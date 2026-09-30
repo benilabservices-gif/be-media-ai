@@ -104,7 +104,8 @@
                     <button class="btn btn-ghost btn-sm" style="position:relative;" onclick="showNotifications()">
                         🔔 <span class="badge badge-error" style="position:absolute;top:-4px;right:-4px;font-size:9px;padding:1px 5px;">3</span>
                     </button>
-                    <a href="../admin.html" class="btn btn-ghost btn-sm">Espace Admin</a>
+                    <a href="../admin.html" class="btn btn-ghost btn-sm" id="navAdminLink" style="display:none;">Espace Admin</a>
+                    <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Déconnexion</button>
                 </div>
             </header>
 
@@ -716,6 +717,44 @@
     </div>
 
     <script>
+    // ── Configuration ──
+    const D360_API_BASE = window.D360_API_BASE || 'http://localhost:8000/api/v1';
+    let _csrfToken = '';
+
+    async function getCsrf() {
+        try {
+            const res = await fetch(D360_API_BASE + '/auth/csrf', { credentials: 'include' });
+            const data = await res.json();
+            _csrfToken = data.csrf_token || '';
+        } catch (_) {}
+    }
+
+    function csrfHeaders() {
+        return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
+    }
+
+    // ── Auth guard ──
+    async function checkAuth() {
+        try {
+            const data = await fetch(D360_API_BASE + '/me', { credentials: 'include' }).then(r => {
+                if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' });
+                return r.json();
+            });
+            return data;
+        } catch (e) {
+            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
+                window.location.href = 'index.html';
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    // ── State ──
+    let _user = null;
+    let _orgId = null;
+    let _orgData = null;
+
     // ── Page routing ──
     const pageTitles = {
         dashboard: 'Tableau de bord',
@@ -784,10 +823,82 @@
         alert('🔔 Notifications\n\n• Votre contenu "Reels behind the chef" est en attente de validation\n• Nouvel avis Google : 5★ — "Excellent !"\n• Facture septembre disponible');
     }
 
-    // Init reveals
-    document.querySelectorAll('.reveal').forEach(el => {
-        if (isInViewport(el)) el.classList.add('active');
-    });
+    // ── Init ──
+    (async () => {
+        try {
+            await getCsrf();
+            const me = await checkAuth();
+            _user = me?.user;
+            const membership = me?.memberships?.[0];
+            if (membership) {
+                _orgId = membership.organization_id;
+                // Load org data
+                try {
+                    _orgData = await fetch(D360_API_BASE + '/orgs/' + _orgId, { credentials: 'include' }).then(r => r.json());
+                } catch (_) {}
+                // Load passport
+                try {
+                    const passportRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/passport', { credentials: 'include' });
+                    if (passportRes.ok) passportData = await passportRes.json();
+                } catch (_) {}
+                // Load action plan
+                try {
+                    const planRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/action-plan', { credentials: 'include' });
+                    if (planRes.ok) actionPlanData = await planRes.json();
+                } catch (_) {}
+                // Load diagnostics
+                try {
+                    const diagRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/diagnostics', { credentials: 'include' });
+                    if (diagRes.ok) diagnosticsData = await diagRes.json();
+                } catch (_) {}
+            }
+            // Update UI with real data
+            if (_user) {
+                const initial = _user.full_name?.charAt(0).toUpperCase() || 'A';
+                document.getElementById('userAvatar').textContent = initial;
+                document.getElementById('userName').textContent = _user.full_name || _user.email || 'Utilisateur';
+            }
+            if (_orgData) {
+                document.getElementById('welcomeName').textContent = _orgData.commercial_name || _orgData.legal_name || 'Entreprise';
+                // Update company info in entreprise page
+                if (passportData?.items) renderPassportData(passportData.items);
+                // Show admin link if user is staff
+                if (me?.staff_roles?.length > 0) {
+                    document.getElementById('navAdminLink').style.display = 'inline-flex';
+                }
+            }
+            // Trigger reveals
+            document.querySelectorAll('.reveal').forEach(el => {
+                if (isInViewport(el)) el.classList.add('active');
+            });
+        } catch (e) {
+            console.error('[D360] Dashboard init error:', e);
+        }
+    })();
+
+    // ── Passport renderer ──
+    let passportData = null;
+    let actionPlanData = null;
+    let diagnosticsData = null;
+
+    function renderPassportData(items) {
+        const fieldMap = {
+            WEBSITE: { section: 'presence', field: 'site' },
+            DOMAIN: { section: 'presence', field: 'domain' },
+            EMAIL: { section: 'presence', field: 'emailprof' },
+            GOOGLE_BUSINESS: { section: 'visibility', field: 'gb' },
+            FACEBOOK: { section: 'visibility', field: 'facebook' },
+            INSTAGRAM: { section: 'visibility', field: 'instagram' },
+            WHATSAPP: { section: 'contact', field: 'whatsapp' },
+        };
+        // Could expand to fill all passport fields dynamically
+    }
+
+    // ── Logout ──
+    async function handleLogout() {
+        try { await fetch(D360_API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
+        window.location.href = 'index.html';
+    }
     </script>
 </body>
 </html>
