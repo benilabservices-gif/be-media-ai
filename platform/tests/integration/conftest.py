@@ -11,14 +11,15 @@ from digital360.core.db import create_engine, create_session_factory
 from digital360.core.jobs import Job
 from digital360.core.tenancy import staff_transaction
 from digital360.main import create_app
+from digital360.modules.configuration.infrastructure.models import ConfigKind
 from digital360.modules.diagnostics.application import config_store
 from digital360.modules.diagnostics.domain.seeds import (
     SEEDS_DIR,
+    load_catalog,
     load_questionnaire,
     load_rule_set,
     load_scoring_model,
 )
-from digital360.modules.diagnostics.infrastructure.models import ConfigKind
 from tests.conftest import make_settings
 from tests.integration.api_client import ApiClient
 
@@ -87,6 +88,9 @@ def published_config(test_database_url: str) -> None:
                 )
                 await config_store.publish(
                     session, ConfigKind.RULE_SET, load_rule_set(SEEDS_DIR / "rules.v1.yaml")
+                )
+                await config_store.publish(
+                    session, ConfigKind.CATALOG, load_catalog(SEEDS_DIR / "catalog.v1.yaml")
                 )
         finally:
             await engine.dispose()

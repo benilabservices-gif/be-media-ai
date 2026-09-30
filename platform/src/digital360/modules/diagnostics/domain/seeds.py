@@ -5,6 +5,7 @@ from typing import Any
 
 import yaml
 
+from digital360.modules.catalog.domain.models import Catalog
 from digital360.modules.diagnostics.domain.config import (
     QuestionnaireDefinition,
     RuleSet,
@@ -32,3 +33,7 @@ def load_scoring_model(path: Path) -> ScoringModel:
 
 def load_rule_set(path: Path) -> RuleSet:
     return RuleSet.model_validate(_read(path))
+
+
+def load_catalog(path: Path) -> Catalog:
+    return Catalog.model_validate(_read(path))

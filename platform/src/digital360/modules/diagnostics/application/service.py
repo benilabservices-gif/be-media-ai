@@ -2,6 +2,7 @@
 complétion (score, plan, passport déclaratif), rattachement à une organisation.
 """
 
+import dataclasses
 import hashlib
 import secrets
 import uuid
@@ -21,6 +22,8 @@ from digital360.core.errors import AppError
 from digital360.core.jobs import JobRegistry, publish
 from digital360.core.pagination import PageInfo, PageParams, build_page_info
 from digital360.core.tenancy import TenantContext, staff_transaction, tenant_transaction
+from digital360.modules.catalog.application.service import current_catalog_or_none, price_payload
+from digital360.modules.configuration.infrastructure.models import ConfigKind
 from digital360.modules.diagnostics.application import config_store
 from digital360.modules.diagnostics.domain.config import QuestionnaireDefinition
 from digital360.modules.diagnostics.domain.engine import (
@@ -36,7 +39,6 @@ from digital360.modules.diagnostics.domain.engine import (
 from digital360.modules.diagnostics.infrastructure.models import (
     ActionPlan,
     ActionPlanItem,
-    ConfigKind,
     DiagnosticSession,
     DiagnosticStatus,
     DigitalScore,
@@ -89,6 +91,7 @@ class PlanItemView:
     product_code: str | None
     cta: str
     status: str
+    price: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -422,6 +425,18 @@ class DiagnosticService:
             )
         ).scalars()
         passport = declared_passport(questionnaire, diagnostic.answers)
+        # Prix dans la devise du pays déclaré ; absents si le catalogue n'est pas publié
+        catalog = await current_catalog_or_none(session)
+        currency = (
+            catalog.currency_for_country(diagnostic.answers.get("country")) if catalog else None
+        )
+
+        def with_price(view: PlanItemView) -> PlanItemView:
+            if catalog is None or currency is None or view.product_code is None:
+                return view
+            price = price_payload(catalog.product(view.product_code), currency)
+            return dataclasses.replace(view, price=price)
+
         return DiagnosticResult(
             id=diagnostic.id,
             status=diagnostic.status,
@@ -437,7 +452,7 @@ class DiagnosticService:
                 {"key": key.value, "status": status, "source": "DECLARED", "details": {}}
                 for key, status in passport.items()
             ],
-            plan_items=[_plan_item_view(item) for item in items],
+            plan_items=[with_price(_plan_item_view(item)) for item in items],
         )
 
 

@@ -97,3 +97,13 @@ name = "passport ne dépend pas de diagnostics"
 type = "forbidden"
 source_modules = ["digital360.modules.passport"]
 forbidden_modules = ["digital360.modules.diagnostics"]
+
+[[tool.importlinter.contracts]]
+name = "catalog et configuration ne dépendent d'aucun module métier consommateur"
+type = "forbidden"
+source_modules = ["digital360.modules.catalog", "digital360.modules.configuration"]
+forbidden_modules = [
+    "digital360.modules.diagnostics",
+    "digital360.modules.organizations",
+    "digital360.modules.passport",
+]

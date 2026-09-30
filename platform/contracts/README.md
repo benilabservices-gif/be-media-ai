@@ -30,10 +30,15 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /orgs/{id}/action-plan` · `PATCH …/items/{item_id}` | **Disponible** | Le client peut écarter une recommandation |
 | `GET /orgs/{id}/diagnostics` | **Disponible** | Historique des diagnostics de l'entreprise |
 | `GET /admin/diagnostics` | **Disponible** | Staff : prospects captés (coordonnées, score, consentements) |
-| `GET /public/catalog` | À mocker | M4. Les prix EUR de ton mock sont des conversions, pas des prix officiels |
-| `/orgs/{id}/entitlements`, `/website-projects` | À mocker | M4 à M6 |
+| `GET /public/catalog?currency=XOF` | **Disponible** | Offres publiques, `price` (ou `null` si non vendue dans la devise), `available_currencies`. Pour l'instant **XOF uniquement** : XAF et EUR renvoient `price: null` |
+| `GET /orgs/{id}/entitlements` | **Disponible** | Droits effectifs de l'entreprise (`value` : booléen, entier ou `"UNLIMITED"`), avec leur `sources` |
+| `GET·POST /admin/organizations/{id}/entitlement-overrides` · `DELETE …/{override_id}` | **Disponible** | Staff : accorder ou retirer un droit (geste commercial, test) |
+| `/orgs/{id}/website-projects` | À mocker | M6 |
 
 ## 2. Configuration
+
+- **Montants** : toujours en **unité mineure** et **HT**. XOF et XAF : en francs (`89900` = 89 900 FCFA). EUR : en **centimes** (`13705` = 137,05 €), donc diviser par 100 à l'affichage.
+- Le plan d'action du diagnostic porte désormais un `price` dans la devise du pays déclaré (`null` si non vendu dans cette devise, ou si la recommandation n'a pas de produit).
 
 - **Base de l'API** : ne pas coder `'/api/v1'` en dur (le frontend et l'API seront sur deux sous-domaines, ex. `app.benilab360.com` et `api.benilab360.com`). Utiliser une variable, par exemple `window.D360_API_BASE || 'http://localhost:8000/api/v1'`.
 - **Toujours** `credentials: 'include'` (déjà fait dans `client.js`) : la session est un cookie.

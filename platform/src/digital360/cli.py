@@ -1,5 +1,6 @@
 """Commandes d'administration : `python -m digital360.cli <commande>`.
 
+seed-config      (publie config/seeds/*.yaml : questionnaire, barème, règles, catalogue)
 grant-staff-role --email admin@benilab.ci --role ADMIN
 export-openapi   (régénère contracts/openapi.json)
 """
@@ -19,14 +20,15 @@ from digital360.core.config import get_settings
 from digital360.core.db import create_engine, create_session_factory
 from digital360.core.permissions import StaffRole
 from digital360.core.tenancy import staff_transaction
+from digital360.modules.configuration.infrastructure.models import ConfigKind
 from digital360.modules.diagnostics.application import config_store
 from digital360.modules.diagnostics.domain.seeds import (
     SEEDS_DIR,
+    load_catalog,
     load_questionnaire,
     load_rule_set,
     load_scoring_model,
 )
-from digital360.modules.diagnostics.infrastructure.models import ConfigKind
 from digital360.modules.identity.infrastructure.models import StaffRoleAssignment, User
 
 OPENAPI_PATH = Path("contracts/openapi.json")
@@ -65,6 +67,7 @@ async def seed_config(seeds_dir: Path = SEEDS_DIR) -> list[str]:
         (ConfigKind.QUESTIONNAIRE, load_questionnaire(_latest(seeds_dir, "questionnaire"))),
         (ConfigKind.SCORING_MODEL, load_scoring_model(_latest(seeds_dir, "scoring"))),
         (ConfigKind.RULE_SET, load_rule_set(_latest(seeds_dir, "rules"))),
+        (ConfigKind.CATALOG, load_catalog(_latest(seeds_dir, "catalog"))),
     ]
     engine = create_engine(str(get_settings().database_url))
     try:

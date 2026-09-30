@@ -14,6 +14,8 @@ from digital360.core.errors import register_error_handlers
 from digital360.core.logging import REQUEST_ID_HEADER, RequestContextMiddleware, configure_logging
 from digital360.core.rate_limit import RateLimiter
 from digital360.jobs import registry
+from digital360.modules.catalog.api import routes as catalog_routes
+from digital360.modules.catalog.application.service import CatalogService
 from digital360.modules.diagnostics.api import routes as diagnostic_routes
 from digital360.modules.diagnostics.application.service import DiagnosticService
 from digital360.modules.identity.api import routes as identity_routes
@@ -48,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.organization_service = OrganizationService(session_factory)
         app.state.diagnostic_service = DiagnosticService(session_factory, registry)
         app.state.passport_service = PassportService(session_factory)
+        app.state.catalog_service = CatalogService(session_factory)
         app.state.rate_limiter = RateLimiter()
         yield
         await app.state.engine.dispose()
@@ -84,6 +87,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api_router.include_router(diagnostic_routes.router)
     api_router.include_router(diagnostic_routes.admin_router)
     api_router.include_router(passport_routes.router)
+    api_router.include_router(catalog_routes.public_router)
+    api_router.include_router(catalog_routes.router)
+    api_router.include_router(catalog_routes.admin_router)
     app.include_router(api_router)
 
     return app
