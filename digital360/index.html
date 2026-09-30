@@ -687,21 +687,19 @@
 
     // ── Pricing from catalog ──
     async function loadCatalog() {
-        try {
-            if (MOCK_MODE) { catalogData = MOCK_CATALOG; renderPricing(); return; }
-            catalogData = await api.getCatalog(currentCurrency);
-            console.log('[D360] Catalog loaded:', catalogData);
-            renderPricing();
-        } catch (e) {
-            console.warn('[D360] Catalogue non chargé, utilisation des valeurs par défaut', e);
-            renderPricingDefault();
-        }
-    }
+         try {
+             if (MOCK_MODE) { catalogData = MOCK_CATALOG; renderPricing(); return; }
+             catalogData = await api.getCatalog(currentCurrency);
+             renderPricing();
+         } catch (e) {
+             console.warn('[D360] Catalogue non chargé, utilisation des valeurs par défaut', e);
+             renderPricingDefault();
+         }
+     }
 
     function renderPricing() {
-        if (!catalogData) { console.warn('[D360] renderPricing: no catalogData, using default'); renderPricingDefault(); return; }
-        console.log('[D360] renderPricing called with', catalogData.products?.length || 0, 'products');
-        const grid = document.getElementById('pricingGrid');
+         if (!catalogData) { renderPricingDefault(); return; }
+         const grid = document.getElementById('pricingGrid');
         if (!grid) { console.error('[D360] pricingGrid element not found!'); return; }
         const featureMap = {
             DIGITAL_START: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'],
@@ -752,9 +750,8 @@
 
     function renderPricingDefault() {
         // Fallback static rendering with HT
-        const grid = document.getElementById('pricingGrid');
-        if (!grid) { console.error('[D360] renderPricingDefault: pricingGrid not found'); return; }
-        console.log('[D360] renderPricingDefault called');
+         const grid = document.getElementById('pricingGrid');
+         if (!grid) { console.error('[D360] renderPricingDefault: pricingGrid not found'); return; }
         const products = [
              { code: 'DIGITAL_START', name: 'Digital Start', price: { amount: 89900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
              { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
@@ -1217,18 +1214,39 @@
         const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
         const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
 
-        const sections = [
-            { title: 'Identité', items: [] },
-            { title: 'Présence web', items: [] },
-            { title: 'Google & Réseaux', items: [] },
-        ];
+         const sections = [
+             { title: 'Identité', items: [] },
+             { title: 'Présence web', items: [] },
+             { title: 'Google & Réseaux', items: [] },
+             { title: 'Conversion', items: [] },
+             { title: 'Fidélisation', items: [] },
+         ];
 
-        passport.items.forEach(item => {
-            const key = item.key;
-            const details = item.details || {};
-            let sectionIdx = 0;
-            if (['GOOGLE_BUSINESS', 'FACEBOOK', 'INSTAGRAM', 'TIKTOK', 'LINKEDIN', 'SEO'].includes(key)) sectionIdx = 2;
-            else if (['WEBSITE', 'DOMAIN', 'EMAIL', 'HOSTING'].includes(key)) sectionIdx = 1;
+         const keySectionMap = {
+             COMPANY: 0, SECTOR: 0, CITY: 0, DESCRIPTION: 0,
+             PHONE: 0, WHATSAPP: 0, EMAIL: 0,
+             WEBSITE: 1, DOMAIN: 1, EMAIL_PRO: 1, HOSTING: 1,
+             GOOGLE_BUSINESS: 2, FACEBOOK: 2, INSTAGRAM: 2, TIKTOK: 2, LINKEDIN: 2, SEO: 2,
+             WHATSAPP_BU: 2, ADS: 2,
+             CONTACT_FORM: 3, RESERVATION: 3, PAYMENT: 3, FUNNEL: 3,
+             EMAILING: 4, CRM: 4, RETENTION: 4, AUTOMATION: 4,
+         };
+         const keyLabelMap = {
+             WEBSITE: 'Site web', DOMAIN: 'Nom de domaine', EMAIL: 'Email professionnel',
+             HOSTING: 'Hébergement', GOOGLE_BUSINESS: 'Google Business',
+             FACEBOOK: 'Facebook', INSTAGRAM: 'Instagram', TIKTOK: 'TikTok', LINKEDIN: 'LinkedIn',
+             WHATSAPP: 'WhatsApp', WHATSAPP_BU: 'WhatsApp Business',
+             SEO: 'SEO local', ADS: 'Publicité',
+             CONTACT_FORM: 'Formulaire de contact', RESERVATION: 'Réservation',
+             PAYMENT: 'Paiement en ligne', FUNNEL: 'Tunnel de conversion',
+             EMAILING: 'Email marketing', CRM: 'CRM / Prospects', RETENTION: 'Relances',
+             AUTOMATION: 'Automatisations',
+         };
+
+         passport.items.forEach(item => {
+             const key = item.key;
+             const details = item.details || {};
+             const sectionIdx = keySectionMap[key] !== undefined ? keySectionMap[key] : 0;
 
             const div = document.createElement('div');
             div.className = 'passport-section';
@@ -1241,18 +1259,14 @@
             const value = document.createElement('div');
             value.className = 'passport-field-value';
 
-            const keyNames = {
-                WEBSITE: 'Site web', DOMAIN: 'Nom de domaine', EMAIL: 'Email professionnel',
-                GOOGLE_BUSINESS: 'Google Business', FACEBOOK: 'Facebook', INSTAGRAM: 'Instagram',
-                TIKTOK: 'TikTok', LINKEDIN: 'LinkedIn', WHATSAPP: 'WhatsApp',
-                SEO: 'SEO local', ADS: 'Publicité', EMAILING: 'Email marketing', CRM: 'CRM'
-            };
-            label.textContent = keyNames[key] || key.replace(/_/g, ' ');
+             const keyNames = keyLabelMap[key] || key.replace(/_/g, ' ');
 
-            if (key === 'WEBSITE' && details.url) value.textContent = details.url;
-            else if (key === 'DOMAIN' && details.fqdn) value.textContent = details.fqdn + (details.expires_at ? ' — valide jusqu\'en ' + details.expires_at.slice(0, 4) : '');
-            else if (key === 'EMAIL' && details.address) value.textContent = details.address;
-            else if (key === 'GOOGLE_BUSINESS') {
+             // Value display
+             if (key === 'WEBSITE' && details.url) value.textContent = details.url;
+             else if (key === 'DOMAIN' && details.fqdn) value.textContent = details.fqdn + (details.expires_at ? ' — valide jusqu\'en ' + details.expires_at.slice(0, 4) : '');
+             else if (key === 'EMAIL' && details.address) value.textContent = details.address;
+             else if (key === 'HOSTING') value.textContent = statusLabels[item.status] || item.status;
+             else if (key === 'GOOGLE_BUSINESS') {
                 const badge = document.createElement('span');
                 badge.className = 'badge ' + (statusBadges[item.status] || 'badge-muted');
                 badge.textContent = statusLabels[item.status] || item.status;

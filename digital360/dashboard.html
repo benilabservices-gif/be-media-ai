@@ -54,7 +54,6 @@
                 </div>
                 <div class="dash-nav-item" data-page="site" onclick="switchPage('site')">
                     <span class="nav-icon">🌐</span> Mon site web
-                    <span class="nav-badge">1</span>
                 </div>
                 <div class="dash-nav-section">Modules</div>
                 <div class="dash-nav-item" data-page="google" onclick="switchPage('google')">
@@ -102,7 +101,7 @@
                 </div>
                 <div class="dash-topbar-actions">
                     <button class="btn btn-ghost btn-sm" style="position:relative;" onclick="showNotifications()">
-                        🔔 <span class="badge badge-error" style="position:absolute;top:-4px;right:-4px;font-size:9px;padding:1px 5px;">3</span>
+                        🔔
                     </button>
                     <a href="../admin.html" class="btn btn-ghost btn-sm" id="navAdminLink" style="display:none;">Espace Admin</a>
                     <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Déconnexion</button>
@@ -130,10 +129,15 @@
                                  <div class="score-ring-label">/100</div>
                              </div>
                          </div>
-                         <div class="dash-score-info">
-                             <h2>Votre Digital Score</h2>
-                             <p id="dashScoreMsg">Vos données sont en cours de chargement.</p>
-                         </div>
+                          <div class="dash-score-info">
+                              <h2>Votre Digital Score</h2>
+                              <p id="dashScoreMsg">Aucun diagnostic effectué.</p>
+                          </div>
+                          <div class="dash-next-action" id="dashNoDiagCta" style="display:none;">
+                              <div class="label">Premier pas</div>
+                              <p>Faites votre diagnostic gratuit pour obtenir votre plan de transformation.</p>
+                              <a href="index.html#diagnostic" class="btn btn-primary btn-sm" style="display:inline-block;margin-top:0.5rem;">Faire mon diagnostic</a>
+                          </div>
                          <div class="dash-next-action" id="dashNextAction" style="display:none;">
                              <div class="label">Prochaine action</div>
                              <p id="dashNextActionText">—</p>
@@ -813,9 +817,11 @@
             document.getElementById('dashScoreCircle').style.strokeDashoffset = offset;
             document.getElementById('welcomeSub').textContent =
                 'Votre présence digitale est à <strong style="color:var(--accent);">' + total + '%</strong> — ' + (latest.maturity_label || 'voici où vous en êtes.');
-        } else {
-            document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
-        }
+         } else {
+             document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
+             document.getElementById('dashNoDiagCta').style.display = '';
+             document.getElementById('dashNextAction').style.display = 'none';
+         }
 
         // Next action from action plan
         if (actionPlanData?.items) {
