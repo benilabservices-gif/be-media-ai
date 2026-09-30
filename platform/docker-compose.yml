@@ -1,0 +1,45 @@
+# Environnement de développement local : `docker compose up --build`
+# Le worker et le stockage objet (MinIO) seront ajoutés avec les étapes qui les utilisent.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: digital360
+      POSTGRES_PASSWORD: digital360
+      POSTGRES_DB: digital360
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U digital360 -d digital360"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Étape de release : les migrations passent avant le démarrage de l'API
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://digital360:digital360@postgres:5432/digital360
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://digital360:digital360@postgres:5432/digital360
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-data:

@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "digital360"
+version = "0.1.0"
+description = "BENILAB Digital360 — moteur backend (API + workers)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32,<1",
+    "pydantic>=2.9,<3",
+    "pydantic-settings>=2.7,<3",  # NoDecode
+    "sqlalchemy[asyncio]>=2.0.36,<2.1",
+    "asyncpg>=0.30,<1",
+    "alembic>=1.14,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9",
+    "httpx2>=2.13,<3",  # client HTTP attendu par starlette.testclient (httpx est déprécié)
+    "ruff>=0.8",
+    "black>=24.10",
+    "mypy>=1.13",
+    "import-linter>=2.1",
+    "pip-audit>=2.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/digital360"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF", "N", "SIM"]
+ignore = ["E501"]  # la longueur de ligne est gérée par black
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert est l'outil normal de pytest
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: nécessite une base PostgreSQL réelle (TEST_DATABASE_URL)",
+]
+filterwarnings = ["error"]
+
+[tool.importlinter]
+root_package = "digital360"
+
+[[tool.importlinter.contracts]]
+name = "core reste transverse : il ne dépend d'aucun module métier"
+type = "forbidden"
+source_modules = ["digital360.core"]
+forbidden_modules = ["digital360.modules"]
