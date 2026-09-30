@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Client — BENILAB Digital360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .dash-page { display: none; }
+        .dash-page.active { display: block; }
+        .chart-placeholder {
+            width: 100%; height: 200px;
+            background: linear-gradient(135deg, rgba(127,181,168,0.03), rgba(127,181,168,0.01));
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 13px;
+        }
+        /* Simple CSS bar chart */
+        .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 1rem; }
+        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 1s cubic-bezier(0.16,1,0.3,1); min-height: 4px; }
+        .bar-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .bar-value { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+
+    <div class="dash-layout">
+        <!-- Sidebar -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="dash-sidebar-header">
+                <div class="dash-sidebar-logo">BENILAB <em>Digital360</em></div>
+                <div class="dash-sidebar-user">
+                    <div class="dash-avatar" id="userAvatar">A</div>
+                    <div class="dash-user-info">
+                        <div class="dash-user-name" id="userName">Amadou Diallo</div>
+                        <div class="dash-user-role">Client</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="dash-sidebar-nav">
+                <div class="dash-nav-section">Principal</div>
+                <div class="dash-nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <span class="nav-icon">📊</span> Tableau de bord
+                </div>
+                <div class="dash-nav-item" data-page="entreprise" onclick="switchPage('entreprise')">
+                    <span class="nav-icon">🏢</span> Mon entreprise
+                </div>
+                <div class="dash-nav-item" data-page="site" onclick="switchPage('site')">
+                    <span class="nav-icon">🌐</span> Mon site web
+                    <span class="nav-badge">1</span>
+                </div>
+                <div class="dash-nav-section">Modules</div>
+                <div class="dash-nav-item" data-page="google" onclick="switchPage('google')">
+                    <span class="nav-icon">📍</span> Google Business
+                </div>
+                <div class="dash-nav-item" data-page="reseaux" onclick="switchPage('reseaux')">
+                    <span class="nav-icon">📱</span> Réseaux sociaux
+                </div>
+                <div class="dash-nav-item" data-page="contenus" onclick="switchPage('contenus')">
+                    <span class="nav-icon">✍️</span> Contenus
+                </div>
+                <div class="dash-nav-item" data-page="prospects" onclick="switchPage('prospects')">
+                    <span class="nav-icon">👥</span> Prospects
+                </div>
+                <div class="dash-nav-item" data-page="publicite" onclick="switchPage('publicite')">
+                    <span class="nav-icon">⚡</span> Publicité
+                </div>
+                <div class="dash-nav-item" data-page="conversion" onclick="switchPage('conversion')">
+                    <span class="nav-icon">🔄</span> Conversion
+                </div>
+                <div class="dash-nav-section">Suivi</div>
+                <div class="dash-nav-item" data-page="analytics" onclick="switchPage('analytics')">
+                    <span class="nav-icon">📈</span> Analytics
+                </div>
+                <div class="dash-nav-item" data-page="abonnement" onclick="switchPage('abonnement')">
+                    <span class="nav-icon">💳</span> Abonnement
+                </div>
+                <div class="dash-nav-item" data-page="support" onclick="switchPage('support')">
+                    <span class="nav-icon">💬</span> Support
+                </div>
+                <div style="padding:12px;">
+                    <a href="../digital360/index.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Retour à l'accueil</a>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="dash-sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- Main -->
+        <main class="dash-main">
+            <header class="dash-topbar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="dash-hamburger" onclick="toggleSidebar()">☰</button>
+                    <div class="dash-topbar-title" id="pageTitle">Tableau de bord</div>
+                </div>
+                <div class="dash-topbar-actions">
+                    <button class="btn btn-ghost btn-sm" style="position:relative;" onclick="showNotifications()">
+                        🔔 <span class="badge badge-error" style="position:absolute;top:-4px;right:-4px;font-size:9px;padding:1px 5px;">3</span>
+                    </button>
+                    <a href="../admin.html" class="btn btn-ghost btn-sm">Espace Admin</a>
+                </div>
+            </header>
+
+            <div class="dash-content">
+
+                <!-- ═══ DASHBOARD ═══ -->
+                <div class="dash-page active" id="page-dashboard">
+                    <div class="dash-welcome reveal">
+                        <h1>Bonjour <span class="name" id="welcomeName">Amadou</span></h1>
+                        <p>Votre présence digitale est à <strong style="color:var(--accent);">63%</strong> — voici où vous en êtes.</p>
+                    </div>
+
+                    <!-- Score Banner -->
+                    <div class="dash-score-banner reveal delay-1">
+                        <div class="dash-score-ring score-ring">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                <circle class="score-ring-fill" cx="60" cy="60" r="52"
+                                    stroke-dasharray="326.7" stroke-dashoffset="120" style="stroke-dashoffset:120;"/>
+                            </svg>
+                            <div class="score-ring-text">
+                                <div class="score-ring-value" style="font-size:2rem;">63</div>
+                                <div class="score-ring-label">/100</div>
+                            </div>
+                        </div>
+                        <div class="dash-score-info">
+                            <h2>Votre Digital Score</h2>
+                            <p>Votre entreprise a une bonne基础 digitale. Les prochaines étapes recommandées sont l'optimisation Google Business et le renforcement de votre acquisition.</p>
+                        </div>
+                        <div class="dash-next-action">
+                            <div class="label">Prochaine action</div>
+                            <p>Optimisez votre fiche Google Business pour améliorer votre visibilité locale.</p>
+                            <button class="btn btn-primary btn-sm" onclick="switchPage('google')">Optimiser Google Business</button>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="dash-stats reveal delay-2">
+                        <div class="dash-stat">
+                            <div class="dash-stat-value">24</div>
+                            <div class="dash-stat-label">Visiteurs ce mois</div>
+                            <div class="dash-stat-change up">↑ 12% vs mois dernier</div>
+                        </div>
+                        <div class="dash-stat">
+                            <div class="dash-stat-value">3</div>
+                            <div class="dash-stat-label">Leads captés</div>
+                            <div class="dash-stat-change up">↑ 1 vs mois dernier</div>
+                        </div>
+                        <div class="dash-stat">
+                            <div class="dash-stat-value">8</div>
+                            <div class="dash-stat-label">Contenus publiés</div>
+                            <div class="dash-stat-change">Ce mois</div>
+                        </div>
+                        <div class="dash-stat">
+                            <div class="dash-stat-value">1</div>
+                            <div class="dash-stat-label">Campagne active</div>
+                            <div class="dash-stat-change">Meta Ads</div>
+                        </div>
+                    </div>
+
+                    <!-- Modules quick access -->
+                    <div class="reveal delay-3" style="margin-bottom:2rem;">
+                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Vos modules</h3>
+                        <div class="dash-modules">
+                            <div class="dash-module" onclick="switchPage('site')">
+                                <div class="dash-module-icon">🌐</div>
+                                <h3>Site web</h3>
+                                <p>Site en ligne · 5 pages</p>
+                                <div class="dash-module-status"><span class="badge badge-success">Opérationnel</span></div>
+                            </div>
+                            <div class="dash-module" onclick="switchPage('google')">
+                                <div class="dash-module-icon">📍</div>
+                                <h3>Google Business</h3>
+                                <p>Fiche créée · À optimiser</p>
+                                <div class="dash-module-status"><span class="badge badge-warning">En cours</span></div>
+                            </div>
+                            <div class="dash-module" onclick="switchPage('reseaux')">
+                                <div class="dash-module-icon">📱</div>
+                                <h3>Réseaux sociaux</h3>
+                                <p>Facebook actif · Instagram</p>
+                                <div class="dash-module-status"><span class="badge badge-info">2 plateformes</span></div>
+                            </div>
+                            <div class="dash-module" onclick="switchPage('contenus')">
+                                <div class="dash-module-icon">✍️</div>
+                                <h3>Contenus</h3>
+                                <p>8 publiés · 2 en validation</p>
+                                <div class="dash-module-status"><span class="badge badge-accent">Mensuel</span></div>
+                            </div>
+                            <div class="dash-module" onclick="switchPage('prospects')">
+                                <div class="dash-module-icon">👥</div>
+                                <h3>Prospects</h3>
+                                <p>12 prospects · 3 nouveaux</p>
+                                <div class="dash-module-status"><span class="badge badge-warning">À qualifier</span></div>
+                            </div>
+                            <div class="dash-module" onclick="switchPage('analytics')">
+                                <div class="dash-module-icon">📈</div>
+                                <h3>Analytics</h3>
+                                <p>Trafic, leads, conversions</p>
+                                <div class="dash-module-status"><span class="badge badge-success">Actif</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart + Recent -->
+                    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;" class="reveal delay-4">
+                        <div class="chart-container">
+                            <h3>Trafic — 6 derniers mois</h3>
+                            <div class="bar-chart">
+                                <div class="bar-col"><div class="bar-value">12</div><div class="bar" style="height:60px;background:var(--accent);"></div><div class="bar-label">Avr</div></div>
+                                <div class="bar-col"><div class="bar-value">18</div><div class="bar" style="height:90px;background:var(--accent);"></div><div class="bar-label">Mai</div></div>
+                                <div class="bar-col"><div class="bar-value">15</div><div class="bar" style="height:75px;background:var(--accent);"></div><div class="bar-label">Jun</div></div>
+                                <div class="bar-col"><div class="bar-value">22</div><div class="bar" style="height:110px;background:var(--accent);"></div><div class="bar-label">Juil</div></div>
+                                <div class="bar-col"><div class="bar-value">28</div><div class="bar" style="height:130px;background:var(--accent);"></div><div class="bar-label">Aoû</div></div>
+                                <div class="bar-col"><div class="bar-value">24</div><div class="bar" style="height:120px;background:var(--accent-light);"></div><div class="bar-label">Sep</div></div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Activité récente</h3>
+                            <div style="font-size:13px;">
+                                <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+                                    <span>📝 Nouveau contenu publié</span><span style="color:var(--text-muted);">Il y a 2j</span>
+                                </div>
+                                <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+                                    <span>👤 Nouveau prospect</span><span style="color:var(--text-muted);">Il y a 3j</span>
+                                </div>
+                                <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+                                    <span>⭐ Nouvel avis Google</span><span style="color:var(--text-muted);">Il y a 5j</span>
+                                </div>
+                                <div style="padding:10px 0;display:flex;justify-content:space-between;">
+                                    <span>📊 Rapport mensuel disponible</span><span style="color:var(--text-muted);">Il y a 7j</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ ENTREPRISE ═══ -->
+                <div class="dash-page" id="page-entreprise">
+                    <div class="page-header reveal">
+                        <h1>Mon entreprise</h1>
+                        <p>Votre Digital Passport — informations centrales de votre activité.</p>
+                    </div>
+                    <div class="passport-grid reveal delay-1">
+                        <div class="passport-section">
+                            <h3>Identité</h3>
+                            <div class="passport-field"><div class="passport-field-label">Nom</div><div class="passport-field-value">Restaurant Le Délice</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Secteur</div><div class="passport-field-value">Restaurant / Hospitality</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Ville</div><div class="passport-field-value">Abidjan, Cocody</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Description</div><div class="passport-field-value" style="font-size:14px;color:var(--text-secondary);">Cuisine ivoirienne et internationale dans un cadre moderne. Ouvert midi et soir.</div></div>
+                        </div>
+                        <div class="passport-section">
+                            <h3>Coordonnées</h3>
+                            <div class="passport-field"><div class="passport-field-label">Téléphone</div><div class="passport-field-value">+225 07 08 09 10</div></div>
+                            <div class="passport-field"><div class="passport-field-label">WhatsApp</div><div class="passport-field-value">+225 07 08 09 10</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Email</div><div class="passport-field-value">contact@letedelice.ci</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Adresse</div><div class="passport-field-value">Bd Latrille, Cocody Abidjan</div></div>
+                        </div>
+                        <div class="passport-section">
+                            <h3>Présence digitale</h3>
+                            <div class="passport-field"><div class="passport-field-label">Site web</div><div class="passport-field-value">www.letedelice.ci ✓</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Domaine</div><div class="passport-field-value">letedelice.ci — valide jusqu'en 2027</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Email pro</div><div class="passport-field-value">contact@letedelice.ci ✓</div></div>
+                        </div>
+                        <div class="passport-section">
+                            <h3>Google & Réseaux</h3>
+                            <div class="passport-field"><div class="passport-field-label">Google Business</div><div class="passport-field-value"><span class="badge badge-warning">À optimiser</span></div></div>
+                            <div class="passport-field"><div class="passport-field-label">Avis Google</div><div class="passport-field-value">7 avis — note 4.2/5</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Facebook</div><div class="passport-field-value">@letedelice.ci — 340 abonnés</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Instagram</div><div class="passport-field-value">@letedelice_ci — 180 abonnés</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ SITE WEB ═══ -->
+                <div class="dash-page" id="page-site">
+                    <div class="page-header reveal">
+                        <h1>Mon site web</h1>
+                        <p>État, aperçu et modifications de votre site.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                            <div class="card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                                    <span style="font-size:13px;font-weight:600;">letedelice.ci</span>
+                                    <span class="badge badge-success">En ligne</span>
+                                </div>
+                                <div class="chart-placeholder" style="height:160px;margin-bottom:1rem;border-style:solid;border-color:var(--border);background:linear-gradient(135deg,var(--bg-tertiary),var(--bg-card));">
+                                    <span style="font-size:3rem;opacity:0.3;">🌐</span>
+                                </div>
+                                <div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;">
+                                    <span>Mise en ligne: 15 Août 2025</span>
+                                    <span>5 pages</span>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Pages du site</h3>
+                                <div style="font-size:14px;">
+                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>🏠 Accueil</span><span class="badge badge-success">✓</span></div>
+                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>📋 Menu / Services</span><span class="badge badge-success">✓</span></div>
+                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>📸 Galerie</span><span class="badge badge-success">✓</span></div>
+                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>📍 Contact</span><span class="badge badge-success">✓</span></div>
+                                    <div style="padding:8px 0;display:flex;justify-content:space-between;"><span>ℹ️ À propos</span><span class="badge badge-success">✓</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-accent">
+                            <span>💡</span>
+                            <div><strong>Suggestion :</strong> Ajoutez une section "Avis clients" sur la page d'accueil pour renforcer la confiance des visiteurs.</div>
+                        </div>
+                        <div style="margin-top:1rem;">
+                            <button class="btn btn-outline" onclick="alert('Formulaire de demande de modification ouvert.')">Demander une modification</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ GOOGLE BUSINESS ═══ -->
+                <div class="dash-page" id="page-google">
+                    <div class="page-header reveal">
+                        <h1>Google Business</h1>
+                        <p>Gérez votre fiche Google pour être trouvé localement.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="card" style="margin-bottom:1.5rem;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                                <div>
+                                    <div style="font-size:1.2rem;font-weight:600;">Restaurant Le Délice</div>
+                                    <div style="font-size:13px;color:var(--text-muted);">Restaurant · Abidjan</div>
+                                </div>
+                                <span class="badge badge-warning">Score: 62/100</span>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;">
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Avis</div><div style="font-size:1.5rem;font-weight:700;">7 <span style="font-size:0.8rem;color:var(--warning);">★</span> 4.2</div></div>
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Vues fiche</div><div style="font-size:1.5rem;font-weight:700;color:var(--accent);">234</div></div>
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Appels</div><div style="font-size:1.5rem;font-weight:700;">12</div></div>
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Itinéraires</div><div style="font-size:1.5rem;font-weight:700;">38</div></div>
+                            </div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <div><strong>Optimisation en cours :</strong> Votre fiche peut être améliorée — ajoutez plus de photos, répondre aux avis et complétez vos horaires.</div>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top:1rem;">Demander l'optimisation complète</button>
+                    </div>
+                </div>
+
+                <!-- ═══ RÉSEAUX SOCIAUX ═══ -->
+                <div class="dash-page" id="page-reseaux">
+                    <div class="page-header reveal">
+                        <h1>Réseaux sociaux</h1>
+                        <p>Calendrier éditorial et performances de vos réseaux.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;">
+                            <div class="card" style="text-align:center;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">📘</div>
+                                <div style="font-weight:600;">Facebook</div>
+                                <div style="font-size:13px;color:var(--text-muted);">340 abonnés</div>
+                                <div style="font-size:12px;color:var(--success);margin-top:0.5rem;">✓ Connecté</div>
+                            </div>
+                            <div class="card" style="text-align:center;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">📸</div>
+                                <div style="font-weight:600;">Instagram</div>
+                                <div style="font-size:13px;color:var(--text-muted);">180 abonnés</div>
+                                <div style="font-size:12px;color:var(--success);margin-top:0.5rem;">✓ Connecté</div>
+                            </div>
+                            <div class="card" style="text-align:center;opacity:0.5;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">🎵</div>
+                                <div style="font-weight:600;">TikTok</div>
+                                <div style="font-size:13px;color:var(--text-muted);">Non connecté</div>
+                                <div style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;">— Pas connecté</div>
+                            </div>
+                        </div>
+
+                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Calendrier éditorial — Septembre 2025</h3>
+                        <div class="calendar-grid">
+                            <div class="calendar-day-header">Lun</div><div class="calendar-day-header">Mar</div><div class="calendar-day-header">Mer</div><div class="calendar-day-header">Jeu</div><div class="calendar-day-header">Ven</div><div class="calendar-day-header">Sam</div><div class="calendar-day-header">Dim</div>
+                            <div class="calendar-day" style="opacity:0.3;"><div class="day-num">1</div></div>
+                            <div class="calendar-day"><div class="day-num">2</div></div>
+                            <div class="calendar-day"><div class="day-num">3</div><div class="calendar-event post">Post Facebook</div></div>
+                            <div class="calendar-day"><div class="day-num">4</div></div>
+                            <div class="calendar-day"><div class="day-num">5</div><div class="calendar-event post">Post Instagram</div></div>
+                            <div class="calendar-day"><div class="day-num">6</div></div>
+                            <div class="calendar-day"><div class="day-num">7</div></div>
+                            <div class="calendar-day"><div class="day-num">8</div><div class="calendar-event post">Reels Instagram</div></div>
+                            <div class="calendar-day today"><div class="day-num">9</div><div class="calendar-event pending">En validation</div></div>
+                            <div class="calendar-day"><div class="day-num">10</div><div class="calendar-event post">Post Facebook</div></div>
+                            <div class="calendar-day"><div class="day-num">11</div></div>
+                            <div class="calendar-day"><div class="day-num">12</div><div class="calendar-event post">Story WhatsApp</div></div>
+                            <div class="calendar-day"><div class="day-num">13</div></div>
+                            <div class="calendar-day"><div class="day-num">14</div><div class="calendar-event pending">En validation</div></div>
+                        </div>
+                        <div style="margin-top:1rem;display:flex;gap:1rem;font-size:12px;color:var(--text-muted);">
+                            <span><span class="badge badge-accent" style="margin-right:4px;">●</span> Publié</span>
+                            <span><span class="badge badge-warning" style="margin-right:4px;">●</span> En validation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ CONTENUS ═══ -->
+                <div class="dash-page" id="page-contenus">
+                    <div class="page-header reveal">
+                        <h1>Content Studio</h1>
+                        <p>Gérez vos contenus de A à Z.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="tab-group">
+                            <button class="tab-btn active" onclick="switchTab(this,'cont-all')">Tous</button>
+                            <button class="tab-btn" onclick="switchTab(this,'cont-published')">Publiés</button>
+                            <button class="tab-btn" onclick="switchTab(this,'cont-validating')">En validation</button>
+                            <button class="tab-btn" onclick="switchTab(this,'cont-draft')">Brouillons</button>
+                        </div>
+                        <div class="card" id="cont-all">
+                            <div style="display:flex;flex-direction:column;gap:1rem;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight:500;">Post Facebook — Spécial weekend</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">📘 Facebook · 5 sept · 245 vues</div>
+                                    </div>
+                                    <span class="badge badge-success">Publié</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight:500;">Reels Instagram — detrás du chef</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">📸 Instagram · 8 sept · En attente</div>
+                                    </div>
+                                    <span class="badge badge-warning">En validation</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight:500;">Carrousel — Nos 5 plats signature</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">📸 Instagram · 12 sept</div>
+                                    </div>
+                                    <span class="badge badge-muted">Brouillon</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+                                    <div>
+                                        <div style="font-weight:500;">Story WhatsApp — Offer du jour</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">💬 WhatsApp · 14 sept</div>
+                                    </div>
+                                    <span class="badge badge-warning">En validation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ PROSPECTS ═══ -->
+                <div class="dash-page" id="page-prospects">
+                    <div class="page-header reveal">
+                        <h1>Prospects</h1>
+                        <p>Suivez vos prospects et convertissez-les en clients.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:flex;gap:1rem;margin-bottom:1.5rem;">
+                            <button class="btn btn-primary btn-sm" onclick="alert('Formulaire d\'ajout de prospect')">+ Ajouter un prospect</button>
+                            <button class="btn btn-outline btn-sm" onclick="toggleKanbanView()">Vue Kanban</button>
+                        </div>
+                        <div id="kanbanView" style="display:none;">
+                            <div class="kanban">
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Nouveaux</span><span class="kanban-col-count">3</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Marie K.</div><div class="kanban-card-meta">Facebook · Il y a 2j · Budget: Event privé</div></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Jean M.</div><div class="kanban-card-meta">Site web · Il y a 3j · Déjeuner entreprise</div></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Sophie B.</div><div class="kanban-card-meta">WhatsApp · Il y a 5j · Birthday</div></div>
+                                </div>
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Contactés</span><span class="kanban-col-count">4</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Patrick T.</div><div class="kanban-card-meta">Google · 10 sept · Repas famille</div></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Aminata D.</div><div class="kanban-card-meta">Instagram · 8 sept · Corporate lunch</div></div>
+                                </div>
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Qualifiés</span><span class="kanban-col-count">2</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Hotel Ivoire</div><div class="kanban-card-meta">Site web · 5 sept · Traiteur événement</div></div>
+                                </div>
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Gagnés</span><span class="kanban-col-count">3</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Event Corporate ABC</div><div class="kanban-card-meta">Facebook · Gagné · 250 000 FCFA</div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tableView">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead><tr><th>Prospect</th><th>Source</th><th>Statut</th><th>Date</th><th>Valeur</th><th>Action</th></tr></thead>
+                                    <tbody>
+                                        <tr><td style="font-weight:500;">Marie K.</td><td>Facebook</td><td><span class="badge badge-muted">Nouveau</span></td><td>7 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Jean M.</td><td>Site web</td><td><span class="badge badge-muted">Nouveau</span></td><td>6 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Patrick T.</td><td>Google</td><td><span class="badge badge-info">Contacté</span></td><td>3 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Hotel Ivoire</td><td>Site web</td><td><span class="badge badge-warning">Qualifié</span></td><td>5 sept</td><td>250 000 FCFA HT</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Event ABC</td><td>Facebook</td><td><span class="badge badge-success">Gagné</span></td><td>28 août</td><td>250 000 FCFA HT</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ PUBLICITÉ ═══ -->
+                <div class="dash-page" id="page-publicite">
+                    <div class="page-header reveal">
+                        <h1>Ads Center</h1>
+                        <p>Campagnes publicitaires et performances.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
+                            <span>ℹ️</span>
+                            <div><strong>Module en construction.</strong> La gestion publicitaire sera disponible prochainement. Contactez-nous pour en discuter.</div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                            <div class="card metric-card">
+                                <div class="metric-value">1</div>
+                                <div class="metric-label">Campagne active</div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-value">45K</div>
+                                <div class="metric-label">Budget média (FCFA)</div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-value">12K</div>
+                                <div class="metric-label">Coût par lead (FCFA)</div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:1.5rem;">
+                            <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Répartition budget</h3>
+                            <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;">
+                                <div style="text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:var(--accent);">30 000</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">Frais BENILAB</div>
+                                </div>
+                                <div style="text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:var(--warning);">15 000</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">Budget média (client)</div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info" style="margin-top:1rem;">
+                                <span>💡</span> Le budget publicitaire est déterminé ensemble selon vos objectifs et votre capacité. Les frais BENILAB couvrent la gestion et l'optimisation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ CONVERSION ═══ -->
+                <div class="dash-page" id="page-conversion">
+                    <div class="page-header reveal">
+                        <h1>Conversion Center</h1>
+                        <p>Landing pages, formulaires, WhatsApp et tunnels de conversion.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
+                            <span>🚧</span>
+                            <div><strong>Module en développement.</strong> Le Conversion Center et Virtuoso Funnel seront intégrés prochainement.</div>
+                        </div>
+                        <div class="modules-grid">
+                            <div class="module-card">
+                                <div class="module-icon">💬</div>
+                                <div class="module-name">WhatsApp Business</div>
+                                <div class="module-status badge badge-success">Configuré</div>
+                            </div>
+                            <div class="module-card">
+                                <div class="module-icon">📝</div>
+                                <div class="module-name">Formulaire contact</div>
+                                <div class="module-status badge badge-success">Actif</div>
+                            </div>
+                            <div class="module-card">
+                                <div class="module-icon">🎯</div>
+                                <div class="module-name">Landing page</div>
+                                <div class="module-status badge badge-muted">Non activé</div>
+                            </div>
+                            <div class="module-card">
+                                <div class="module-icon">🛒</div>
+                                <div class="module-name">Paiement en ligne</div>
+                                <div class="module-status badge badge-muted">Module V2</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ ANALYTICS ═══ -->
+                <div class="dash-page" id="page-analytics">
+                    <div class="page-header reveal">
+                        <h1>Analytics</h1>
+                        <p>Trafic, sources, conversions et performances.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="dash-stats">
+                            <div class="dash-stat"><div class="dash-stat-value">129</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change up">↑ 18%</div></div>
+                            <div class="dash-stat"><div class="dash-stat-value">3</div><div class="dash-stat-label">Leads</div><div class="dash-stat-change up">↑ 1</div></div>
+                            <div class="dash-stat"><div class="dash-stat-value">2</div><div class="dash-stat-label">Conversions</div><div class="dash-stat-change">—</div></div>
+                            <div class="dash-stat"><div class="dash-stat-value">4.2%</div><div class="dash-stat-label">Taux conversion</div><div class="dash-stat-change up">↑ 0.8%</div></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                            <div class="chart-container">
+                                <h3>Sources de trafic</h3>
+                                <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Google</span><span style="color:var(--accent);font-weight:600;">45%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:45%;background:var(--accent);"></div></div></div>
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Facebook</span><span style="color:var(--accent-warm);font-weight:600;">30%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:30%;background:var(--accent-warm);"></div></div></div>
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>WhatsApp</span><span style="color:var(--success);font-weight:600;">15%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:15%;background:var(--success);"></div></div></div>
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Direct</span><span style="color:var(--text-muted);font-weight:600;">10%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:10%;background:var(--text-muted);"></div></div></div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <h3>Évolution trafic</h3>
+                                <div class="bar-chart">
+                                    <div class="bar-col"><div class="bar-value">12</div><div class="bar" style="height:50px;background:var(--accent);"></div><div class="bar-label">Avr</div></div>
+                                    <div class="bar-col"><div class="bar-value">18</div><div class="bar" style="height:75px;background:var(--accent);"></div><div class="bar-label">Mai</div></div>
+                                    <div class="bar-col"><div class="bar-value">15</div><div class="bar" style="height:65px;background:var(--accent);"></div><div class="bar-label">Jun</div></div>
+                                    <div class="bar-col"><div class="bar-value">22</div><div class="bar" style="height:95px;background:var(--accent);"></div><div class="bar-label">Juil</div></div>
+                                    <div class="bar-col"><div class="bar-value">28</div><div class="bar" style="height:120px;background:var(--accent);"></div><div class="bar-label">Aoû</div></div>
+                                    <div class="bar-col"><div class="bar-value">34</div><div class="bar" style="height:140px;background:var(--accent-light);"></div><div class="bar-label">Sep</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ ABONNEMENT ═══ -->
+                <div class="dash-page" id="page-abonnement">
+                    <div class="page-header reveal">
+                        <h1>Mon abonnement</h1>
+                        <p>Gérez votre offre et consultez vos factures.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="card" style="margin-bottom:2rem;border-color:var(--border-strong);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                                <div>
+                                    <div class="label" style="margin-bottom:0.5rem;">Offre actuelle</div>
+                                    <div style="font-size:1.5rem;font-weight:700;">Digital Growth</div>
+                                    <div style="font-size:14px;color:var(--text-muted);">50 000 FCFA HT / mois</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div class="label" style="margin-bottom:0.5rem;">Prochaine échéance</div>
+                                    <div style="font-size:1.1rem;font-weight:600;">1er octobre 2025</div>
+                                    <span class="badge badge-success" style="margin-top:0.5rem;">Actif</span>
+                                </div>
+                            </div>
+                            <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;gap:1rem;flex-wrap:wrap;">
+                                <button class="btn btn-outline btn-sm">Changer d'offre</button>
+                                <button class="btn btn-ghost btn-sm">Télécharger une facture</button>
+                            </div>
+                        </div>
+
+                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Comparer les offres</h3>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+                            <div class="card" style="text-align:center;opacity:0.6;">
+                                <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">Essential</div>
+                                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;">25K</div>
+                                <div style="font-size:12px;color:var(--text-muted);">FCFA HT/mois</div>
+                            </div>
+                            <div class="card featured" style="text-align:center;border-color:var(--accent);">
+                                <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;">Growth ← Vous êtes ici</div>
+                                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--accent);">50K</div>
+                                <div style="font-size:12px;color:var(--text-muted);">FCFA HT/mois</div>
+                            </div>
+                            <div class="card" style="text-align:center;">
+                                <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">Performance</div>
+                                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;">100K</div>
+                                <div style="font-size:12px;color:var(--text-muted);">FCFA HT/mois</div>
+                            </div>
+                        </div>
+
+                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Historique des factures</h3>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>Date</th><th>Description</th><th>Montant</th><th>Statut</th></tr></thead>
+                                <tbody>
+                                    <tr><td>1 sept 2025</td><td>Abonnement Growth — Septembre</td><td>50 000 FCFA HT</td><td><span class="badge badge-success">Payé</span></td></tr>
+                                    <tr><td>1 août 2025</td><td>Abonnement Growth — Août</td><td>50 000 FCFA HT</td><td><span class="badge badge-success">Payé</span></td></tr>
+                                    <tr><td>15 juillet 2025</td><td>Digital Start — Pack complet</td><td>89 900 FCFA HT</td><td><span class="badge badge-success">Payé</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ SUPPORT ═══ -->
+                <div class="dash-page" id="page-support">
+                    <div class="page-header reveal">
+                        <h1>Support</h1>
+                        <p>Besoin d'aide ? Nous sommes là pour vous.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                            <div class="card">
+                                <h3 style="margin-bottom:1rem;">📅 Prendre rendez-vous</h3>
+                                <p style="font-size:14px;color:var(--text-muted);margin-bottom:1.5rem;">Réservez un créneau de consultation gratuit avec notre équipe.</p>
+                                <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-primary">Voir les créneaux</a>
+                            </div>
+                            <div class="card">
+                                <h3 style="margin-bottom:1rem;">💬 Nous contacter</h3>
+                                <p style="font-size:14px;color:var(--text-muted);margin-bottom:1rem;">
+                                    Email: contact@benilab.ci<br>
+                                    WhatsApp: +225 07 00 00 00
+                                </p>
+                                <button class="btn btn-outline">Ouvrir WhatsApp</button>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:1.5rem;">
+                            <h3 style="margin-bottom:1rem;">📋 Tickets existants</h3>
+                            <div class="empty-state" style="padding:2rem;">
+                                <div class="empty-state-icon">📭</div>
+                                <p>Vous n'avez aucun ticket ouvert.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // ── Page routing ──
+    const pageTitles = {
+        dashboard: 'Tableau de bord',
+        entreprise: 'Mon entreprise',
+        site: 'Mon site web',
+        google: 'Google Business',
+        reseaux: 'Réseaux sociaux',
+        contenus: 'Content Studio',
+        prospects: 'Prospects',
+        publicite: 'Publicité',
+        conversion: 'Conversion Center',
+        analytics: 'Analytics',
+        abonnement: 'Mon abonnement',
+        support: 'Support'
+    };
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+        const page = document.getElementById('page-' + pageId);
+        if (page) page.classList.add('active');
+
+        document.querySelectorAll('.dash-nav-item').forEach(n => n.classList.remove('active'));
+        const navItem = document.querySelector(`.dash-nav-item[data-page="${pageId}"]`);
+        if (navItem) navItem.classList.add('active');
+
+        document.getElementById('pageTitle').textContent = pageTitles[pageId] || pageId;
+        window.scrollTo({ top: 0 });
+
+        // Close mobile sidebar
+        document.getElementById('dashSidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+
+        // Trigger reveals
+        setTimeout(() => {
+            document.querySelectorAll(`#page-${pageId} .reveal`).forEach(el => {
+                if (isInViewport(el)) el.classList.add('active');
+            });
+        }, 100);
+    }
+
+    function isInViewport(el) {
+        return el.getBoundingClientRect().top < window.innerHeight * 0.9;
+    }
+
+    function toggleSidebar() {
+        document.getElementById('dashSidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+
+    function switchTab(btn, panelId) {
+        btn.closest('.tab-group').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function toggleKanbanView() {
+        const kv = document.getElementById('kanbanView');
+        const tv = document.getElementById('tableView');
+        if (kv.style.display === 'none') {
+            kv.style.display = 'block'; tv.style.display = 'none';
+        } else {
+            kv.style.display = 'none'; tv.style.display = 'block';
+        }
+    }
+
+    function showNotifications() {
+        alert('🔔 Notifications\n\n• Votre contenu "Reels behind the chef" est en attente de validation\n• Nouvel avis Google : 5★ — "Excellent !"\n• Facture septembre disponible');
+    }
+
+    // Init reveals
+    document.querySelectorAll('.reveal').forEach(el => {
+        if (isInViewport(el)) el.classList.add('active');
+    });
+    </script>
+</body>
+</html>

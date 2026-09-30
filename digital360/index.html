@@ -3,450 +3,1149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital360 — Digitalisez votre entreprise</title>
-    <meta name="description" content="Digital360 accompagne les petites entreprises dans leur transformation digitale. Site web, e-commerce, visibilité en ligne.">
+    <title>BENILAB Digital360 — De votre présence digitale à votre croissance</title>
+    <meta name="description" content="Diagnostic digital gratuit pour TPE/PME. Site web, visibilité, acquisition, conversion et fidélisation.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/landing.css">
     <style>
-        :root {
-            --bg: #0c0b0e;
-            --bg2: #13111a;
-            --bg3: #1a1725;
-            --accent: #7fb5a8;
-            --accent2: #a8d4c8;
-            --text: #e8e4df;
-            --muted: #9a95a0;
-            --dim: #5c5764;
-            --border: rgba(127,181,168,0.12);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
-        a { text-decoration: none; color: inherit; }
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 6vw; }
-
-        /* ── Nav ── */
-        .nav {
-            position: fixed; top: 0; width: 100%; z-index: 100;
-            padding: 20px 6vw;
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(12,11,14,0.9);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-        }
-        .logo {
-            font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
-        }
-        .logo em { font-style: italic; color: var(--accent); font-family: 'Playfair Display', serif; }
-        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-        .nav-links a { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); transition: color 0.3s; }
-        .nav-links a:hover { color: var(--accent); }
-        .btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: var(--accent); color: var(--bg);
-            padding: 12px 28px; border-radius: 100px;
-            font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-            transition: all 0.3s;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(127,181,168,0.25); }
-        .btn-outline {
-            background: transparent; border: 1px solid var(--accent); color: var(--accent);
-        }
-        .btn-outline:hover { background: var(--accent); color: var(--bg); }
-
-        /* ── Hero ── */
-        .hero {
-            min-height: 100vh; display: flex; align-items: center;
-            padding: 140px 6vw 80px;
-            position: relative; overflow: hidden;
-        }
-        .hero::before {
-            content: '';
-            position: absolute; inset: 0;
-            background:
-                radial-gradient(ellipse 60% 50% at 70% 20%, rgba(127,181,168,0.08) 0%, transparent 60%),
-                radial-gradient(ellipse 40% 40% at 20% 80%, rgba(127,181,168,0.04) 0%, transparent 60%);
-        }
-        .hero-content { position: relative; z-index: 2; max-width: 600px; }
-        .hero-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            border: 1px solid var(--border); border-radius: 100px;
-            padding: 8px 16px; font-size: 11px; letter-spacing: 0.18em;
-            text-transform: uppercase; color: var(--accent); margin-bottom: 3vh;
-            background: rgba(127,181,168,0.04);
-        }
-        .hero-badge .dot {
-            width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
-        .hero h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.8rem, 5vw, 5rem);
-            font-weight: 400; line-height: 1.05; letter-spacing: -0.02em;
-            margin-bottom: 3vh;
-        }
-        .hero h1 .italic { font-style: italic; color: var(--accent); }
-        .hero h1 .dim { font-weight: 300; color: var(--muted); }
-        .hero p {
-            font-size: 1.05rem; color: var(--muted); line-height: 1.7;
-            max-width: 460px; margin-bottom: 4vh; font-weight: 300;
-        }
-        .hero-actions { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-
-        /* ── Services ── */
-        .services { padding: 12vh 6vw; }
-        .section-label {
-            font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
-            color: var(--accent); margin-bottom: 1.5rem;
-            display: flex; align-items: center; gap: 12px;
-        }
-        .section-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            font-weight: 400; line-height: 1.1; letter-spacing: -0.02em;
-            margin-bottom: 1rem;
-        }
-        .section-sub { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 500px; margin-bottom: 5vh; }
-        .services-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;
-        }
-        .service-card {
-            background: var(--bg2); border: 1px solid var(--border);
-            border-radius: 20px; padding: 2.5rem 2rem;
-            transition: all 0.4s;
-        }
-        .service-card:hover {
-            border-color: rgba(127,181,168,0.25);
-            transform: translateY(-6px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        }
-        .service-icon {
-            width: 48px; height: 48px; border-radius: 14px;
-            background: linear-gradient(135deg, rgba(127,181,168,0.15), rgba(127,181,168,0.05));
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.3rem; margin-bottom: 1.5rem;
-        }
-        .service-card h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.75rem; }
-        .service-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
-
-        /* ── How it works ── */
-        .how { padding: 12vh 6vw; background: var(--bg2); }
-        .steps { display: flex; gap: 0; margin-top: 5vh; }
-        .step {
-            flex: 1; padding: 3rem 2rem; text-align: center;
-            border-right: 1px solid var(--border); position: relative;
-        }
-        .step:last-child { border-right: none; }
-        .step-num {
-            font-family: 'Playfair Display', serif;
-            font-size: 3rem; font-weight: 700; color: var(--accent);
-            opacity: 0.2; margin-bottom: 1rem;
-        }
-        .step h3 { font-size: 1.1rem; margin-bottom: 0.75rem; }
-        .step p { font-size: 14px; color: var(--muted); line-height: 1.6; }
-
-        /* ── Pricing ── */
-        .pricing { padding: 12vh 6vw; }
-        .pricing-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem; margin-top: 5vh;
-        }
-        .price-card {
-            background: var(--bg2); border: 1px solid var(--border);
-            border-radius: 20px; padding: 2.5rem 2rem; text-align: center;
-            transition: all 0.4s;
-        }
-        .price-card.featured {
-            border-color: rgba(127,181,168,0.3);
-            background: linear-gradient(135deg, rgba(127,181,168,0.05), rgba(127,181,168,0.02));
-        }
-        .price-card h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 1rem; }
-        .price-card .price {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.8rem; font-weight: 700; color: var(--accent); margin-bottom: 0.5rem;
-        }
-        .price-card .price span { font-size: 14px; color: var(--dim); font-family: 'Outfit', sans-serif; font-weight: 400; }
-        .price-card .desc { font-size: 14px; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
-        .price-card ul { list-style: none; text-align: left; margin-bottom: 2rem; }
-        .price-card li {
-            padding: 8px 0; font-size: 14px; color: var(--muted);
-            border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .price-card li::before { content: '✓'; color: var(--accent); font-weight: 700; }
-        .price-card li.disabled { opacity: 0.35; }
-        .price-card li.disabled::before { content: '—'; }
-
-        /* ── CTA ── */
-        .cta {
-            padding: 16vh 6vw; text-align: center; position: relative; overflow: hidden;
-        }
-        .cta::before {
-            content: '';
-            position: absolute; inset: 0;
-            background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(127,181,168,0.06) 0%, transparent 70%);
-        }
-        .cta h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2rem, 5vw, 4rem);
-            font-weight: 400; line-height: 1.1; margin-bottom: 2vh;
-            position: relative;
-        }
-        .cta h2 .italic { font-style: italic; color: var(--accent); }
-        .cta p { color: var(--muted); font-size: 16px; margin-bottom: 4vh; position: relative; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7; }
-
-        /* ── Footer ── */
-        .footer {
-            padding: 6vh 6vw; border-top: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 13px; color: var(--dim);
-        }
-        .footer a { color: var(--accent); transition: opacity 0.3s; }
-        .footer a:hover { opacity: 0.7; }
-        .footer-links { display: flex; gap: 2rem; }
-
-        /* ── Reveal ── */
-        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16,1,0.3,1); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-        .delay-1 { transition-delay: 0.1s; }
-        .delay-2 { transition-delay: 0.2s; }
-        .delay-3 { transition-delay: 0.3s; }
-
-        @media(max-width:768px) {
-            .nav-links { display: none; }
-            .steps { flex-direction: column; }
-            .step { border-right: none; border-bottom: 1px solid var(--border); }
-            .step:last-child { border-bottom: none; }
-            .footer { flex-direction: column; gap: 1.5rem; text-align: center; }
-        }
+        .page{display:none}.page.active{display:block}
+        .hidden{display:none!important}
+        .diag-question{font-size:1.15rem;font-weight:500;margin-bottom:1.5rem;line-height:1.4}
+        .diag-question small{display:block;font-size:12px;color:var(--text-muted);font-weight:400;margin-top:4px}
+        .diag-options{display:grid;gap:0.75rem;max-width:600px}
+        .diag-options.two-col{grid-template-columns:1fr 1fr}
+        .diag-option{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem 1.25rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.75rem}
+        .diag-option:hover{border-color:var(--border-strong);transform:translateX(4px)}
+        .diag-option.selected{border-color:var(--accent);background:rgba(127,181,168,.06)}
+        .diag-option-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .3s}
+        .diag-option.selected .diag-option-radio{border-color:var(--accent);background:var(--accent)}
+        .diag-option.selected .diag-option-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--text-inverse)}
+        .diag-option-text{font-size:14px}
+        .diag-nav{display:flex;justify-content:space-between;margin-top:2.5rem}
+        .score-disclaimer{font-size:11px;color:var(--text-muted);text-align:center;margin-top:1rem;line-height:1.5}
+        .module-card .module-source{font-size:10px;color:var(--text-muted);margin-top:4px}
+        /* Loading skeleton for dynamic sections */
+        .loading-skeleton{animation:shimmer 1.5s infinite;background:linear-gradient(90deg,var(--bg-tertiary) 25%,var(--bg-elevated) 50%,var(--bg-tertiary) 75%);background-size:200% 100%;border-radius:var(--radius-sm);height:20px;margin-bottom:8px}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        /* Currency selector */
+        .currency-selector{display:flex;gap:.5rem;align-items:center}
+        .currency-btn{padding:4px 12px;border-radius:var(--radius-full);font-size:11px;border:1px solid var(--border);color:var(--text-muted);transition:all .3s}
+        .currency-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(127,181,168,.08)}
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="../index.html" class="logo">Be<em>.</em>Media<em>.</em>AI</a>
-        <ul class="nav-links">
-            <li><a href="#services">Services</a></li>
-            <li><a href="#how">Comment ça marche</a></li>
-            <li><a href="#pricing">Tarifs</a></li>
-            <li>        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn">Nous contacter</a></li>
+    <div class="noise"></div>
+
+    <!-- ═══════════════ NAVIGATION ═══════════════ -->
+    <nav class="lp-nav" id="mainNav">
+        <a href="#" class="lp-logo" onclick="showPage('landing');return false;">
+            BENILAB<br><em>Digital360</em>
+        </a>
+        <ul class="lp-nav-links">
+            <li><a href="#services" data-scroll>Services</a></li>
+            <li><a href="#how" data-scroll>Comment ça marche</a></li>
+            <li><a href="#pricing" data-scroll>Tarifs</a></li>
+            <li><a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-sm">Mon espace</a></li>
+            <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm">Diagnostic gratuit</a></li>
         </ul>
+        <div class="currency-selector" style="margin-right:1rem;">
+            <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">FCFA</button>
+            <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">€</button>
+        </div>
+        <button class="lp-menu-toggle" onclick="toggleMobileMenu()">☰</button>
     </nav>
 
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-badge reveal"><span class="dot"></span> Digital360 par Be Media AI</div>
-            <h1 class="reveal delay-1">
-                Votre entreprise<br>
-                <span class="italic">dans le monde</span><br>
-                <span class="dim">digital</span>
-            </h1>
-            <p class="reveal delay-2">
-                Vous êtes artisan, commerçant ou dirigeant de TPE/PME ? Digital360 vous accompagne
-                pour créer votre présence en ligne, vendre plus et gagner en visibilité — sans complexité.
-            </p>
-            <div class="hero-actions reveal delay-3">
-                <a href="#pricing" class="btn">Voir les offres</a>
-                <a href="#services" class="btn btn-outline">En savoir plus →</a>
-            </div>
-        </div>
-    </section>
+    <div class="lp-mobile-menu" id="mobileMenu">
+        <button class="modal-close" onclick="toggleMobileMenu()" style="position:absolute;top:1.5rem;right:1.5rem;">✕</button>
+        <a href="#services" onclick="toggleMobileMenu();scrollToSection('services')">Services</a>
+        <a href="#how" onclick="toggleMobileMenu();scrollToSection('how')">Comment ça marche</a>
+        <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing')">Tarifs</a>
+        <a href="#" onclick="toggleMobileMenu();startDiagnostic()">Diagnostic gratuit</a>
+        <a href="#" onclick="toggleMobileMenu();showPage('dashboard')">Mon espace client</a>
+    </div>
 
-    <section class="services" id="services">
-        <div class="reveal">
-            <div class="section-label">Nos services</div>
-            <h2 class="section-title">Tout ce dont vous avez<br><span style="color:var(--accent);font-style:italic;">besoin pour réussir en ligne</span></h2>
-            <p class="section-sub">Des solutions simples et efficaces, pensées pour les entreprises qui veulent passer à l'action.</p>
-        </div>
-        <div class="services-grid">
-            <div class="service-card reveal delay-1">
-                <div class="service-icon">🌐</div>
-                <h3>Site web professionnel</h3>
-                <p>Un site moderne, responsive et optimisé pour convertir vos visiteurs en clients. Créé sur mesure selon votre activité.</p>
-            </div>
-            <div class="service-card reveal delay-2">
-                <div class="service-icon">🛒</div>
-                <h3>Boutique en ligne</h3>
-                <p>Vendez vos produits 24h/24 avec une solution e-commerce complète : catalogue, paiement sécurisé, gestion des commandes.</p>
-            </div>
-            <div class="service-card reveal delay-3">
-                <div class="service-icon">📍</div>
-                <h3>Visibilité locale</h3>
-                <p>Optimisation Google Business, référencement local et stratégies pour que vos clients vous trouvent facilement.</p>
-            </div>
-            <div class="service-card reveal delay-1">
-                <div class="service-icon">📱</div>
-                <h3>Réseaux sociaux</h3>
-                <p>Gestion de votre présence sur les réseaux sociaux : création de contenu, planning éditorial, animation de communauté.</p>
-            </div>
-            <div class="service-card reveal delay-2">
-                <div class="service-icon">⚡</div>
-                <h3>Automatisation IA</h3>
-                <p>Chatbots, réponses automatiques, gestion intelligente des demandes clients. Gagnez du temps chaque jour.</p>
-            </div>
-            <div class="service-card reveal delay-3">
-                <div class="service-icon">📊</div>
-                <h3>Suivi & Analytics</h3>
-                <p>Suivez vos performances en temps réel : trafic, conversions, comportements clients. Des données pour décider mieux.</p>
-            </div>
-        </div>
-    </section>
+    <!-- ═══════════════ PAGE: LANDING ═══════════════ -->
+    <div class="page active" id="page-landing">
 
-    <section class="how" id="how">
-        <div class="reveal">
-            <div class="section-label">Comment ça marche</div>
-            <h2 class="section-title">Simple, rapide,<br><span style="color:var(--accent);font-style:italic;">sans surprise</span></h2>
-        </div>
-        <div class="steps">
-            <div class="step reveal delay-1">
-                <div class="step-num">01</div>
-                <h3>Échange</h3>
-                <p>Nous analysons votre activité, vos objectifs et votre marché pour définir le plan idéal.</p>
+        <!-- HERO -->
+        <section class="lp-hero">
+            <div class="lp-hero-content">
+                <div class="lp-hero-badge reveal"><span class="dot"></span> Diagnostic gratuit — Résultats en 3 minutes</div>
+                <h1 class="reveal delay-1">
+                    De votre présence<br>
+                    <span class="italic">digitale</span> à<br>
+                    <span class="dim">votre croissance</span>
+                </h1>
+                <p class="reveal delay-2">
+                    BENILAB Digital360 aide les TPE/PME à construire leur système digital :
+                    présence, visibilité, acquisition, conversion et fidélisation — étape par étape.
+                </p>
+                <div class="lp-hero-actions reveal delay-3">
+                    <a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-lg">Faire mon diagnostic gratuit</a>
+                    <a href="#services" data-scroll class="btn btn-outline btn-lg">Découvrir les services →</a>
+                </div>
             </div>
-            <div class="step reveal delay-2">
-                <div class="step-num">02</div>
-                <h3>Création</h3>
-                <p>Notre équipe conçoit et développe votre solution avec des validations régulières.</p>
-            </div>
-            <div class="step reveal delay-3">
-                <div class="step-num">03</div>
-                <h3>Lancement</h3>
-                <p>Mise en ligne, formation et accompagnement — vous êtes prêt à recevoir vos clients en ligne.</p>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="pricing" id="pricing">
-        <div class="reveal" style="text-align:center;">
-            <div class="section-label" style="justify-content:center;">Tarifs</div>
-            <h2 class="section-title">Des formules <span style="color:var(--accent);font-style:italic;">claires</span></h2>
-            <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Choisissez l'offre qui correspond à votre stade de développement.</p>
-        </div>
-        <div class="pricing-grid">
-            <div class="price-card reveal delay-1">
-                <h3>Essentiel</h3>
-                <div class="price">150K<span> FCFA</span></div>
-                <p class="desc">Idéal pour une première présence en ligne professionnelle.</p>
-                <ul>
-                    <li>Site vitrine 5 pages</li>
-                    <li>Design responsive</li>
-                    <li>Formulaire de contact</li>
-                    <li>Optimisation Google de base</li>
-                    <li class="disabled">Boutique en ligne</li>
-                    <li class="disabled">Automatisation IA</li>
-                </ul>
-                <a href="#contact" class="btn btn-outline" style="width:100%;">Choisir Essentiel</a>
+        <!-- SERVICES -->
+        <section class="lp-services section" id="services">
+            <div class="reveal">
+                <div class="section-label">Nos services</div>
+                <h2 class="section-title">Un écosystème complet<br>pour votre <span style="color:var(--accent);font-style:italic;">transformation</span></h2>
+                <p class="section-sub">De la création de votre site à la génération de prospects, chaque brique est pensée pour progresser à votre rythme.</p>
             </div>
-            <div class="price-card featured reveal delay-2">
-                <h3>Pro</h3>
-                <div class="price">400K<span> FCFA</span></div>
-                <p class="desc">Le pack complet pour vendre en ligne et se démarquer.</p>
-                <ul>
-                    <li>Site vitrine illimité</li>
-                    <li>Boutique en ligne complète</li>
-                    <li>Optimisation SEO avancée</li>
-                    <li>Gestion réseaux sociaux (1 mois)</li>
-                    <li>Chatbot IA basique</li>
-                    <li class="disabled">Tableau de bord analytics</li>
-                </ul>
-                <a href="#contact" class="btn" style="width:100%;">Choisir Pro</a>
+            <div class="lp-services-grid">
+                <div class="card service-card reveal delay-1">
+                    <div class="service-icon">🌐</div>
+                    <h3>Site web professionnel</h3>
+                    <p>Site responsive, SEO technique, formulaire de contact, WhatsApp intégré et Google Maps.</p>
+                </div>
+                <div class="card service-card reveal delay-2">
+                    <div class="service-icon">📍</div>
+                    <h3>Google Business</h3>
+                    <p>Création et optimisation de votre fiche Google pour être trouvé localement.</p>
+                </div>
+                <div class="card service-card reveal delay-3">
+                    <div class="service-icon">📱</div>
+                    <h3>Réseaux sociaux</h3>
+                    <p>Gestion Facebook, Instagram, TikTok — contenu, calendrier, community management.</p>
+                </div>
+                <div class="card service-card">
+                    <div class="service-icon">⚡</div>
+                    <h3>Publicité en ligne</h3>
+                    <p>Meta Ads, Google Ads, TikTok Ads — campagnes ciblées pour attirer des clients qualifiés.</p>
+                </div>
+                <div class="card service-card">
+                    <div class="service-icon">🔄</div>
+                    <h3>Conversion & CRM</h3>
+                    <p>Landing pages, formulaires, suivi des prospects, email marketing et automatisation.</p>
+                </div>
+                <div class="card service-card">
+                    <div class="service-icon">📊</div>
+                    <h3>Analytics & Reporting</h3>
+                    <p>Suivi du trafic, des leads, des conversions — des données claires pour décider.</p>
+                </div>
             </div>
-            <div class="price-card reveal delay-3">
-                <h3>Sur mesure</h3>
-                <div class="price">Devis<span></span></div>
-                <p class="desc">Une solution adaptée à vos besoins spécifiques et votre budget.</p>
-                <ul>
-                    <li>Architecture personnalisée</li>
-                    <li>Intégrations sur mesure</li>
-                    <li>Automatisation IA avancée</li>
-                    <li>Tableau de bord analytics</li>
-                    <li>Formation équipe incluse</li>
-                    <li>Support prioritaire 6 mois</li>
-                </ul>
-                <a href="#contact" class="btn btn-outline" style="width:100%;">Demander un devis</a>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="cta" id="contact">
-        <div class="reveal">
-            <div class="section-label" style="justify-content:center;">Contact</div>
-            <h2>Prêt à <span class="italic">digitiser</span><br>votre entreprise ?</h2>
-            <p>Premier échange gratuit. Dites-nous ce dont vous avez besoin et nous vous proposons la solution adaptée.</p>
+        <!-- HOW IT WORKS -->
+        <section class="lp-how section" id="how">
+            <div class="reveal">
+                <div class="section-label">Comment ça marche</div>
+                <h2 class="section-title">Simple, clair,<br><span style="color:var(--accent);font-style:italic;">sans surprise</span></h2>
+            </div>
+            <div class="lp-steps">
+                <div class="lp-step reveal delay-1">
+                    <div class="lp-step-num">01</div>
+                    <h3>Diagnostic gratuit</h3>
+                    <p>Vous répondez à un questionnaire en 3 minutes. On évalue votre maturité digitale.</p>
+                </div>
+                <div class="lp-step reveal delay-2">
+                    <div class="lp-step-num">02</div>
+                    <h3>Plan personnalisé</h3>
+                    <p>Recevez votre Digital Score, votre Digital Passport et un plan de transformation en 5 phases.</p>
+                </div>
+                <div class="lp-step reveal delay-3">
+                    <div class="lp-step-num">03</div>
+                    <h3>On s'occupe de tout</h3>
+                    <p>Site web, visibilité, contenu, publicité — vous choisissez le rythme, on déploie.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING -->
+        <section class="lp-pricing section" id="pricing">
+            <div class="reveal" style="text-align:center;">
+                <div class="section-label" style="justify-content:center;">Nos offres</div>
+                <h2 class="section-title">Des formules <span style="color:var(--accent);font-style:italic;">claires</span></h2>
+                <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Commencez par Digital Start, puis choisissez votre accompagnement mensuel.</p>
+            </div>
+            <div class="lp-pricing-grid" id="pricingGrid">
+                <!-- Rendered dynamically from catalog -->
+            </div>
+        </section>
+
+        <!-- MODULES -->
+        <section class="section section-alt" id="modules">
+            <div class="reveal">
+                <div class="section-label">Modules</div>
+                <h2 class="section-title">Toutes les briques<br>pour votre <span style="color:var(--accent);font-style:italic;">succès digital</span></h2>
+                <p class="section-sub">Activez les services dont vous avez besoin, quand vous en avez besoin. Chaque module fonctionne indépendamment ou en combinaison.</p>
+            </div>
+            <div class="modules-grid">
+                <div class="module-card available"><div class="module-icon">🌐</div><div class="module-name">Site web</div><div class="module-status badge badge-success">Disponible</div></div>
+                <div class="module-card available"><div class="module-icon">📧</div><div class="module-name">Email professionnel</div><div class="module-status badge badge-success">Disponible</div></div>
+                <div class="module-card available"><div class="module-icon">📍</div><div class="module-name">Google Business</div><div class="module-status badge badge-warning">Activation</div></div>
+                <div class="module-card available"><div class="module-icon">📘</div><div class="module-name">Facebook</div><div class="module-status badge badge-muted">À connecter</div></div>
+                <div class="module-card available"><div class="module-icon">📸</div><div class="module-name">Instagram</div><div class="module-status badge badge-muted">À connecter</div></div>
+                <div class="module-card available"><div class="module-icon">🎵</div><div class="module-name">TikTok</div><div class="module-status badge badge-muted">À connecter</div></div>
+                <div class="module-card available"><div class="module-icon">🎯</div><div class="module-name">Meta Ads</div><div class="module-status badge badge-muted">Module V2</div></div>
+                <div class="module-card available"><div class="module-icon">🔍</div><div class="module-name">SEO local</div><div class="module-status badge badge-warning">En cours</div></div>
+                <div class="module-card available"><div class="module-icon">💬</div><div class="module-name">WhatsApp Business</div><div class="module-status badge badge-success">Disponible</div></div>
+                <div class="module-card available"><div class="module-icon">📝</div><div class="module-name">Formulaires</div><div class="module-status badge badge-success">Disponible</div></div>
+                <div class="module-card available"><div class="module-icon">📧</div><div class="module-name">Email marketing</div><div class="module-status badge badge-muted">Module V2</div></div>
+                <div class="module-card available"><div class="module-icon">👥</div><div class="module-name">CRM / Prospects</div><div class="module-status badge badge-muted">Module V2</div></div>
+            </div>
+        </section>
+
+        <!-- CTA FINAL -->
+        <section class="lp-cta section">
+            <div class="reveal">
+                <div class="section-label" style="justify-content:center;">Passons à l'action</div>
+                <h2>Quel est le niveau<br><span style="color:var(--accent);font-style:italic;">digital</span> de<br>votre entreprise ?</h2>
+                <p>Répondez à notre diagnostic gratuit et recevez votre Digital Score, votre plan de transformation et nos recommandations.</p>
                 <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;">
-                <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn" style="background:var(--accent);">Prendre RDV</a>
-                <button class="btn btn-outline" onclick="openContactModal()">Envoyer un message</button>
-                <a href="../index.html" class="btn btn-outline">Retour à Be Media AI</a>
+                    <a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-lg">Faire mon diagnostic gratuit</a>
+                    <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-outline btn-lg">Prendre rendez-vous</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="lp-footer">
+            <span>© 2026 BENILAB SARL — Digital360</span>
+            <div class="lp-footer-links">
+                <a href="#">Mentions légales</a>
+                <a href="#">Politique de confidentialité</a>
+                <a href="../index.html">Be Media AI</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ═══════════════ PAGE: DIAGNOSTIC ═══════════════ -->
+    <div class="page" id="page-diagnostic">
+        <div style="padding-top:100px;min-height:100vh;">
+            <div class="container-sm" style="padding:0 6vw;">
+                <!-- Stepper — rendered dynamically -->
+                <div class="stepper" id="diagnosticStepper"></div>
+                <div class="progress-bar"><div class="progress-fill" id="diagProgress" style="width:0%"></div></div>
+                <!-- Question content — rendered dynamically -->
+                <div id="diagContent" style="min-height:300px;"></div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <footer class="footer">
-        <span>© 2026 Digital360 — Un service de Be Media AI</span>
-        <div class="footer-links">
-            <a href="../index.html">Be Media AI</a>
-            <a href="#">Mentions légales</a>
-        </div>
-    </footer>
-
-    <script>
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
-        }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-        <!-- Contact Modal -->
-    <div class="contact-modal" id="contactModal">
-        <div class="contact-modal-backdrop" onclick="closeContactModal()"></div>
-        <div class="contact-modal-box">
-            <button class="contact-modal-close" onclick="closeContactModal()">✕</button>
-            <div class="contact-modal-inner">
-                <div class="contact-modal-left">
-                    <h3>Parlons de votre<br><span style="color:var(--accent);font-style:italic;">projet</span></h3>
-                    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-top:1rem;margin-bottom:2rem;">Remplissez le formulaire ou prenez rendez-vous directement via Calendly.</p>
-                    <div style="display:flex;flex-direction:column;gap:1rem;">
-                        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="modal-btn" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text);transition:all 0.3s;">
-                            <span style="font-size:1.3rem;">📅</span>
-                            <div><div style="font-weight:600;font-size:14px;">Prendre rendez-vous</div><div style="font-size:12px;color:var(--dim);">Créneau de 45 min — consultation gratuite</div></div>
-                        </a>
-                        <a href="mailto:contact@bemediiai.com" class="modal-btn" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text);transition:all 0.3s;">
-                            <span style="font-size:1.3rem;">✉️</span>
-                            <div><div style="font-weight:600;font-size:14px;">Envoyer un email</div><div style="font-size:12px;color:var(--dim);">contact@bemediiai.com</div></div>
-                        </a>
+    <!-- ═══════════════ PAGE: SCORE ═══════════════ -->
+    <div class="page" id="page-score">
+        <div style="padding-top:100px;min-height:100vh;">
+            <div class="container" style="padding:0 6vw;">
+                <div class="reveal">
+                    <div class="section-label" style="justify-content:center;">Votre diagnostic</div>
+                    <h2 class="section-title" style="text-align:center;">Votre <span style="color:var(--accent);font-style:italic;">Digital Score</span></h2>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:3rem;align-items:start;margin-top:3rem;">
+                    <div class="reveal delay-1" style="text-align:center;">
+                        <div class="score-ring" id="mainScoreRing">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                <circle class="score-ring-fill" id="scoreCircle" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+                            </svg>
+                            <div class="score-ring-text">
+                                <div class="score-ring-value" id="totalScore">0</div>
+                                <div class="score-ring-label">/ 100</div>
+                            </div>
+                        </div>
+                        <div id="scoreLevel" style="margin-top:1.5rem;font-size:1.1rem;font-weight:600;"></div>
+                        <p id="scoreMessage" style="color:var(--text-muted);font-size:14px;margin-top:0.5rem;"></p>
+                        <p id="scoreDisclaimer" class="score-disclaimer"></p>
+                    </div>
+                    <div class="reveal delay-2">
+                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">Décomposition par catégorie</h3>
+                        <div id="categoryScores"></div>
                     </div>
                 </div>
-                <div class="contact-modal-right">
-                    <h4 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">Envoyer un message</h4>
-                    <form id="contactForm" onsubmit="handleContact(event)">
-                        <div style="margin-bottom:1rem;"><input type="text" class="contact-input" placeholder="Votre nom complet" required style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--text);font-family:Outfit,sans-serif;font-size:14px;outline:none;transition:border-color 0.3s;"></div>
-                        <div style="margin-bottom:1rem;"><input type="email" class="contact-input" placeholder="Votre email" required style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--text);font-family:Outfit,sans-serif;font-size:14px;outline:none;transition:border-color 0.3s;"></div>
-                        <div style="margin-bottom:1rem;"><textarea class="contact-input" placeholder="Décrivez votre projet..." rows="4" required style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--text);font-family:Outfit,sans-serif;font-size:14px;outline:none;transition:border-color 0.3s;resize:vertical;min-height:100px;"></textarea></div>
-                        <button type="submit" style="width:100%;background:var(--accent);border:none;border-radius:12px;padding:14px;color:var(--bg);font-weight:600;font-size:14px;font-family:Outfit,sans-serif;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;">Envoyer le message</button>
-                    </form>
-                    <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 0;"><div style="font-size:2.5rem;margin-bottom:1rem;">✓</div><div style="font-size:16px;font-weight:600;margin-bottom:0.5rem;">Message envoyé !</div><div style="font-size:14px;color:var(--dim);">Nous vous répondrons dans les 24h.</div></div>
+                <div class="reveal" style="margin-top:4rem;">
+                    <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">État de vos modules</h3>
+                    <div class="modules-grid" id="modulesStatus"></div>
+                </div>
+                <div class="reveal" style="text-align:center;margin-top:4rem;padding:3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);">
+                    <h2 class="section-title" style="margin-bottom:1rem;">Prêt pour la <span style="color:var(--accent);font-style:italic;">prochaine étape</span> ?</h2>
+                    <p style="color:var(--text-secondary);margin-bottom:2rem;">Consultez votre Digital Passport et votre plan de transformation personnalisé.</p>
+                    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                        <a href="#" onclick="showPage('passport');return false;" class="btn btn-primary">Voir mon Digital Passport</a>
+                        <a href="#" onclick="showPage('plan');return false;" class="btn btn-outline">Mon plan de transformation</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <style>
-        .contact-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s cubic-bezier(.16,1,.3,1)}
-        .contact-modal.open{opacity:1;pointer-events:all}
-        .contact-modal-backdrop{position:absolute;inset:0;background:rgba(12,11,14,.85);backdrop-filter:blur(12px)}
-        .contact-modal-box{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:24px;width:90%;max-width:900px;max-height:90vh;overflow-y:auto;padding:3rem;box-shadow:0 40px 80px rgba(0,0,0,.5);transform:translateY(30px) scale(.95);transition:transform .4s cubic-bezier(.16,1,.3,1)}
-        .contact-modal.open .contact-modal-box{transform:translateY(0) scale(1)}
-        .contact-modal-close{position:absolute;top:1.5rem;right:1.5rem;background:none;border:1px solid var(--border);color:var(--dim);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:14px;transition:all .3s;display:flex;align-items:center;justify-content:center}
-        .contact-modal-close:hover{border-color:var(--accent);color:var(--accent)}
-        .contact-modal-inner{display:grid;grid-template-columns:1fr 1.2fr;gap:3rem}
-        .contact-modal-left h3{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400;line-height:1.2}
-        .modal-btn:hover{border-color:rgba(127,181,168,.3)}
-        @media(max-width:768px){.contact-modal-inner{grid-template-columns:1fr}.contact-modal-box{padding:2rem}}
-    </style>
+
+    <!-- ═══════════════ PAGE: PASSPORT ═══════════════ -->
+    <div class="page" id="page-passport">
+        <div style="padding-top:100px;min-height:100vh;">
+            <div class="container" style="padding:0 6vw;">
+                <div class="reveal">
+                    <div class="section-label">Digital Passport</div>
+                    <h2 class="section-title">Votre profil <span style="color:var(--accent);font-style:italic;">digital</span></h2>
+                    <p class="section-sub">Ce profil central regroupe toutes les informations de votre entreprise. Il servira de base à tous nos services.</p>
+                </div>
+                <div class="passport-grid reveal delay-1" id="passportGrid">
+                    <!-- Rendered dynamically from API response -->
+                </div>
+                <div class="reveal delay-2" style="text-align:center;margin-top:2rem;">
+                    <a href="#" onclick="showPage('plan');return false;" class="btn btn-primary">Voir mon plan de transformation →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PAGE: PLAN ═══════════════ -->
+    <div class="page" id="page-plan">
+        <div style="padding-top:100px;min-height:100vh;">
+            <div class="container" style="padding:0 6vw;">
+                <div class="reveal">
+                    <div class="section-label">Votre feuille de route</div>
+                    <h2 class="section-title">Votre <span style="color:var(--accent);font-style:italic;">Plan Digital</span></h2>
+                    <p class="section-sub">Voici le chemin recommandé pour transformer votre présence digitale, phase par phase.</p>
+                </div>
+                <div class="plan-phases reveal delay-1" id="planPhases"></div>
+                <div class="reveal delay-2" style="text-align:center;margin-top:3rem;padding:3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);">
+                    <h2 class="section-title" style="margin-bottom:1rem;">Commencez par <span style="color:var(--accent);font-style:italic;">Digital Start</span></h2>
+                    <p style="color:var(--text-secondary);margin-bottom:1rem;">Le pack complet pour construire votre première présence web professionnelle.</p>
+                    <div id="planPricingCta" style="font-family:var(--font-display);font-size:2.5rem;font-weight:700;color:var(--accent);margin-bottom:0.5rem;"></div>
+                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:2rem;">Paiement unique · Nom de domaine + hébergement inclus</p>
+                    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-primary btn-lg">Prendre rendez-vous</a>
+                        <a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-lg">Retour</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
     <script>
-        window.openContactModal=function(){const m=document.getElementById('contactModal');if(m){m.classList.add('open');document.body.style.overflow='hidden'}};
-        window.closeContactModal=function(){const m=document.getElementById('contactModal');if(m){m.classList.remove('open');document.body.style.overflow=''}};
-        window.handleContact=function(e){e.preventDefault();const f=document.getElementById('contactForm'),s=document.getElementById('contactSuccess');if(f)f.style.display='none';if(s)s.style.display='block'};
-        document.addEventListener('keydown',e=>{if(e.key==='Escape')closeContactModal()});
+    // ── Configuration ──
+    let currentCurrency = 'XOF';
+    let currentDiagStep = 0;
+    let totalSteps = 0;
+    let diagData = {};
+    let diagSessionId = null;
+    let diagToken = null;
+    let questionnaireData = null;
+    let currentAnswers = {};
+    let scoreResult = null;
+    let passportData = null;
+    let actionPlanData = null;
+    let catalogData = null;
+
+    // ── API client (inline for single-file deployment; replaces external module) ──
+    const API_BASE = '/api/v1';
+    const MOCK_MODE = window.D360_API_MODE === 'mock';
+
+    async function apiRequest(path, options = {}) {
+        const url = API_BASE + path;
+        const csrf = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)?.[1] || '';
+        const headers = { 'Content-Type': 'application/json', ...(csrf ? { 'X-CSRF-Token': csrf } : {}), ...options.headers };
+        const opts = { credentials: 'include', headers, ...options };
+        if (options.body && !(options.body instanceof FormData)) opts.body = JSON.stringify(options.body);
+        const res = await fetch(url, opts);
+        const text = await res.text();
+        if (!res.ok) {
+            if (text) { try { const p = JSON.parse(text); throw Object.assign(new Error(p.title || `HTTP ${res.status}`), { status: res.status, code: p.code, detail: p.detail, errors: p.errors, requestId: p.request_id }); } catch (_) { throw new Error(`HTTP ${res.status}`); } }
+            throw new Error(`HTTP ${res.status}`);
+        }
+        if (!text) return null;
+        try { return JSON.parse(text); } catch (_) { return text; }
+    }
+
+    // ── Mock data ──
+    const MOCK_QUESTIONNAIRE = {
+        version: 1,
+        sections: [
+            { key: 'identity', title: 'Identité de l\'entreprise', questions: [
+                { key: 'company', label: 'Nom de l\'entreprise', type: 'TEXT', required: true },
+                { key: 'sector', label: 'Secteur d\'activité', type: 'SINGLE', required: false, options: [
+                    { value: 'restaurant', label: 'Restaurant / Hospitality' }, { value: 'retail', label: 'Commerce / Retail' },
+                    { value: 'services', label: 'Services professionnels' }, { value: 'beauty', label: 'Beauté / Coiffure' },
+                    { value: 'health', label: 'Santé / Bien-être' }, { value: 'education', label: 'Éducation / Formation' },
+                    { value: 'tech', label: 'Technologie' }, { value: 'artisan', label: 'Artisan / Manufacture' }, { value: 'other', label: 'Autre' }
+                ]},
+                { key: 'city', label: 'Ville', type: 'TEXT', required: false },
+                { key: 'phone', label: 'Téléphone', type: 'PHONE', required: false },
+                { key: 'whatsapp', label: 'WhatsApp', type: 'PHONE', required: false },
+                { key: 'email', label: 'Email', type: 'EMAIL', required: false },
+                { key: 'description', label: 'Décrivez votre activité', type: 'TEXT', required: false }
+            ]},
+            { key: 'presence', title: 'Présence web', questions: [
+                { key: 'site', label: 'Possédez-vous un site web ?', type: 'SINGLE', required: true, options: [
+                    { value: 'oui', label: 'Oui, mon site est en ligne' }, { value: 'en-cours', label: 'En cours de création' }, { value: 'non', label: 'Non, je n\'ai pas de site' }
+                ]},
+                { key: 'domain', label: 'Avez-vous un nom de domaine ?', type: 'SINGLE', required: false, options: [
+                    { value: 'oui', label: 'Oui' }, { value: 'non', label: 'Non' }
+                ]},
+                { key: 'emailprof', label: 'Avez-vous un email professionnel ?', type: 'SINGLE', required: false, options: [
+                    { value: 'oui', label: 'Oui — ex: nom@entreprise.com' }, { value: 'non', label: 'Non — j\'utilise Gmail/Outlook personnel' }
+                ]}
+            ]},
+            { key: 'visibility', title: 'Visibilité en ligne', questions: [
+                { key: 'gb', label: 'Avez-vous une fiche Google Business ?', type: 'SINGLE', required: true, options: [
+                    { value: 'oui', label: 'Oui, elle est créée et validée' }, { value: 'en-cours', label: 'J\'ai commencé mais c\'est incomplet' }, { value: 'non', label: 'Non, je n\'en ai pas' }
+                ]},
+                { key: 'reviews', label: 'Combien d\'avis Google possédez-vous ?', type: 'SINGLE', required: false, options: [
+                    { value: '0-5', label: '0 à 5 avis' }, { value: '6-20', label: '6 à 20 avis' }, { value: '20+', label: 'Plus de 20 avis' }, { value: 'n/a', label: 'Pas de fiche Google' }
+                ]},
+                { key: 'socials', label: 'Quels réseaux sociaux utilisez-vous ?', type: 'MULTI', required: false, options: [
+                    { value: 'facebook', label: '📘 Facebook' }, { value: 'instagram', label: '📸 Instagram' }, { value: 'tiktok', label: '🎵 TikTok' }, { value: 'linkedin', label: '💼 LinkedIn' }
+                ]}
+            ]},
+            { key: 'acquisition', title: 'Acquisition', questions: [
+                { key: 'ads', label: 'Investissez-vous dans la publicité en ligne ?', type: 'SINGLE', required: false, options: [
+                    { value: 'meta', label: 'Oui, Meta Ads (Facebook/Instagram)' }, { value: 'google', label: 'Oui, Google Ads' }, { value: 'tiktok', label: 'Oui, TikTok Ads' }, { value: 'none', label: 'Non, je n\'ai jamais fait de publicité' }
+                ]}
+            ]},
+            { key: 'conversion', title: 'Conversion', questions: [
+                { key: 'contact', label: 'Comment vos clients vous contactent-ils principalement ?', type: 'SINGLE', required: false, options: [
+                    { value: 'whatsapp', label: 'WhatsApp' }, { value: 'phone', label: 'Téléphone' }, { value: 'form', label: 'Formulaire sur le site' }, { value: 'dm', label: 'Message privé (réseaux)' }, { value: 'walkin', label: 'Passage physique uniquement' }
+                ]},
+                { key: 'booking', label: 'Proposez-vous un système de réservation ou paiement en ligne ?', type: 'SINGLE', required: false, options: [
+                    { value: 'both', label: 'Les deux (réservation + paiement)' }, { value: 'reservation', label: 'Réservation uniquement' }, { value: 'payment', label: 'Paiement en ligne uniquement' }, { value: 'none', label: 'Non, rien en ligne' }
+                ]}
+            ]},
+            { key: 'retention', title: 'Fidélisation & suivi', questions: [
+                { key: 'clientbase', label: 'Avez-vous une base de clients ?', type: 'SINGLE', required: false, options: [
+                    { value: 'crm', label: 'Oui, dans un CRM' }, { value: 'spreadsheet', label: 'Oui, dans un fichier Excel / Google Sheets' }, { value: 'notebook', label: 'Quelques notes, pas de système structuré' }, { value: 'none', label: 'Non, pas de liste clients' }
+                ]},
+                { key: 'comm', label: 'Envoyez-vous des communications à vos clients ?', type: 'SINGLE', required: false, options: [
+                    { value: 'email', label: 'Oui, par email' }, { value: 'whatsapp', label: 'Oui, par WhatsApp' }, { value: 'social', label: 'Oui, via les réseaux sociaux' }, { value: 'none', label: 'Non, pas de communication régulière' }
+                ]}
+            ]},
+            { key: 'content', title: 'Contenu', questions: [
+                { key: 'freq', label: 'À quelle fréquence publiez-vous du contenu ?', type: 'SINGLE', required: false, options: [
+                    { value: 'daily', label: 'Quotidiennement' }, { value: 'weekly', label: '1 à 2 fois par semaine' }, { value: 'monthly', label: 'Quelques fois par mois' }, { value: 'rarely', label: 'Rarement ou jamais' }
+                ]},
+                { key: 'producer', label: 'Qui produit votre contenu ?', type: 'SINGLE', required: false, options: [
+                    { value: 'internal', label: 'Moi-même / mon équipe' }, { value: 'freelance', label: 'Un freelance' }, { value: 'agency', label: 'Une agence' }, { value: 'none', label: 'Je n\'ai pas encore de contenu' }
+                ]},
+                { key: 'goal', label: 'Quel est votre principal objectif digital ?', type: 'SINGLE', required: true, options: [
+                    { value: 'presence', label: 'Créer ma première présence en ligne' }, { value: 'visibility', label: 'Être plus visible localement' }, { value: 'sales', label: 'Vendre plus / générer des leads' }, { value: 'brand', label: 'Renforcer ma marque' }
+                ]}
+            ]}
+        ]
+    };
+
+    const MOCK_COMPLETE = {
+        score: {
+            total: 63,
+            disclaimer: 'Le Digital Score est un indicateur interne de diagnostic établi par BENILAB à partir de vos déclarations. Il ne constitue pas une certification.',
+            categories: {
+                PRESENCE: { score: 72, label: 'Présence' }, VISIBILITY: { score: 55, label: 'Visibilité' },
+                ACQUISITION: { score: 40, label: 'Acquisition' }, CONVERSION: { score: 65, label: 'Conversion' },
+                RETENTION: { score: 58, label: 'Fidélisation' }
+            },
+            maturity_level: 'ESTABLISHED',
+            maturity_label: 'Bases digitales solides'
+        },
+        passport: {
+            items: [
+                { key: 'WEBSITE', status: 'ACTIVE', source: 'DECLARED', details: { url: 'www.letedelice.ci' } },
+                { key: 'DOMAIN', status: 'ACTIVE', source: 'DECLARED', details: { fqdn: 'letedelice.ci', expires_at: '2027-08-15' } },
+                { key: 'EMAIL', status: 'ACTIVE', source: 'DECLARED', details: { address: 'contact@letedelice.ci' } },
+                { key: 'GOOGLE_BUSINESS', status: 'IN_PROGRESS', source: 'DECLARED', details: { reviews_count: 7, rating: 4.2 } },
+                { key: 'FACEBOOK', status: 'ACTIVE', source: 'DECLARED', details: { followers: 340 } },
+                { key: 'INSTAGRAM', status: 'ACTIVE', source: 'DECLARED', details: { followers: 180 } },
+                { key: 'TIKTOK', status: 'NOT_CONFIGURED', source: 'DECLARED' },
+                { key: 'WHATSAPP', status: 'ACTIVE', source: 'DECLARED' },
+                { key: 'SEO', status: 'IN_PROGRESS', source: 'DECLARED' },
+                { key: 'ADS', status: 'NOT_CONFIGURED', source: 'DECLARED' },
+                { key: 'EMAILING', status: 'NOT_CONFIGURED', source: 'DECLARED' },
+                { key: 'CRM', status: 'NOT_CONFIGURED', source: 'DECLARED' }
+            ]
+        },
+        action_plan: {
+            items: [
+                { rule_key: 'no_google_business', module: 'VISIBILITY', priority: 'HIGH', reason: 'Votre fiche Google Business peut être optimisée pour améliorer votre visibilité locale.', current_state: 'Fiche existante mais incomplète', recommended_action: 'Optimiser la fiche Google Business (photos, horaires, catégories)', product_code: 'DIGITAL_GROWTH', cta: 'ACTIVATE', status: 'PROPOSED' },
+                { rule_key: 'social_low_frequency', module: 'VISIBILITY', priority: 'MEDIUM', reason: 'Votre fréquence de publication est insuffisante pour maintenir une visibilité constante.', current_state: '1 à 2 publications par semaine', recommended_action: 'Augmenter la fréquence et structurer un calendrier éditorial', product_code: 'DIGITAL_GROWTH', cta: 'ACTIVATE', status: 'PROPOSED' },
+                { rule_key: 'no_ads', module: 'ACQUISITION', priority: 'LOW', reason: 'Aucune publicité en ligne n\'est configurée. Les campagnes payantes peuvent accélérer votre acquisition.', current_state: 'Pas de campagne active', recommended_action: 'Lancer une première campagne Meta Ads ciblée', product_code: 'DIGITAL_PERFORMANCE', cta: 'CONTACT', status: 'PROPOSED' },
+                { rule_key: 'no_crm', module: 'RETENTION', priority: 'MEDIUM', reason: 'Vous ne disposez pas encore d\'un système structuré pour suivre vos prospects.', current_state: 'Aucun CRM', recommended_action: 'Mettre en place un suivi des prospects et relances automatiques', product_code: 'DIGITAL_PERFORMANCE', cta: 'ACTIVATE', status: 'PROPOSED' }
+            ]
+        }
+    };
+
+    const MOCK_CATALOG = {
+        currency: 'XOF',
+        products: [
+            { code: 'DIGITAL_START', name: 'Digital Start', kind: 'ONE_TIME', module: 'PRESENCE', price: { amount: 89900, currency: 'XOF' }, description: 'Pack complet : site web, domaine, hébergement, SEO de base.' },
+            { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', kind: 'SUBSCRIPTION', module: 'PRESENCE', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, description: 'Maintenance, mises à jour, 4 contenus/mois, suivi Google Business.' },
+            { code: 'DIGITAL_GROWTH', name: 'Digital Growth', kind: 'SUBSCRIPTION', module: 'VISIBILITY', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Essential + gestion réseaux, 8 contenus/mois, SEO local.' },
+            { code: 'DIGITAL_PERFORMANCE', name: 'Digital Performance', kind: 'SUBSCRIPTION', module: 'ACQUISITION', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Growth + publicité, email marketing, automatisations, reporting avancé.' }
+        ]
+    };
+
+    // ── Currency helpers ──
+    function formatPrice(amount, currency) {
+        if (amount == null) return '—';
+        const cur = currency || currentCurrency;
+        if (cur === 'EUR') {
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    function setCurrency(cur) {
+        currentCurrency = cur;
+        document.querySelectorAll('.currency-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.cur === cur);
+        });
+        renderPricing();
+        renderPlanPricingCta();
+    }
+
+    // ── Navigation ──
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const page = document.getElementById('page-' + pageId);
+        if (page) page.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+            document.querySelectorAll('.page.active .reveal').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight * 0.9) el.classList.add('active');
+            });
+        }, 100);
+    }
+
+    function isInViewport(el) { return el.getBoundingClientRect().top < window.innerHeight * 0.9; }
+
+    function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
+    function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
+
+    // ── Scroll reveal ──
+    const revealObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ── Nav scroll ──
+    window.addEventListener('scroll', () => {
+        const nav = document.getElementById('mainNav');
+        if (nav) nav.classList.toggle('scrolled', window.pageYOffset > 80);
+    });
+
+    // ── Pricing from catalog ──
+    async function loadCatalog() {
+        try {
+            if (MOCK_MODE) { catalogData = MOCK_CATALOG; renderPricing(); return; }
+            catalogData = await apiRequest(`/public/catalog?currency=${currentCurrency}`);
+            renderPricing();
+        } catch (e) {
+            console.warn('[D360] Catalogue non chargé, utilisation des valeurs par défaut', e);
+            renderPricingDefault();
+        }
+    }
+
+    function renderPricing() {
+        if (!catalogData) { renderPricingDefault(); return; }
+        const grid = document.getElementById('pricingGrid');
+        const featureMap = {
+            DIGITAL_START: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'],
+            DIGITAL_ESSENTIAL: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'],
+            DIGITAL_GROWTH: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'],
+            DIGITAL_PERFORMANCE: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé']
+        };
+        grid.innerHTML = '';
+         catalogData.products.forEach((prod, i) => {
+             const isFeatured = prod.code === 'DIGITAL_GROWTH';
+             const period = prod.price.period ? (prod.price.period === 'MONTH' ? ' / mois' : ' / an') : '';
+             const features = featureMap[prod.code] || [];
+             const card = document.createElement('div');
+             card.className = `card price-card${isFeatured ? ' featured' : ''} reveal delay-${i + 1}`;
+             // Title
+             const h3 = document.createElement('h3');
+             h3.style.cssText = 'font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;';
+             h3.textContent = prod.name;
+             card.appendChild(h3);
+             // Price
+             const priceDiv = document.createElement('div');
+             priceDiv.className = 'price-amount';
+             priceDiv.appendChild(document.createTextNode(formatPrice(prod.price.amount, prod.price.currency)));
+             if (period) { const span = document.createElement('span'); span.textContent = period; priceDiv.appendChild(span); }
+             card.appendChild(priceDiv);
+             // Period text
+             const pEl = document.createElement('p');
+             pEl.className = 'price-period';
+             pEl.textContent = prod.kind === 'ONE_TIME' ? 'Paiement unique — Pack complet' : 'Abonnement' + period;
+             card.appendChild(pEl);
+             // Features list
+             const ul = document.createElement('ul');
+             ul.className = 'price-features';
+             features.forEach(f => { const li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
+             if (prod.code !== 'DIGITAL_START') { const li = document.createElement('li'); li.className = 'disabled'; li.textContent = 'Module V2'; ul.appendChild(li); }
+             card.appendChild(ul);
+             // CTA
+             const a = document.createElement('a');
+             a.href = '#';
+             a.onclick = (e) => { e.preventDefault(); startDiagnostic(); };
+             a.className = `btn ${isFeatured ? 'btn-primary' : 'btn-outline'} btn-block`;
+             a.textContent = 'Choisir';
+             card.appendChild(a);
+             grid.appendChild(card);
+         });
+    }
+
+    function renderPricingDefault() {
+        // Fallback static rendering with HT
+        const grid = document.getElementById('pricingGrid');
+        const products = [
+            { code: 'DIGITAL_START', name: 'Digital Start', price: 89900, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
+            { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', price: 25000, period: ' / mois', featured: false, features: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
+            { code: 'DIGITAL_GROWTH', name: 'Digital Growth', price: 50000, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
+            { code: 'DIGITAL_PERFORMANCE', name: 'Digital Performance', price: 100000, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
+        ];
+        grid.innerHTML = '';
+         products.forEach((p, i) => {
+             const card = document.createElement('div');
+             card.className = `card price-card${p.featured ? ' featured' : ''} reveal delay-${i + 1}`;
+             const h3 = document.createElement('h3');
+             h3.style.cssText = 'font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;';
+             h3.textContent = p.name;
+             card.appendChild(h3);
+             const priceDiv = document.createElement('div');
+             priceDiv.className = 'price-amount';
+             priceDiv.appendChild(document.createTextNode(formatPrice(p.price)));
+             if (p.period) { const span = document.createElement('span'); span.textContent = p.period; priceDiv.appendChild(span); }
+             card.appendChild(priceDiv);
+             const pEl = document.createElement('p');
+             pEl.className = 'price-period';
+             pEl.textContent = p.period ? 'Abonnement' : 'Paiement unique — Pack complet';
+             card.appendChild(pEl);
+             const ul = document.createElement('ul');
+             ul.className = 'price-features';
+             p.features.forEach(f => { const li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
+             card.appendChild(ul);
+             const a = document.createElement('a');
+             a.href = '#';
+             a.onclick = (e) => { e.preventDefault(); startDiagnostic(); };
+             a.className = `btn ${p.featured ? 'btn-primary' : 'btn-outline'} btn-block`;
+             a.textContent = 'Commencer';
+             card.appendChild(a);
+             grid.appendChild(card);
+         });
+    }
+
+    function renderPlanPricingCta() {
+        const el = document.getElementById('planPricingCta');
+        if (catalogData) {
+            const start = catalogData.products.find(p => p.code === 'DIGITAL_START');
+            el.textContent = start ? formatPrice(start.price.amount, start.price.currency) : formatPrice(89900);
+        } else {
+            el.textContent = formatPrice(89900);
+        }
+    }
+
+    // ── Diagnostic: load questionnaire ──
+    async function loadQuestionnaire() {
+        try {
+            if (MOCK_MODE) { questionnaireData = MOCK_QUESTIONNAIRE; }
+            else { questionnaireData = await apiRequest('/public/questionnaire'); }
+            totalSteps = questionnaireData.sections.length;
+            buildStepper();
+            renderCurrentStep();
+        } catch (e) {
+            console.error('[D360] Erreur chargement questionnaire:', e);
+            // Fallback: use mock
+            questionnaireData = MOCK_QUESTIONNAIRE;
+            totalSteps = questionnaireData.sections.length;
+            buildStepper();
+            renderCurrentStep();
+        }
+    }
+
+    function buildStepper() {
+        const stepper = document.getElementById('diagnosticStepper');
+        stepper.innerHTML = '';
+        questionnaireData.sections.forEach((sec, i) => {
+             const item = document.createElement('div');
+             item.className = 'step-item' + (i === 0 ? ' active' : '');
+             item.dataset.step = i;
+             const dot = document.createElement('div');
+             dot.className = 'step-dot';
+             dot.textContent = i + 1;
+             const lbl = document.createElement('div');
+             lbl.className = 'step-label';
+             lbl.textContent = sec.title.split(' ').slice(0, 2).join(' ');
+             item.appendChild(dot);
+             item.appendChild(lbl);
+             stepper.appendChild(item);
+         });
+    }
+
+    function updateStepper() {
+        document.querySelectorAll('#diagnosticStepper .step-item').forEach((item, i) => {
+            item.classList.remove('active', 'completed');
+            if (i < currentDiagStep) item.classList.add('completed');
+            if (i === currentDiagStep) item.classList.add('active');
+        });
+        const pct = totalSteps > 0 ? ((currentDiagStep + 1) / totalSteps * 100) : 0;
+        document.getElementById('diagProgress').style.width = pct + '%';
+    }
+
+    function renderCurrentStep() {
+        const section = questionnaireData.sections[currentDiagStep];
+        const content = document.getElementById('diagContent');
+        content.innerHTML = '';
+
+        const title = document.createElement('h2');
+        title.className = 'section-title';
+        title.style.marginBottom = '0.5rem';
+        const highlight = document.createElement('span');
+        highlight.style.color = 'var(--accent)';
+        highlight.style.fontStyle = 'italic';
+        highlight.textContent = section.title.split(' ')[0];
+        title.appendChild(document.createTextNode('Étape ' + (currentDiagStep + 1) + ' : '));
+        title.appendChild(highlight);
+
+        const sub = document.createElement('p');
+        sub.className = 'section-sub';
+        sub.style.marginBottom = '2rem';
+        sub.textContent = getSectionDescription(section.key);
+
+        content.appendChild(title);
+        content.appendChild(sub);
+
+        section.questions.forEach(q => {
+            const group = document.createElement('div');
+            group.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.className = 'form-label';
+            label.textContent = q.label + (q.required ? ' *' : '');
+            group.appendChild(label);
+
+            if (q.type === 'TEXT' || q.type === 'EMAIL' || q.type === 'PHONE') {
+                const input = document.createElement('input');
+                input.type = q.type === 'EMAIL' ? 'email' : q.type === 'PHONE' ? 'tel' : 'text';
+                input.className = 'form-input';
+                input.placeholder = q.label;
+                input.id = 'q-' + q.key;
+                input.value = currentAnswers[q.key] || '';
+                input.addEventListener('input', () => { currentAnswers[q.key] = input.value; });
+                group.appendChild(input);
+            } else if (q.type === 'SINGLE') {
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'diag-options';
+                q.options.forEach(opt => {
+                    const optEl = document.createElement('div');
+                     optEl.className = 'diag-option' + (currentAnswers[q.key] === opt.value ? ' selected' : '');
+                     optEl.dataset.val = opt.value;
+                     const radioEl = document.createElement('div');
+                     radioEl.className = 'diag-option-radio';
+                     const textEl = document.createElement('div');
+                     textEl.className = 'diag-option-text';
+                     textEl.textContent = opt.label;
+                     optEl.appendChild(radioEl);
+                     optEl.appendChild(textEl);
+                    optEl.addEventListener('click', () => {
+                        optionsDiv.querySelectorAll('.diag-option').forEach(o => o.classList.remove('selected'));
+                        optEl.classList.add('selected');
+                        currentAnswers[q.key] = opt.value;
+                    });
+                    optionsDiv.appendChild(optEl);
+                });
+                group.appendChild(optionsDiv);
+            } else if (q.type === 'MULTI') {
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'diag-options two-col';
+                q.options.forEach(opt => {
+                    const optEl = document.createElement('div');
+                    const isSelected = Array.isArray(currentAnswers[q.key]) && currentAnswers[q.key].includes(opt.value);
+                    optEl.className = 'diag-option' + (isSelected ? ' selected' : '');
+                     optEl.dataset.val = opt.value;
+                     const radioEl2 = document.createElement('div');
+                     radioEl2.className = 'diag-option-radio';
+                     const textEl2 = document.createElement('div');
+                     textEl2.className = 'diag-option-text';
+                     textEl2.textContent = opt.label;
+                     optEl.appendChild(radioEl2);
+                     optEl.appendChild(textEl2);
+                    optEl.addEventListener('click', () => {
+                        optEl.classList.toggle('selected');
+                        const vals = Array.from(optionsDiv.querySelectorAll('.diag-option.selected')).map(o => o.dataset.val);
+                        currentAnswers[q.key] = vals;
+                    });
+                    optionsDiv.appendChild(optEl);
+                });
+                group.appendChild(optionsDiv);
+            }
+            content.appendChild(group);
+        });
+
+        // Nav buttons
+        const nav = document.createElement('div');
+        nav.className = 'diag-nav';
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn btn-ghost';
+        prevBtn.textContent = '← Précédent';
+        prevBtn.addEventListener('click', prevDiagStep);
+        prevBtn.disabled = currentDiagStep === 0;
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-primary';
+        nextBtn.textContent = currentDiagStep === totalSteps - 1 ? 'Voir mes résultats →' : 'Continuer →';
+        nextBtn.addEventListener('click', currentDiagStep === totalSteps - 1 ? submitDiagnostic : nextDiagStep);
+
+        nav.appendChild(prevBtn);
+        nav.appendChild(nextBtn);
+        content.appendChild(nav);
+
+        updateStepper();
+    }
+
+    function getSectionDescription(key) {
+        const descs = {
+            identity: 'Ces informations serviront à personnaliser votre diagnostic et votre plan digital.',
+            presence: 'Évaluons votre infrastructure digitale actuelle.',
+            visibility: 'Comment vos futurs clients vous trouvent-ils ?',
+            acquisition: 'Comment attirez-vous de nouveaux clients aujourd\'hui ?',
+            conversion: 'Comment vos visiteurs deviennent-ils clients ?',
+            retention: 'Comment gérez-vous votre relation avec vos clients existants ?',
+            content: 'Dernière étape — parlons de votre production de contenu.'
+        };
+        return descs[key] || '';
+    }
+
+    function nextDiagStep() {
+        if (currentDiagStep < totalSteps - 1) { currentDiagStep++; renderCurrentStep(); }
+    }
+    function prevDiagStep() {
+        if (currentDiagStep > 0) { currentDiagStep--; renderCurrentStep(); }
+    }
+
+    // ── Submit diagnostic ──
+    async function submitDiagnostic() {
+        // Save answers to session
+        try {
+            if (!diagSessionId) {
+                const session = await apiRequest('/public/diagnostics', { method: 'POST' });
+                diagSessionId = session.id;
+                diagToken = session.token;
+                localStorage.setItem('d360_diag_token', diagToken);
+                localStorage.setItem('d360_diag_id', diagSessionId);
+            }
+            // Save answers
+            await apiRequest(`/public/diagnostics/${diagSessionId}/answers`, {
+                method: 'PUT', body: { answers: currentAnswers }
+            });
+            // Save contact
+            await apiRequest(`/public/diagnostics/${diagSessionId}/contact`, {
+                method: 'PUT', body: { company: currentAnswers.company, email: currentAnswers.email, phone: currentAnswers.phone, whatsapp: currentAnswers.whatsapp }
+            });
+        } catch (e) { console.warn('[D360] Sauvegarde réponses échouée:', e); }
+
+        // Complete
+        try {
+            if (MOCK_MODE) {
+                scoreResult = MOCK_COMPLETE;
+            } else {
+                scoreResult = await apiRequest(`/public/diagnostics/${diagSessionId}/complete`, { method: 'POST' });
+            }
+        } catch (e) {
+            console.warn('[D360] Erreur complétion, utilisation mock:', e);
+            scoreResult = MOCK_COMPLETE;
+        }
+
+        diagData = { ...currentAnswers, company: currentAnswers.company };
+        renderScorePage(scoreResult.score);
+        passportData = scoreResult.passport;
+        actionPlanData = scoreResult.action_plan;
+        showPage('score');
+    }
+
+    // ── Render score page ──
+    function renderScorePage(score) {
+        const total = score.total;
+        const circumference = 326.7;
+        const offset = circumference - (total / 100) * circumference;
+
+        setTimeout(() => {
+            document.getElementById('scoreCircle').style.strokeDashoffset = offset;
+        }, 300);
+
+        let current = 0;
+        const interval = setInterval(() => {
+            current += 1;
+            if (current > total) { clearInterval(interval); return; }
+            document.getElementById('totalScore').textContent = current;
+        }, 20);
+
+        // Level
+        const levelEl = document.getElementById('scoreLevel');
+        const msgEl = document.getElementById('scoreMessage');
+        const discEl = document.getElementById('scoreDisclaimer');
+        levelEl.textContent = score.maturity_label || '—';
+        msgEl.textContent = getLevelMessage(total);
+        discEl.textContent = score.disclaimer || '';
+        levelEl.style.color = total >= 60 ? 'var(--accent)' : total >= 40 ? 'var(--warning)' : 'var(--error)';
+
+        // Category bars
+        const catContainer = document.getElementById('categoryScores');
+        catContainer.innerHTML = '';
+        const colors = { PRESENCE: 'var(--accent)', VISIBILITY: 'var(--accent-warm)', ACQUISITION: 'var(--accent-rose)', CONVERSION: 'var(--success)', RETENTION: 'var(--info)' };
+        Object.entries(score.categories).forEach(([key, val]) => {
+             const row = document.createElement('div');
+             row.className = 'cat-score';
+             const header = document.createElement('div');
+             header.className = 'cat-score-header';
+             const nameSpan = document.createElement('span');
+             nameSpan.className = 'cat-score-name';
+             nameSpan.textContent = val.label || key;
+             const valSpan = document.createElement('span');
+             valSpan.className = 'cat-score-val';
+             valSpan.textContent = val.score + '%';
+             header.appendChild(nameSpan);
+             header.appendChild(valSpan);
+             const track = document.createElement('div');
+             track.className = 'cat-score-track';
+             const fill = document.createElement('div');
+             fill.className = 'cat-score-fill';
+             fill.style.cssText = `width:${val.score}%;background:${colors[key] || 'var(--accent)'}`;
+             track.appendChild(fill);
+             row.appendChild(header);
+             row.appendChild(track);
+             catContainer.appendChild(row);
+         });
+
+        // Modules status from passport
+        const modulesGrid = document.getElementById('modulesStatus');
+        modulesGrid.innerHTML = '';
+        const moduleIcons = { WEBSITE: '🌐', DOMAIN: '🔗', EMAIL: '📧', GOOGLE_BUSINESS: '📍', FACEBOOK: '📘', INSTAGRAM: '📸', TIKTOK: '🎵', LINKEDIN: '💼', WHATSAPP: '💬', SEO: '🔍', ADS: '🎯', EMAILING: '✉️', CRM: '👥', HOSTING: '☁️', ANALYTICS: '📊', CONVERSION: '🔄' };
+        const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
+        const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
+        (passportData?.items || []).forEach(item => {
+             const card = document.createElement('div');
+             card.className = 'module-card' + (item.status === 'ACTIVE' ? '' : item.status === 'IN_PROGRESS' ? ' available' : '');
+             const iconEl = document.createElement('div');
+             iconEl.className = 'module-icon';
+             iconEl.textContent = moduleIcons[item.key] || '📦';
+             const nameEl = document.createElement('div');
+             nameEl.className = 'module-name';
+             nameEl.textContent = item.key.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+             const statusEl = document.createElement('div');
+             statusEl.className = 'module-status badge ' + (statusBadges[item.status] || 'badge-muted');
+             statusEl.textContent = statusLabels[item.status] || item.status;
+             const sourceEl = document.createElement('div');
+             sourceEl.className = 'module-source';
+             const srcText = item.source === 'DECLARED' ? 'Déclaré' : item.source === 'VERIFIED' ? 'Vérifié' : item.source === 'SYNCED' ? 'Synchronisé' : item.source;
+             sourceEl.textContent = 'Source : ' + srcText;
+             card.appendChild(iconEl);
+             card.appendChild(nameEl);
+             card.appendChild(statusEl);
+             card.appendChild(sourceEl);
+             modulesGrid.appendChild(card);
+         });
+    }
+
+    function getLevelMessage(score) {
+        if (score >= 80) return 'Votre entreprise est bien positionnée. Concentrez-vous sur l\'acquisition et la conversion.';
+        if (score >= 60) return 'Vous avez les bases. Il est maintenant temps d\'optimiser et d\'accélérer votre croissance.';
+        if (score >= 40) return 'Des progrès importants sont possibles. Suivez notre plan phase par phase.';
+        return 'Votre présence digitale est fragile. Commençons par les fondamentaux.';
+    }
+
+    // ── Render passport ──
+    function renderPassport() {
+        const grid = document.getElementById('passportGrid');
+        grid.innerHTML = '';
+
+        const sections = [
+            { key: 'identity', title: 'Identité', fields: ['company', 'sector', 'city', 'description'] },
+            { key: 'contact', title: 'Coordonnées', fields: ['phone', 'whatsapp', 'email'] },
+            { key: 'presence', title: 'Présence web', fields: ['site', 'domain', 'emailprof'] },
+            { key: 'visibility', title: 'Google & Réseaux', fields: ['gb', 'reviews', 'socials'] }
+        ];
+
+        sections.forEach(sec => {
+            const div = document.createElement('div');
+             div.className = 'passport-section';
+             const h3 = document.createElement('h3');
+             h3.textContent = sec.title;
+             div.appendChild(h3);
+            sec.fields.forEach(fieldKey => {
+                const val = diagData[fieldKey];
+                if (val === undefined || val === null) return;
+                const field = document.createElement('div');
+                field.className = 'passport-field';
+                const label = document.createElement('div');
+                label.className = 'passport-field-label';
+                const value = document.createElement('div');
+                value.className = 'passport-field-value';
+                if (fieldKey === 'sector') {
+                    const sectorNames = { restaurant: 'Restaurant/Hospitality', retail: 'Commerce', services: 'Services', beauty: 'Beauté/Coiffure', health: 'Santé/Bien-être', education: 'Éducation', tech: 'Technologie', artisan: 'Artisan', other: 'Autre' };
+                    label.textContent = 'Secteur';
+                    value.textContent = sectorNames[val] || val;
+                } else if (fieldKey === 'site') {
+                    label.textContent = 'Site web';
+                    value.textContent = val === 'oui' ? 'Site en ligne' : val === 'en-cours' ? 'En cours de création' : 'Aucun site';
+                } else if (fieldKey === 'domain') {
+                    label.textContent = 'Nom de domaine';
+                    value.textContent = val === 'oui' ? 'Domaine possédé' : 'Aucun domaine';
+                } else if (fieldKey === 'emailprof') {
+                    label.textContent = 'Email professionnel';
+                    value.textContent = val === 'oui' ? 'Email professionnel actif' : 'Email personnel utilisé';
+                } else if (fieldKey === 'gb') {
+                    label.textContent = 'Google Business';
+                    value.textContent = val === 'oui' ? 'Fiche créée et validée' : val === 'en-cours' ? 'Fiche incomplète' : 'Aucune fiche Google Business';
+                } else if (fieldKey === 'reviews') {
+                    label.textContent = 'Avis Google';
+                    value.textContent = val === 'n/a' ? 'Pas de fiche' : (val || 'Non renseigné');
+                } else if (fieldKey === 'socials') {
+                    label.textContent = 'Réseaux sociaux';
+                    const socialNames = { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', linkedin: 'LinkedIn' };
+                    const arr = Array.isArray(val) ? val : [];
+                    value.textContent = arr.length ? arr.map(s => socialNames[s] || s).join(', ') : 'Aucun réseau social';
+                } else {
+                    label.textContent = { company: 'Nom de l\'entreprise', city: 'Localisation', description: 'Description', phone: 'Téléphone', whatsapp: 'WhatsApp', email: 'Email' }[fieldKey] || fieldKey;
+                    value.textContent = val || '—';
+                    if (fieldKey === 'description') value.style.cssText = 'font-size:14px;color:var(--text-secondary);';
+                }
+                field.appendChild(label);
+                field.appendChild(value);
+                div.appendChild(field);
+            });
+            grid.appendChild(div);
+        });
+    }
+
+    // ── Render plan from API ──
+    function renderPlan() {
+        const container = document.getElementById('planPhases');
+        container.innerHTML = '';
+
+        const phaseMap = {
+            PRESENCE: { num: '01', name: 'ÊTRE PRÉSENT' },
+            VISIBILITY: { num: '02', name: 'ÊTRE VISIBLE' },
+            ACQUISITION: { num: '03', name: 'ATTIRER' },
+            CONVERSION: { num: '04', name: 'CONVERTIR' },
+            RETENTION: { num: '05', name: 'FIDÉLISER' }
+        };
+
+        const byModule = {};
+        (actionPlanData?.items || []).forEach(item => {
+            if (!byModule[item.module]) byModule[item.module] = [];
+            byModule[item.module].push(item);
+        });
+
+        Object.entries(phaseMap).forEach(([modKey, phaseInfo]) => {
+            const items = byModule[modKey] || [];
+            if (items.length === 0) return;
+             const phase = document.createElement('div');
+             phase.className = 'plan-phase';
+             const header = document.createElement('div');
+             header.className = 'plan-phase-header';
+             const titleDiv = document.createElement('div');
+             titleDiv.className = 'plan-phase-title';
+             const numSpan = document.createElement('span');
+             numSpan.className = 'plan-phase-num';
+             numSpan.textContent = phaseInfo.num;
+             const nameSpan = document.createElement('span');
+             nameSpan.className = 'plan-phase-name';
+             nameSpan.textContent = phaseInfo.name;
+             titleDiv.appendChild(numSpan);
+             titleDiv.appendChild(nameSpan);
+             const toggle = document.createElement('span');
+             toggle.className = 'plan-phase-toggle';
+             toggle.textContent = '+';
+             header.appendChild(titleDiv);
+             header.appendChild(toggle);
+             const body = document.createElement('div');
+             body.className = 'plan-phase-body';
+             phase.appendChild(header);
+             phase.appendChild(body);
+             header.addEventListener('click', () => phase.classList.toggle('open'));
+            items.forEach(item => {
+                const row = document.createElement('div');
+                 row.className = 'plan-item';
+                 const statusLabel = item.status === 'PROPOSED' ? 'À activer' : item.status === 'ACCEPTED' ? 'Accepté' : item.status === 'DONE' ? 'Terminé' : item.status;
+                 const statusBadge = item.status === 'PROPOSED' ? 'badge-warning' : item.status === 'DONE' ? 'badge-success' : 'badge-muted';
+                 const nameEl = document.createElement('span');
+                 nameEl.className = 'plan-item-name';
+                 nameEl.textContent = item.recommended_action || item.reason;
+                 const statusBadgeEl = document.createElement('span');
+                 statusBadgeEl.className = 'plan-item-status badge ' + statusBadge;
+                 statusBadgeEl.textContent = statusLabel;
+                 row.appendChild(nameEl);
+                 row.appendChild(statusBadgeEl);
+                body.appendChild(row);
+            });
+            container.appendChild(phase);
+        });
+
+        // If no plan items from API, show default structure
+        if (Object.keys(byModule).length === 0) {
+            showDefaultPlan();
+        }
+    }
+
+    function showDefaultPlan() {
+        const container = document.getElementById('planPhases');
+        const phases = [
+            { num: '01', name: 'ÊTRE PRÉSENT', items: ['Nom de domaine', 'Site web professionnel', 'Email professionnel', 'Google Business'] },
+            { num: '02', name: 'ÊTRE VISIBLE', items: ['Facebook / Instagram', 'Contenu régulier', 'SEO local'] },
+            { num: '03', name: 'ATTIRER', items: ['Publicité en ligne', 'Landing page dédiée'] },
+            { num: '04', name: 'CONVERTIR', items: ['Optimiser WhatsApp', 'Système de réservation', 'Formulaire de contact'] },
+            { num: '05', name: 'FIDÉLISER', items: ['Base clients structurée', 'Email marketing', 'Automatisation'] }
+        ];
+        container.innerHTML = '';
+        phases.forEach(p => {
+            const phase = document.createElement('div');
+            phase.className = 'plan-phase';
+            const phase = document.createElement('div');
+             phase.className = 'plan-phase';
+             const header = document.createElement('div');
+             header.className = 'plan-phase-header';
+             const titleDiv = document.createElement('div');
+             titleDiv.className = 'plan-phase-title';
+             const numSpan = document.createElement('span');
+             numSpan.className = 'plan-phase-num';
+             numSpan.textContent = p.num;
+             const nameSpan = document.createElement('span');
+             nameSpan.className = 'plan-phase-name';
+             nameSpan.textContent = p.name;
+             titleDiv.appendChild(numSpan);
+             titleDiv.appendChild(nameSpan);
+             const toggle = document.createElement('span');
+             toggle.className = 'plan-phase-toggle';
+             toggle.textContent = '+';
+             header.appendChild(titleDiv);
+             header.appendChild(toggle);
+             const body = document.createElement('div');
+             body.className = 'plan-phase-body';
+             p.items.forEach(item => {
+                 const row = document.createElement('div');
+                 row.className = 'plan-item';
+                 const nameEl = document.createElement('span');
+                 nameEl.className = 'plan-item-name';
+                 nameEl.textContent = item;
+                 const statusEl = document.createElement('span');
+                 statusEl.className = 'plan-item-status badge badge-warning';
+                 statusEl.textContent = 'À activer';
+                 row.appendChild(nameEl);
+                 row.appendChild(statusEl);
+                 body.appendChild(row);
+             });
+             phase.appendChild(header);
+             phase.appendChild(body);
+             header.addEventListener('click', () => phase.classList.toggle('open'));
+            container.appendChild(phase);
+        });
+    }
+
+    // ── Start diagnostic flow ──
+    function startDiagnostic() {
+        currentDiagStep = 0;
+        currentAnswers = {};
+        // Restore session if exists
+        diagSessionId = localStorage.getItem('d360_diag_id');
+        diagToken = localStorage.getItem('d360_diag_token');
+        showPage('diagnostic');
+        loadQuestionnaire();
+    }
+
+    // ── Init ──
+    loadCatalog();
+    renderPlanPricingCta();
     </script>
 </body>
 </html>
