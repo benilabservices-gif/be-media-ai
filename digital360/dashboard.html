@@ -111,136 +111,74 @@
 
             <div class="dash-content">
 
-                <!-- ═══ DASHBOARD ═══ -->
-                <div class="dash-page active" id="page-dashboard">
-                    <div class="dash-welcome reveal">
-                        <h1>Bonjour <span class="name" id="welcomeName">Amadou</span></h1>
-                        <p>Votre présence digitale est à <strong style="color:var(--accent);">63%</strong> — voici où vous en êtes.</p>
-                    </div>
+                 <!-- ═══ DASHBOARD ═══ -->
+                 <div class="dash-page active" id="page-dashboard">
+                     <div class="dash-welcome reveal">
+                         <h1>Bonjour <span class="name" id="welcomeName">—</span></h1>
+                         <p id="welcomeSub">Chargement de vos données…</p>
+                     </div>
 
-                    <!-- Score Banner -->
-                    <div class="dash-score-banner reveal delay-1">
-                        <div class="dash-score-ring score-ring">
-                            <svg viewBox="0 0 120 120">
-                                <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
-                                <circle class="score-ring-fill" cx="60" cy="60" r="52"
-                                    stroke-dasharray="326.7" stroke-dashoffset="120" style="stroke-dashoffset:120;"/>
-                            </svg>
-                            <div class="score-ring-text">
-                                <div class="score-ring-value" style="font-size:2rem;">63</div>
-                                <div class="score-ring-label">/100</div>
-                            </div>
-                        </div>
-                        <div class="dash-score-info">
-                            <h2>Votre Digital Score</h2>
-                            <p>Votre entreprise a une bonne基础 digitale. Les prochaines étapes recommandées sont l'optimisation Google Business et le renforcement de votre acquisition.</p>
-                        </div>
-                        <div class="dash-next-action">
-                            <div class="label">Prochaine action</div>
-                            <p>Optimisez votre fiche Google Business pour améliorer votre visibilité locale.</p>
-                            <button class="btn btn-primary btn-sm" onclick="switchPage('google')">Optimiser Google Business</button>
-                        </div>
-                    </div>
+                     <!-- Score Banner -->
+                     <div class="dash-score-banner reveal delay-1" id="scoreBanner">
+                         <div class="dash-score-ring score-ring">
+                             <svg viewBox="0 0 120 120">
+                                 <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                 <circle class="score-ring-fill" id="dashScoreCircle" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+                             </svg>
+                             <div class="score-ring-text">
+                                 <div class="score-ring-value" id="dashScoreValue" style="font-size:2rem;">—</div>
+                                 <div class="score-ring-label">/100</div>
+                             </div>
+                         </div>
+                         <div class="dash-score-info">
+                             <h2>Votre Digital Score</h2>
+                             <p id="dashScoreMsg">Vos données sont en cours de chargement.</p>
+                         </div>
+                         <div class="dash-next-action" id="dashNextAction" style="display:none;">
+                             <div class="label">Prochaine action</div>
+                             <p id="dashNextActionText">—</p>
+                             <button class="btn btn-primary btn-sm" id="dashNextActionBtn">Voir</button>
+                         </div>
+                     </div>
 
-                    <!-- Stats -->
-                    <div class="dash-stats reveal delay-2">
-                        <div class="dash-stat">
-                            <div class="dash-stat-value">24</div>
-                            <div class="dash-stat-label">Visiteurs ce mois</div>
-                            <div class="dash-stat-change up">↑ 12% vs mois dernier</div>
-                        </div>
-                        <div class="dash-stat">
-                            <div class="dash-stat-value">3</div>
-                            <div class="dash-stat-label">Leads captés</div>
-                            <div class="dash-stat-change up">↑ 1 vs mois dernier</div>
-                        </div>
-                        <div class="dash-stat">
-                            <div class="dash-stat-value">8</div>
-                            <div class="dash-stat-label">Contenus publiés</div>
-                            <div class="dash-stat-change">Ce mois</div>
-                        </div>
-                        <div class="dash-stat">
-                            <div class="dash-stat-value">1</div>
-                            <div class="dash-stat-label">Campagne active</div>
-                            <div class="dash-stat-change">Meta Ads</div>
-                        </div>
-                    </div>
+                     <!-- Stats -->
+                     <div class="dash-stats reveal delay-2" id="dashStats">
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change">Module Analytics</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Leads captés</div><div class="dash-stat-change">Module CRM</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Contenus publiés</div><div class="dash-stat-change">Module Contenu</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Campagnes actives</div><div class="dash-stat-change">Module Publicité</div></div>
+                     </div>
 
-                    <!-- Modules quick access -->
-                    <div class="reveal delay-3" style="margin-bottom:2rem;">
-                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Vos modules</h3>
-                        <div class="dash-modules">
-                            <div class="dash-module" onclick="switchPage('site')">
-                                <div class="dash-module-icon">🌐</div>
-                                <h3>Site web</h3>
-                                <p>Site en ligne · 5 pages</p>
-                                <div class="dash-module-status"><span class="badge badge-success">Opérationnel</span></div>
-                            </div>
-                            <div class="dash-module" onclick="switchPage('google')">
-                                <div class="dash-module-icon">📍</div>
-                                <h3>Google Business</h3>
-                                <p>Fiche créée · À optimiser</p>
-                                <div class="dash-module-status"><span class="badge badge-warning">En cours</span></div>
-                            </div>
-                            <div class="dash-module" onclick="switchPage('reseaux')">
-                                <div class="dash-module-icon">📱</div>
-                                <h3>Réseaux sociaux</h3>
-                                <p>Facebook actif · Instagram</p>
-                                <div class="dash-module-status"><span class="badge badge-info">2 plateformes</span></div>
-                            </div>
-                            <div class="dash-module" onclick="switchPage('contenus')">
-                                <div class="dash-module-icon">✍️</div>
-                                <h3>Contenus</h3>
-                                <p>8 publiés · 2 en validation</p>
-                                <div class="dash-module-status"><span class="badge badge-accent">Mensuel</span></div>
-                            </div>
-                            <div class="dash-module" onclick="switchPage('prospects')">
-                                <div class="dash-module-icon">👥</div>
-                                <h3>Prospects</h3>
-                                <p>12 prospects · 3 nouveaux</p>
-                                <div class="dash-module-status"><span class="badge badge-warning">À qualifier</span></div>
-                            </div>
-                            <div class="dash-module" onclick="switchPage('analytics')">
-                                <div class="dash-module-icon">📈</div>
-                                <h3>Analytics</h3>
-                                <p>Trafic, leads, conversions</p>
-                                <div class="dash-module-status"><span class="badge badge-success">Actif</span></div>
-                            </div>
-                        </div>
-                    </div>
+                     <!-- Modules quick access -->
+                     <div class="reveal delay-3" style="margin-bottom:2rem;">
+                         <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Vos modules</h3>
+                         <div class="dash-modules" id="dashModules"></div>
+                     </div>
 
-                    <!-- Chart + Recent -->
-                    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;" class="reveal delay-4">
-                        <div class="chart-container">
-                            <h3>Trafic — 6 derniers mois</h3>
-                            <div class="bar-chart">
-                                <div class="bar-col"><div class="bar-value">12</div><div class="bar" style="height:60px;background:var(--accent);"></div><div class="bar-label">Avr</div></div>
-                                <div class="bar-col"><div class="bar-value">18</div><div class="bar" style="height:90px;background:var(--accent);"></div><div class="bar-label">Mai</div></div>
-                                <div class="bar-col"><div class="bar-value">15</div><div class="bar" style="height:75px;background:var(--accent);"></div><div class="bar-label">Jun</div></div>
-                                <div class="bar-col"><div class="bar-value">22</div><div class="bar" style="height:110px;background:var(--accent);"></div><div class="bar-label">Juil</div></div>
-                                <div class="bar-col"><div class="bar-value">28</div><div class="bar" style="height:130px;background:var(--accent);"></div><div class="bar-label">Aoû</div></div>
-                                <div class="bar-col"><div class="bar-value">24</div><div class="bar" style="height:120px;background:var(--accent-light);"></div><div class="bar-label">Sep</div></div>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <h3>Activité récente</h3>
-                            <div style="font-size:13px;">
-                                <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
-                                    <span>📝 Nouveau contenu publié</span><span style="color:var(--text-muted);">Il y a 2j</span>
-                                </div>
-                                <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
-                                    <span>👤 Nouveau prospect</span><span style="color:var(--text-muted);">Il y a 3j</span>
-                                </div>
-                                <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
-                                    <span>⭐ Nouvel avis Google</span><span style="color:var(--text-muted);">Il y a 5j</span>
-                                </div>
-                                <div style="padding:10px 0;display:flex;justify-content:space-between;">
-                                    <span>📊 Rapport mensuel disponible</span><span style="color:var(--text-muted);">Il y a 7j</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                     <!-- Chart + Recent -->
+                     <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;" class="reveal delay-4">
+                         <div class="chart-container">
+                             <h3>Trafic — 6 derniers mois</h3>
+                             <div class="chart-placeholder" id="dashTrafficChart">Graphique en chargement…</div>
+                         </div>
+                         <div class="chart-container">
+                             <h3>Activité récente</h3>
+                             <div id="dashRecentActivity"><div class="empty-state" style="padding:2rem;"><div class="empty-state-icon">📭</div><p>Aucune activité récente</p></div></div>
+                         </div>
+                     </div>
+
+                     <!-- Welcome message -->
+                     <div id="welcomeMessage" style="display:none;margin-top:2rem;padding:1.5rem;background:rgba(127,181,168,0.06);border:1px solid rgba(127,181,168,0.2);border-radius:var(--radius-lg);">
+                         <p style="color:var(--accent);font-weight:600;margin-bottom:0.5rem;">✅ Votre espace est prêt</p>
+                         <p style="color:var(--text-secondary);font-size:14px;">Votre diagnostic a été enregistré. Vous pouvez maintenant suivre votre transformation digitale.</p>
+                     </div>
+                 </div>
+                         <div class="chart-container">
+                             <h3>Activité récente</h3>
+                             <div id="dashRecentActivity"><div class="empty-state" style="padding:2rem;"><div class="empty-state-icon">📭</div><p>Aucune activité récente</p></div></div>
+                         </div>
+                     </div>
+                 </div>
 
                 <!-- ═══ ENTREPRISE ═══ -->
                 <div class="dash-page" id="page-entreprise">
@@ -756,6 +694,39 @@
     let _user = null;
     let _orgId = null;
     let _orgData = null;
+    let passportData = null;
+    let actionPlanData = null;
+    let diagnosticsData = null;
+    let entitlementsData = null;
+    let _csrfToken = '';
+
+    // ── Price formatter ──
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return null;
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || 'XOF';
+        if (cur === 'EUR') {
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    // ── Auth guard ──
+    async function checkAuth() {
+        try {
+            const data = await fetch(D360_API_BASE + '/me', { credentials: 'include' }).then(r => {
+                if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' });
+                return r.json();
+            });
+            return data;
+        } catch (e) {
+            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
+                window.location.href = 'index.html';
+                return null;
+            }
+            throw e;
+        }
+    }
 
     // ── Page routing ──
     const pageTitles = {
@@ -822,7 +793,100 @@
     }
 
     function showNotifications() {
-        alert('🔔 Notifications\n\n• Votre contenu "Reels behind the chef" est en attente de validation\n• Nouvel avis Google : 5★ — "Excellent !"\n• Facture septembre disponible');
+        // Remove hardcoded notification
+    }
+
+    // ── Render dashboard from API ──
+    function renderDashboard() {
+        // Welcome message for ?welcome=1
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('welcome') === '1') {
+            document.getElementById('welcomeMessage').style.display = 'block';
+        }
+
+        // Score from last diagnostic
+        if (diagnosticsData?.scores?.length > 0) {
+            const latest = diagnosticsData.scores[diagnosticsData.scores.length - 1];
+            const total = latest.total || 0;
+            document.getElementById('dashScoreValue').textContent = total;
+            const circumference = 326.7;
+            const offset = circumference - (total / 100) * circumference;
+            document.getElementById('dashScoreCircle').style.strokeDashoffset = offset;
+            document.getElementById('welcomeSub').textContent =
+                'Votre présence digitale est à <strong style="color:var(--accent);">' + total + '%</strong> — ' + (latest.maturity_label || 'voici où vous en êtes.');
+        } else {
+            document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
+        }
+
+        // Next action from action plan
+        if (actionPlanData?.items) {
+            const proposed = actionPlanData.items.find(i => i.status === 'PROPOSED');
+            if (proposed) {
+                document.getElementById('dashNextAction').style.display = '';
+                document.getElementById('dashNextActionText').textContent = proposed.recommended_action || proposed.reason;
+                const btn = document.getElementById('dashNextActionBtn');
+                if (proposed.product_code) {
+                    btn.textContent = 'Activer';
+                    btn.onclick = () => alert('Activation de ' + proposed.product_code + ' — module en développement');
+                } else {
+                    btn.textContent = 'Voir';
+                }
+            }
+        }
+
+        // Modules from passport
+        const modulesGrid = document.getElementById('dashModules');
+        modulesGrid.innerHTML = '';
+        const moduleConfig = [
+            { key: 'WEBSITE', icon: '🌐', name: 'Site web', page: 'site', entitlement: 'website' },
+            { key: 'GOOGLE_BUSINESS', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'google_business' },
+            { key: 'FACEBOOK', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'social_media' },
+            { key: 'ADS', icon: '✍️', name: 'Contenus', page: 'contenus', entitlement: 'content' },
+            { key: 'CRM', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'crm' },
+            { key: 'ANALYTICS', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'analytics' },
+        ];
+        const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
+        const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
+        const entitlements = entitlementsData?.modules || {};
+
+        moduleConfig.forEach(mod => {
+            const passportItem = passportData?.items?.find(i => i.key === mod.key);
+            const isEnabled = entitlements[mod.entitlement] === true;
+            const status = passportItem?.status || (isEnabled ? 'NOT_CONFIGURED' : 'NOT_CONFIGURED');
+            const label = statusLabels[status] || status;
+            const badgeClass = statusBadges[status] || 'badge-muted';
+            const desc = isEnabled
+                ? (passportItem ? (status === 'ACTIVE' ? 'Configurez votre module' : 'En cours de configuration') : 'Module activé')
+                : 'Non inclus dans votre offre';
+            const card = document.createElement('div');
+            card.className = 'dash-module';
+            card.onclick = () => { if (isEnabled) switchPage(mod.page); };
+            card.innerHTML = `
+                <div class="dash-module-icon">${mod.icon}</div>
+                <h3>${mod.name}</h3>
+                <p>${desc}</p>
+                <div class="dash-module-status"><span class="badge ${isEnabled ? badgeClass : 'badge-muted'}">${isEnabled ? label : 'Non activé'}</span></div>
+            `;
+            modulesGrid.appendChild(card);
+        });
+
+        // Stats — show empty states with offer info
+        const offerCode = _orgData?.subscription?.plan_code || '';
+        const statData = [
+            { id: 'statVisitors', label: 'Visiteurs ce mois', sub: 'Module Analytics', offer: 'DIGITAL_PERFORMANCE' },
+            { id: 'statLeads', label: 'Leads captés', sub: 'Module CRM', offer: 'DIGITAL_GROWTH' },
+            { id: 'statContents', label: 'Contenus publiés', sub: 'Module Contenu', offer: 'DIGITAL_ESSENTIAL' },
+            { id: 'statCampaigns', label: 'Campagnes actives', sub: 'Module Publicité', offer: 'DIGITAL_PERFORMANCE' },
+        ];
+        statData.forEach(s => {
+            const el = document.getElementById(s.id);
+            if (el) el.textContent = '—';
+        });
+
+        // Trigger reveals
+        document.querySelectorAll('.reveal').forEach(el => {
+            if (isInViewport(el)) el.classList.add('active');
+        });
     }
 
     // ── Init ──
@@ -853,6 +917,11 @@
                     const diagRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/diagnostics', { credentials: 'include' });
                     if (diagRes.ok) diagnosticsData = await diagRes.json();
                 } catch (_) {}
+                // Load entitlements
+                try {
+                    const entRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
+                    if (entRes.ok) entitlementsData = await entRes.json();
+                } catch (_) {}
             }
             // Update UI with real data
             if (_user) {
@@ -862,38 +931,19 @@
             }
             if (_orgData) {
                 document.getElementById('welcomeName').textContent = _orgData.commercial_name || _orgData.legal_name || 'Entreprise';
-                // Update company info in entreprise page
-                if (passportData?.items) renderPassportData(passportData.items);
-                // Show admin link if user is staff
                 if (me?.staff_roles?.length > 0) {
                     document.getElementById('navAdminLink').style.display = 'inline-flex';
                 }
             }
-            // Trigger reveals
-            document.querySelectorAll('.reveal').forEach(el => {
-                if (isInViewport(el)) el.classList.add('active');
-            });
+            renderDashboard();
         } catch (e) {
             console.error('[D360] Dashboard init error:', e);
         }
     })();
 
-    // ── Passport renderer ──
-    let passportData = null;
-    let actionPlanData = null;
-    let diagnosticsData = null;
-
+    // ── Passport renderer for entreprise page ──
     function renderPassportData(items) {
-        const fieldMap = {
-            WEBSITE: { section: 'presence', field: 'site' },
-            DOMAIN: { section: 'presence', field: 'domain' },
-            EMAIL: { section: 'presence', field: 'emailprof' },
-            GOOGLE_BUSINESS: { section: 'visibility', field: 'gb' },
-            FACEBOOK: { section: 'visibility', field: 'facebook' },
-            INSTAGRAM: { section: 'visibility', field: 'instagram' },
-            WHATSAPP: { section: 'contact', field: 'whatsapp' },
-        };
-        // Could expand to fill all passport fields dynamically
+        // Passport already rendered on dashboard; this is a fallback for the entreprise page
     }
 
     // ── Logout ──

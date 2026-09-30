@@ -51,8 +51,8 @@
             <li><a href="#services" data-scroll>Services</a></li>
             <li><a href="#how" data-scroll>Comment ça marche</a></li>
             <li><a href="#pricing" data-scroll>Tarifs</a></li>
-            <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
-            <li><a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
+             <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
+             <li><a href="#" onclick="window.location.href='dashboard.html';return false;" class="btn btn-outline btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
             <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm">Diagnostic gratuit</a></li>
         </ul>
         <button class="lp-menu-toggle" onclick="toggleMobileMenu()">☰</button>
@@ -64,7 +64,7 @@
         <a href="#how" onclick="toggleMobileMenu();scrollToSection('how')">Comment ça marche</a>
         <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing')">Tarifs</a>
         <a href="#" onclick="toggleMobileMenu();startDiagnostic()">Diagnostic gratuit</a>
-        <a href="#" onclick="toggleMobileMenu();showPage('dashboard')">Mon espace client</a>
+         <a href="#" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;">Mon espace client</a>
     </div>
 
     <!-- ═══════════════ PAGE: LANDING ═══════════════ -->
@@ -284,19 +284,26 @@
                         <div id="categoryScores"></div>
                     </div>
                 </div>
-                <div class="reveal" style="margin-top:4rem;">
-                    <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">État de vos modules</h3>
-                    <div class="modules-grid" id="modulesStatus"></div>
-                </div>
-                <div class="reveal" style="text-align:center;margin-top:4rem;padding:3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);">
-                    <h2 class="section-title" style="margin-bottom:1rem;">Prêt pour la <span style="color:var(--accent);font-style:italic;">prochaine étape</span> ?</h2>
-                    <p style="color:var(--text-secondary);margin-bottom:2rem;">Consultez votre Digital Passport et votre plan de transformation personnalisé.</p>
-                    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-                        <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary">Créer mon espace et garder mon diagnostic</a>
-                        <a href="#" onclick="showPage('passport');return false;" class="btn btn-outline">Voir mon Digital Passport</a>
-                        <a href="#" onclick="showPage('plan');return false;" class="btn btn-outline">Mon plan de transformation</a>
-                    </div>
-                </div>
+                 <div class="reveal" style="margin-top:4rem;">
+                     <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">État de vos modules</h3>
+                     <div class="modules-grid" id="modulesStatus"></div>
+                 </div>
+                 <div class="reveal" style="margin-top:4rem;">
+                     <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">Votre plan de transformation</h3>
+                     <div class="plan-phases" id="planPhases"></div>
+                 </div>
+                 <div class="reveal" style="margin-top:4rem;">
+                     <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">Votre Digital Passport</h3>
+                     <div class="passport-grid" id="passportGrid"></div>
+                 </div>
+                 <div class="reveal" style="text-align:center;margin-top:4rem;padding:3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);">
+                     <h2 class="section-title" style="margin-bottom:1rem;">Votre diagnostic est <span style="color:var(--accent);font-style:italic;">enregistré</span></h2>
+                     <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Créez votre espace pour garder ce résultat et suivre votre transformation.</p>
+                     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                         <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary">Créer mon espace gratuit</a>
+                         <a href="#" onclick="openAuthModal('login');return false;" class="btn btn-ghost">J'ai déjà un compte</a>
+                     </div>
+                 </div>
             </div>
         </div>
     </div>
@@ -584,9 +591,20 @@
                 if (el.getBoundingClientRect().top < window.innerHeight * 0.9) el.classList.add('active');
             });
         }, 100);
+        // Update hash
+        history.replaceState(null, '', '#' + pageId);
     }
 
     function isInViewport(el) { return el.getBoundingClientRect().top < window.innerHeight * 0.9; }
+
+    // Hash-based navigation
+    function handleHash() {
+        const hash = window.location.hash.slice(1);
+        if (hash && document.getElementById('page-' + hash)) {
+            showPage(hash);
+        }
+    }
+    window.addEventListener('hashchange', handleHash);
 
     function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
     function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
@@ -1001,11 +1019,11 @@
             return;
         }
 
-        diagData = { ...currentAnswers, company: currentAnswers.company };
-        renderScorePage(scoreResult.score);
-        passportData = scoreResult.passport;
-        actionPlanData = scoreResult.action_plan;
-        showPage('score');
+         diagData = { ...currentAnswers, company: currentAnswers.company };
+         renderScorePage(scoreResult.score);
+         renderPassportFromScore(scoreResult.passport);
+         renderPlanFromScore(scoreResult.action_plan);
+         showPage('score');
     }
 
     // Enregistre les réponses puis termine. Une ancienne session (déjà terminée ou expirée,
@@ -1123,6 +1141,151 @@
         if (score >= 60) return 'Vous avez les bases. Il est maintenant temps d\'optimiser et d\'accélérer votre croissance.';
         if (score >= 40) return 'Des progrès importants sont possibles. Suivez notre plan phase par phase.';
         return 'Votre présence digitale est fragile. Commençons par les fondamentaux.';
+    }
+
+    // ── Render passport from API response ──
+    function renderPassportFromScore(passport) {
+        const grid = document.getElementById('passportGrid');
+        if (!grid || !passport?.items) return;
+        grid.innerHTML = '';
+
+        const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
+        const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
+
+        const sections = [
+            { title: 'Identité', items: [] },
+            { title: 'Présence web', items: [] },
+            { title: 'Google & Réseaux', items: [] },
+        ];
+
+        passport.items.forEach(item => {
+            const key = item.key;
+            const details = item.details || {};
+            let sectionIdx = 0;
+            if (['GOOGLE_BUSINESS', 'FACEBOOK', 'INSTAGRAM', 'TIKTOK', 'LINKEDIN', 'SEO'].includes(key)) sectionIdx = 2;
+            else if (['WEBSITE', 'DOMAIN', 'EMAIL', 'HOSTING'].includes(key)) sectionIdx = 1;
+
+            const div = document.createElement('div');
+            div.className = 'passport-section';
+            div.innerHTML = `<h3>${sections[sectionIdx].title}</h3>`;
+
+            const field = document.createElement('div');
+            field.className = 'passport-field';
+            const label = document.createElement('div');
+            label.className = 'passport-field-label';
+            const value = document.createElement('div');
+            value.className = 'passport-field-value';
+
+            const keyNames = {
+                WEBSITE: 'Site web', DOMAIN: 'Nom de domaine', EMAIL: 'Email professionnel',
+                GOOGLE_BUSINESS: 'Google Business', FACEBOOK: 'Facebook', INSTAGRAM: 'Instagram',
+                TIKTOK: 'TikTok', LINKEDIN: 'LinkedIn', WHATSAPP: 'WhatsApp',
+                SEO: 'SEO local', ADS: 'Publicité', EMAILING: 'Email marketing', CRM: 'CRM'
+            };
+            label.textContent = keyNames[key] || key.replace(/_/g, ' ');
+
+            if (key === 'WEBSITE' && details.url) value.textContent = details.url;
+            else if (key === 'DOMAIN' && details.fqdn) value.textContent = details.fqdn + (details.expires_at ? ' — valide jusqu\'en ' + details.expires_at.slice(0, 4) : '');
+            else if (key === 'EMAIL' && details.address) value.textContent = details.address;
+            else if (key === 'GOOGLE_BUSINESS') {
+                const badge = document.createElement('span');
+                badge.className = 'badge ' + (statusBadges[item.status] || 'badge-muted');
+                badge.textContent = statusLabels[item.status] || item.status;
+                value.appendChild(badge);
+                if (details.reviews_count) {
+                    const reviews = document.createElement('div');
+                    reviews.style.cssText = 'font-size:13px;color:var(--text-secondary);margin-top:4px;';
+                    reviews.textContent = details.reviews_count + ' avis — note ' + (details.rating || '?') + '/5';
+                    value.appendChild(reviews);
+                }
+            }
+            else if (['FACEBOOK', 'INSTAGRAM', 'TIKTOK', 'LINKEDIN'].includes(key) && details.followers) {
+                value.textContent = details.followers + ' abonnés';
+            }
+            else {
+                value.textContent = statusLabels[item.status] || item.status;
+            }
+
+            field.appendChild(label);
+            field.appendChild(value);
+            div.appendChild(field);
+            grid.appendChild(div);
+        });
+    }
+
+    // ── Render plan from API response ──
+    function renderPlanFromScore(plan) {
+        const container = document.getElementById('planPhases');
+        if (!container || !plan?.items) return;
+        container.innerHTML = '';
+
+        const phaseMap = {
+            PRESENT: { num: '01', name: 'ÊTRE PRÉSENT' },
+            VISIBLE: { num: '02', name: 'ÊTRE VISIBLE' },
+            ATTRACT: { num: '03', name: 'ATTIRER' },
+            CONVERT: { num: '04', name: 'CONVERTIR' },
+            RETAIN:  { num: '05', name: 'FIDÉLISER' }
+        };
+
+        const byPhase = {};
+        plan.items.forEach(item => {
+            const phase = item.phase || 'OTHER';
+            if (!byPhase[phase]) byPhase[phase] = [];
+            byPhase[phase].push(item);
+        });
+
+        Object.entries(phaseMap).forEach(([phaseKey, phaseInfo]) => {
+            const items = byPhase[phaseKey] || [];
+            if (items.length === 0) return;
+            const phase = document.createElement('div');
+            phase.className = 'plan-phase';
+            const header = document.createElement('div');
+            header.className = 'plan-phase-header';
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'plan-phase-title';
+            const numSpan = document.createElement('span');
+            numSpan.className = 'plan-phase-num';
+            numSpan.textContent = phaseInfo.num;
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'plan-phase-name';
+            nameSpan.textContent = phaseInfo.name;
+            titleDiv.appendChild(numSpan);
+            titleDiv.appendChild(nameSpan);
+            const toggle = document.createElement('span');
+            toggle.className = 'plan-phase-toggle';
+            toggle.textContent = '+';
+            header.appendChild(titleDiv);
+            header.appendChild(toggle);
+            const body = document.createElement('div');
+            body.className = 'plan-phase-body';
+            phase.appendChild(header);
+            phase.appendChild(body);
+            header.addEventListener('click', () => phase.classList.toggle('open'));
+
+            items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'plan-item';
+                const nameEl = document.createElement('span');
+                nameEl.className = 'plan-item-name';
+                nameEl.textContent = item.recommended_action || item.reason;
+                const rightEl = document.createElement('span');
+                rightEl.style.cssText = 'display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;';
+                if (item.price) {
+                    const priceSpan = document.createElement('span');
+                    priceSpan.className = 'badge badge-accent';
+                    priceSpan.textContent = formatPrice(item.price, currentCurrency);
+                    rightEl.appendChild(priceSpan);
+                }
+                const priorityBadge = document.createElement('span');
+                priorityBadge.className = 'badge ' + (item.priority === 'HIGH' ? 'badge-error' : item.priority === 'MEDIUM' ? 'badge-warning' : 'badge-muted');
+                priorityBadge.textContent = item.priority === 'HIGH' ? 'Urgent' : item.priority === 'MEDIUM' ? 'Important' : 'Faible';
+                rightEl.appendChild(priorityBadge);
+                row.appendChild(nameEl);
+                row.appendChild(rightEl);
+                body.appendChild(row);
+            });
+            container.appendChild(phase);
+        });
     }
 
     // ── Render passport ──
@@ -1338,6 +1501,7 @@
     // ── Init ──
     loadCatalog();
     renderPlanPricingCta();
+    handleHash();
 
     // ── CSRF (déplacé au-dessus dans api.getCsrf) ──
     // ── Auth state ──
@@ -1426,8 +1590,10 @@
             showNotice('Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.');
         }
         await refreshAuth();
-        closeAuthModal();
-    }
+         closeAuthModal();
+         // Redirect to dashboard after successful registration
+         window.location.href = 'dashboard.html?welcome=1';
+     }
     function showNotice(message) {
         const notice = document.createElement('div');
         notice.setAttribute('role', 'status');
