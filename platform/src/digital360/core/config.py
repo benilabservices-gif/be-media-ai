@@ -36,9 +36,12 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def _require_async_driver(cls, value: PostgresDsn) -> PostgresDsn:
-        # SQLAlchemy async exige le driver asyncpg ; une URL sans driver échouerait au premier appel
-        if value.scheme != "postgresql+asyncpg":
-            raise ValueError("DATABASE_URL doit utiliser le schéma postgresql+asyncpg://")
+        # L'URL standard (celle de Neon ou Render) est convertie pour asyncpg par
+        # core.db.engine_options ; un autre pilote explicite échouerait au premier appel
+        if value.scheme not in ("postgresql", "postgres", "postgresql+asyncpg"):
+            raise ValueError(
+                "DATABASE_URL doit commencer par postgresql:// ou postgresql+asyncpg://"
+            )
         return value
 
     @field_validator("cors_allowed_origins", mode="before")

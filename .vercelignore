@@ -7,3 +7,4 @@ platform/
 .env
 .env.*
 *.md
+render.yaml

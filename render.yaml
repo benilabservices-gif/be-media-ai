@@ -1,0 +1,27 @@
+# Blueprint Render : dans le tableau de bord Render, « New » > « Blueprint », puis ce dépôt.
+# Render crée l'API et demande la valeur des variables marquées `sync: false` (secrets).
+services:
+  - type: web
+    name: digital360-api
+    runtime: docker
+    region: frankfurt
+    plan: free
+    rootDir: platform
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: sh scripts/start.sh
+    healthCheckPath: /api/v1/health/ready
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      # Adresse de connexion Neon du rôle applicatif (non superuser), à saisir dans Render :
+      # jamais dans ce fichier ni dans le dépôt
+      - key: DATABASE_URL
+        sync: false
+      # Le site appelle l'API via sa propre adresse (relais Vercel) : pas besoin de CORS.
+      # À renseigner seulement pour appeler l'API depuis une autre origine.
+      - key: CORS_ALLOWED_ORIGINS
+        value: ""

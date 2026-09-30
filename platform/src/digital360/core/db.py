@@ -1,10 +1,12 @@
+import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from fastapi import Request
-from sqlalchemy import MetaData, text
+from sqlalchemy import MetaData, make_url, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -29,9 +31,40 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
+def engine_options(database_url: str) -> tuple[str, dict[str, Any]]:
+    """Adapte une URL PostgreSQL « standard » (celle de Neon, Render…) au pilote asyncpg.
+
+    - `postgresql://` devient `postgresql+asyncpg://`
+    - `sslmode` et `channel_binding`, inconnus d'asyncpg, sont traduits en option `ssl`
+    - derrière un pooler PgBouncer (hôte `-pooler`), le cache de requêtes préparées est
+      désactivé : il est incompatible avec le mode transaction du pooler
+    """
+    url = make_url(database_url)
+    if url.drivername in ("postgresql", "postgres"):
+        url = url.set(drivername="postgresql+asyncpg")
+    query = dict(url.query)
+    connect_args: dict[str, Any] = {}
+    sslmode = query.pop("sslmode", None)
+    query.pop("channel_binding", None)
+    if sslmode in ("require", "verify-ca", "verify-full"):
+        connect_args["ssl"] = "require" if sslmode == "require" else sslmode
+    if url.host and "-pooler" in url.host:
+        # Configuration SQLAlchemy recommandée pour PgBouncer en mode transaction : aucun
+        # cache de requêtes préparées, et des noms uniques pour celles qui restent
+        query["prepared_statement_cache_size"] = "0"
+        connect_args["statement_cache_size"] = 0
+        connect_args["prepared_statement_name_func"] = _unique_statement_name
+    return url.set(query=query).render_as_string(hide_password=False), connect_args
+
+
+def _unique_statement_name() -> str:
+    return f"__asyncpg_{uuid.uuid4()}__"
+
+
 def create_engine(database_url: str) -> AsyncEngine:
+    url, connect_args = engine_options(database_url)
     # pool_pre_ping : évite de servir une connexion coupée par le serveur ou un proxy
-    return create_async_engine(database_url, pool_pre_ping=True)
+    return create_async_engine(url, pool_pre_ping=True, connect_args=connect_args)
 
 
 def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:

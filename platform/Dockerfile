@@ -29,6 +29,7 @@ WORKDIR /app
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY config ./config
+COPY scripts/start.sh ./scripts/start.sh
 
 USER app
 EXPOSE 8000

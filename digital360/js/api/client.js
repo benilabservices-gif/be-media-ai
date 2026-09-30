@@ -15,7 +15,9 @@
  */
 
 // ── Configuration ──
-const API_BASE = window.D360_API_BASE || 'http://localhost:8000/api/v1';
+const API_BASE = window.D360_API_BASE
+        // En local : API sur localhost:8000. En ligne : même adresse que le site, relayée par Vercel vers l'API
+        || (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8000/api/v1' : '/api/v1');
 const MOCK_MODE = window.D360_API_MODE === 'mock';
 
 // ── CSRF token stocké en mémoire (plus fiable que document.cookie) ──

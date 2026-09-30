@@ -88,7 +88,19 @@ Les migrations doivent rester rétrocompatibles (expand → migrate → contract
 | `CORS_ALLOWED_ORIGINS` | non | Origines du frontend, séparées par des virgules |
 | `ALEMBIC_INI_PATH` | non (`alembic.ini`) | Chemin d'`alembic.ini`, relatif au dossier de lancement |
 
-## Déploiement
+## Déploiement (Neon + Render + Vercel)
+
+L'API tourne sur Render, la base sur Neon, le site sur Vercel. Vercel relaie `/api/v1/*` vers Render (`../vercel.json`) : le site et l'API partagent la même adresse, les cookies de session fonctionnent sans nom de domaine.
+
+1. **Neon** : créer un projet (région Frankfurt). Onglet « Connect », copier l'adresse du rôle `neondb_owner`.
+2. **Base** : depuis `platform/`, lancer `.venv\Scripts\python scripts
+eon_setup.py` et coller cette adresse (saisie masquée). Le script crée le rôle applicatif non superuser et sa base, migre, publie la configuration, vérifie la RLS, puis affiche l'adresse `DATABASE_URL` à utiliser.
+3. **Render** : « New » > « Blueprint » > ce dépôt (`../render.yaml`). Coller `DATABASE_URL` quand Render la demande. Au démarrage, le conteneur migre et publie la configuration (`scripts/start.sh`), puis lance l'API.
+4. **Vercel** : vérifier que l'adresse Render dans `../vercel.json` correspond au service créé (`https://digital360-api.onrender.com` par défaut).
+
+Offre gratuite Render : le service s'endort après 15 min sans trafic (premier appel lent), et les workers d'arrière-plan ne sont pas disponibles. Aucun job n'est encore indispensable ; ce sera à revoir avec les notifications (M8).
+
+### Détails
 
 Le dossier `platform/` est exclu du déploiement Vercel (`../.vercelignore`) : il ne doit jamais être servi publiquement. L'API se déploie comme conteneur Docker (voir ARCHITECTURE.md §16.2). Ordre de release : `alembic upgrade head`, puis démarrage des instances.
 
