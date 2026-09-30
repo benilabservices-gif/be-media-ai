@@ -85,7 +85,7 @@ Aucune logique serveur n'existe, donc rien à migrer côté backend. La platefor
 | Langage backend | **Python 3.12 + FastAPI** | Stack principale de l'équipe. Pydantic v2 génère un OpenAPI strict qui sert de contrat pour Kilo. Compromis : pas de types partagés natifs avec le frontend, compensé par la génération des types depuis OpenAPI (§15). |
 | Base de données | **PostgreSQL 16** | Relationnel (facturation, workflows), JSONB pour les données semi-structurées (réponses, contenus de pages), RLS pour l'isolation des tenants, partitionnement pour l'analytics. |
 | ORM / migrations | **SQLAlchemy 2 (async) + Alembic** | Standard Python, migrations versionnées. |
-| Jobs asynchrones | **File de jobs sur PostgreSQL** (`procrastinate`) | Un composant d'infra en moins pour le MVP. L'enfilement se fait **dans la même transaction** que l'écriture métier (outbox gratuite), avec retries et jobs périodiques. Compromis : débit plus faible que Redis, largement suffisant jusqu'à plusieurs milliers de clients. Migrable derrière une interface `JobQueue`. |
+| Jobs asynchrones | **File de jobs maison sur PostgreSQL** (table `jobs`, `FOR UPDATE SKIP LOCKED`, `core/jobs.py`) | Un composant d'infra en moins pour le MVP. L'enfilement se fait **dans la même transaction** que l'écriture métier (outbox), sur la même connexion SQLAlchemy, avec retries, délai croissant et état `DEAD`. Compromis : débit plus faible que Redis, largement suffisant jusqu'à plusieurs milliers de clients. Voir ADR-004. |
 | Configuration métier | **En base, versionnée**, initialisée depuis des fichiers YAML du dépôt (`platform/config/seeds/`) | Questions, barèmes, règles, prix et entitlements évoluent sans redéploiement. Chaque diagnostic référence la version utilisée, donc les résultats restent reproductibles. |
 | Intégrations | **Ports / adapters** (interfaces `Protocol`) avec un adapter `Fake` obligatoire pour chaque port | Aucune dépendance définitive à un fournisseur. Les tests et l'E2E tournent sans réseau. |
 | Montants | **Entiers en unité mineure + code ISO 4217** (`89900 XOF`, `13705 EUR` = 137,05 €) | Trois devises (XOF, XAF, EUR) : XOF et XAF n'ont pas de décimales, l'EUR en a deux. Stocker des unités mineures entières couvre les trois cas et évite les erreurs d'arrondi des flottants. |
@@ -233,8 +233,9 @@ La **boucle cœur** (cahier des charges §59) est entièrement couverte par les 
 
 2. **Barrière base de données (défense en profondeur) : PostgreSQL Row Level Security**
    - Chaque table tenant a une politique `USING (organization_id = current_setting('app.current_org_id')::uuid)`.
-   - La session DB exécute `SET LOCAL app.current_org_id = ...` au début de chaque transaction tenant.
-   - L'application se connecte avec un rôle **non propriétaire** des tables (`app_user`), soumis à la RLS. Les accès staff multi-tenants passent par un rôle `app_staff` avec `BYPASSRLS`, utilisé uniquement par les routes `/admin/*` et les jobs, et **toujours audités**.
+   - Chaque transaction tenant pose `app.current_org_id` via `set_config(..., true)` : la variable disparaît à la fin de la transaction, aucune connexion du pool ne garde de contexte. Sans variable posée, une table tenant ne renvoie **aucune** ligne (fermeture par défaut).
+   - La RLS est **forcée** (`FORCE ROW LEVEL SECURITY`) : elle s'applique aussi au propriétaire des tables, donc au rôle applicatif unique. Ce rôle doit être **non superuser et sans BYPASSRLS** (un superuser ignore toute politique) : `/health/ready` refuse le trafic sinon.
+   - Les accès staff multi-tenants posent `app.scope = 'staff'` (`staff_transaction`), uniquement depuis les routes `/admin/*` et les jobs, et sont **toujours audités**. Voir ADR-011.
 
 3. **Tests de sécurité systématiques** (§16.1) : un test paramétré parcourt **toutes** les routes `/orgs/{org_id}/...` et vérifie qu'un utilisateur de l'organisation B reçoit 404 sur toute ressource de l'organisation A.
 
@@ -464,7 +465,7 @@ La colonne `source` distingue ce que le client **déclare** au diagnostic de ce 
 | `workflow_transitions` | T | id, organization_id, entity_type, entity_id, from_status, to_status, actor_type (`USER`, `SYSTEM`, `PROVIDER`), actor_user_id, reason, metadata, occurred_at | idx (entity_type, entity_id, occurred_at). Append-only. |
 | `notifications` | T | id, organization_id (nullable pour le staff), recipient_user_id, type (`PAYMENT`, `TASK`, `VALIDATION`, `CONTENT`, `SUBSCRIPTION`, `WEBSITE`, `SYSTEM`), channel (`IN_APP`, `EMAIL`, `WHATSAPP`, `SMS`), title, body, data (jsonb), dedup_key, status (`PENDING`, `SENT`, `FAILED`), read_at, sent_at | `UNIQUE (dedup_key, channel)`, idx (recipient_user_id, read_at) |
 | `notification_preferences` | G | user_id, type, channel, enabled | `UNIQUE (user_id, type, channel)` |
-| `audit_logs` | T? | id, organization_id (nullable), actor_type, actor_user_id, action, entity_type, entity_id, old_value (jsonb, champs sensibles masqués), new_value, request_id, ip, user_agent, occurred_at | idx (organization_id, occurred_at DESC), idx (entity_type, entity_id). Append-only : pas de droit UPDATE ni DELETE pour `app_user`. |
+| `audit_logs` | T? | id, organization_id (nullable), actor_type, actor_user_id, action, entity_type, entity_id, old_value (jsonb, champs sensibles masqués), new_value, request_id, ip, user_agent, occurred_at | idx (organization_id, occurred_at DESC), idx (entity_type, entity_id). Append-only : un trigger refuse tout UPDATE et DELETE. |
 | `analytics_events` | T | id, organization_id, website_project_id, user_id, campaign_id, type, source, properties (jsonb), occurred_at | Partitionnée par mois, idx (organization_id, type, occurred_at) |
 | `webhook_events` | G | id, provider, provider_event_id, event_type, signature_valid, payload (jsonb), status (`RECEIVED`, `PROCESSED`, `FAILED`, `IGNORED`), attempts, last_error, received_at, processed_at | `UNIQUE (provider, provider_event_id)` |
 | `idempotency_keys` | G | key, scope (user ou org + route), request_hash, response_status, response_body, created_at | `UNIQUE (scope, key)`, purge après 24 h |
@@ -908,7 +909,7 @@ Chaque intégration externe est un **port** (`integrations/<port>/base.py`, un `
 
 ### 12.1 Événements de domaine et outbox
 
-Un service applicatif qui modifie l'état émet des événements (`PaymentConfirmed`, `WebsiteProjectStatusChanged`, `SubscriptionActivated`…). Ils sont écrits dans la **même transaction** que la modification, sous forme de jobs `procrastinate`. C'est le patron *transactional outbox* : l'événement n'existe que si la transaction est validée, et il ne peut pas être perdu après validation.
+Un service applicatif qui modifie l'état émet des événements (`PaymentConfirmed`, `WebsiteProjectStatusChanged`, `SubscriptionActivated`…). Ils sont écrits dans la **même transaction** que la modification, sous forme de lignes de la table `jobs`. C'est le patron *transactional outbox* : l'événement n'existe que si la transaction est validée, et il ne peut pas être perdu après validation.
 
 Les abonnés (notifications, audit, analytics, passport, tâches) sont des handlers idempotents, exécutés par le worker.
 
@@ -1199,9 +1200,7 @@ CI (GitHub Actions) : `ruff`, `black --check`, `mypy`, `import-linter`, `pytest`
 | `APP_BASE_URL`, `API_BASE_URL` | URLs publiques (liens dans les emails, return_url de paiement) |
 | `CORS_ALLOWED_ORIGINS` | Liste des origines frontend |
 | `SESSION_COOKIE_DOMAIN`, `SESSION_SECRET` | Cookie et signature |
-| `DATABASE_URL` | Rôle applicatif `app_user` (soumis à la RLS) |
-| `DATABASE_STAFF_URL` | Rôle `app_staff` (BYPASSRLS), routes admin et jobs |
-| `DATABASE_MIGRATION_URL` | Rôle propriétaire, réservé aux migrations |
+| `DATABASE_URL` | Rôle applicatif unique, propriétaire des tables, **non superuser et sans BYPASSRLS** (migrations, API, worker) |
 | `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_REGION` | Stockage objet |
 | `PAYMENT_PROVIDER`, `PAYMENT_API_KEY`, `PAYMENT_SITE_ID`, `PAYMENT_WEBHOOK_SECRET` | Selon le fournisseur retenu |
 | `EMAIL_PROVIDER`, `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` (ou clé API) | Emails transactionnels |
@@ -1288,13 +1287,14 @@ Publicité (comptes publicitaires, campagnes, reporting, budget publicitaire fac
 | ADR-001 | Monolithe modulaire | Microservices, monolithe non structuré | Taille de l'équipe, frontières préservées pour une extraction future |
 | ADR-002 | Python + FastAPI | Node/NestJS, Django | Stack de l'équipe, OpenAPI natif. Django écarté car son admin ne couvre pas les workflows métier voulus. |
 | ADR-003 | PostgreSQL, schéma partagé + RLS | Schéma par tenant, base par tenant | Coût opérationnel, défense en profondeur |
-| ADR-004 | File de jobs sur PostgreSQL | Redis + Celery/arq | Moins d'infrastructure, enfilement transactionnel (outbox) |
+| ADR-004 | File de jobs maison sur PostgreSQL (révisé en M1) | Redis + Celery/arq ; `procrastinate` | Moins d'infrastructure, enfilement transactionnel (outbox). `procrastinate`, prévu initialement, imposait un second pilote PostgreSQL (psycopg 3) à côté d'asyncpg : une file de 150 lignes sur la même connexion est plus simple et garantit la même transaction. |
 | ADR-005 | Sessions serveur par cookie | JWT | Révocation immédiate, pas de jeton dans le navigateur |
 | ADR-006 | Configuration métier versionnée en base, seedée depuis YAML | Constantes dans le code, fichiers seuls | Évolution sans déploiement, reproductibilité des scores |
 | ADR-007 | Règles de recommandation en conditions JSON interprétées | Code `if/else`, moteur de règles externe, `eval` | Maintenable, sûr, testable, suffisant |
 | ADR-008 | Renouvellement d'abonnement par facture + lien de paiement | Prélèvement automatique uniquement | Réalité du mobile money sur le marché visé |
 | ADR-009 | Adapter `Fake` obligatoire pour chaque port | Mocks dans les tests | Tests d'intégration et E2E sans réseau, démo possible |
 | ADR-010 | Génération de sites manuelle derrière un port au MVP | Générateur IA dès le MVP | Qualité de livraison maîtrisée, pas d'API supposée |
+| ADR-011 | Un seul rôle applicatif, RLS forcée, accès staff par variable de transaction (`app.scope`) | Rôles séparés `app_user` / `app_staff` (BYPASSRLS) | Fonctionne sur tout PostgreSQL managé sans rôle privilégié, une seule URL de connexion. La barrière contre les bugs applicatifs est identique (fermeture par défaut) ; la variable ne peut être posée que par `core/tenancy.py`, et l'ORM exclut l'injection SQL. |
 
 ---
 

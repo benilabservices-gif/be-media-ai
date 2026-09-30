@@ -1,29 +1,33 @@
 # Environnement de développement local : `docker compose up --build`
-# Le worker et le stockage objet (MinIO) seront ajoutés avec les étapes qui les utilisent.
+# Le stockage objet (MinIO) sera ajouté avec l'étape qui l'utilise.
+
+x-app-env: &app-env
+  # Rôle applicatif non superuser (créé par docker/postgres-init) : la RLS s'applique
+  DATABASE_URL: postgresql+asyncpg://digital360:digital360@postgres:5432/digital360
 
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: digital360
-      POSTGRES_PASSWORD: digital360
-      POSTGRES_DB: digital360
+      # Superuser réservé à l'administration ; l'application ne l'utilise jamais
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U digital360 -d digital360"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d digital360"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  # Étape de release : les migrations passent avant le démarrage de l'API
+  # Étape de release : les migrations passent avant le démarrage de l'API et du worker
   migrate:
     build: .
     command: ["alembic", "upgrade", "head"]
-    environment:
-      DATABASE_URL: postgresql+asyncpg://digital360:digital360@postgres:5432/digital360
+    environment: *app-env
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,10 +37,20 @@ services:
     env_file:
       - path: .env
         required: false
-    environment:
-      DATABASE_URL: postgresql+asyncpg://digital360:digital360@postgres:5432/digital360
+    environment: *app-env
     ports:
       - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build: .
+    command: ["python", "-m", "digital360.worker"]
+    env_file:
+      - path: .env
+        required: false
+    environment: *app-env
     depends_on:
       migrate:
         condition: service_completed_successfully

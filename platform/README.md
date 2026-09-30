@@ -1,20 +1,23 @@
 # BENILAB Digital360 — Platform
 
-Moteur backend de BENILAB Digital360 : API, logique métier, base de données et, plus tard, workers.
+Moteur backend de BENILAB Digital360 : API, logique métier, base de données et worker de tâches.
 Le frontend statique (Kilo) vit dans [`../digital360/`](../digital360/) et consomme cette API.
 
 - Architecture complète : [ARCHITECTURE.md](ARCHITECTURE.md)
 - Contrat d'API (OpenAPI) : `GET /api/v1/openapi.json`, documentation interactive sur `/api/v1/docs` (désactivée en production)
 
-## État actuel : M0 (socle)
+## État actuel : M1 (noyau transverse)
 
 | Disponible | À venir (voir ARCHITECTURE.md §18) |
 |---|---|
-| App FastAPI, config par variables d'environnement | M1 : tenancy + RLS, permissions, state machine, jobs, audit |
-| Logs JSON avec `request_id` | M2 : authentification, organisations |
-| Erreurs au format `application/problem+json` | M3 : diagnostic, score, recommandations, passport |
-| Sondes `/api/v1/health/live` et `/api/v1/health/ready` | … |
-| Alembic (async), Docker, CI | |
+| App FastAPI, config par variables d'environnement, logs JSON avec `request_id` | M2 : authentification, organisations |
+| Erreurs `application/problem+json`, sondes `/api/v1/health/live` et `/ready` | M3 : diagnostic, score, recommandations, passport |
+| Isolation des tenants par RLS PostgreSQL forcée (`core/tenancy.py`) | M4+ : catalogue, facturation, production… |
+| RBAC par permissions (`core/permissions.py`) | |
+| Machine à états + transitions persistées et auditées (`core/state_machine.py`, `core/workflow.py`) | |
+| Évaluateur de conditions JSON (`core/rules.py`) | |
+| File de tâches / outbox + worker (`core/jobs.py`, `python -m digital360.worker`) | |
+| Journal d'audit append-only, clés d'idempotence | |
 
 ## Démarrage
 
@@ -28,6 +31,12 @@ docker compose up --build
 
 ### Sans Docker (PostgreSQL 16 installé localement)
 
+Créer d'abord le rôle applicatif, **non superuser** (sinon la RLS est ignorée et `/health/ready` refuse le trafic) :
+
+```bash
+psql -U postgres -f docker/postgres-init/01-app-role.sql
+```
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # Windows : .venv\Scripts\activate
@@ -35,6 +44,7 @@ pip install -e ".[dev]"
 cp .env.example .env               # adapter DATABASE_URL
 alembic upgrade head
 uvicorn digital360.main:create_app --factory --reload
+python -m digital360.worker        # dans un second terminal
 ```
 
 Toutes les commandes se lancent **depuis `platform/`** : `alembic.ini` y est résolu relativement.
@@ -81,5 +91,7 @@ Le dossier `platform/` est exclu du déploiement Vercel (`../.vercelignore`) : i
 |---|---|
 | `/health/ready` → `base injoignable` | `DATABASE_URL` incorrect ou PostgreSQL arrêté |
 | `/health/ready` → `migrations non à jour` | Lancer `alembic upgrade head` |
+| `/health/ready` → `superuser ou BYPASSRLS` | Se connecter avec le rôle applicatif (`docker/postgres-init/01-app-role.sql`), jamais avec `postgres` |
+| Tâche en état `DEAD` | Voir `jobs.last_error` ; corriger puis remettre `status = 'PENDING'` |
 | `DATABASE_URL doit utiliser le schéma postgresql+asyncpg://` | Ajouter `+asyncpg` au schéma de l'URL |
 | `alembic` ne trouve pas sa configuration | Lancer la commande depuis `platform/` |
