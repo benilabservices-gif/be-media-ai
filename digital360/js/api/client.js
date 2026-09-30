@@ -1,69 +1,80 @@
 /**
  * BENILAB Digital360 — API Client
  *
- * Fetch wrapper avec gestion CSRF, cookies de session,
+ * Fetch wrapper avec gestion CSRF (jeton en mémoire), cookies de session,
  * et parsing automatique des erreurs application/problem+json.
  *
- * Mock support : activez avec window.D360_API_MODE = 'mock'
- * pour développer sans backend. Les mocks sont dans js/api/mocks/.
+ * Configuration :
+ *   window.D360_API_BASE  → URL de base de l'API (défaut : http://localhost:8000/api/v1)
+ *   window.D360_API_MODE  → 'mock' pour activer les mocks locaux
+ *
+ * Authentification pas à pas (voir platform/contracts/README.md) :
+ *   1. api.getCsrf()         — au chargement de la page
+ *   2. api.register(...) ou api.login(...) — crée la session
+ *   3. api.getMe()           — construit l'interface (user, memberships, permissions)
  */
 
-const API_BASE = '/api/v1';
+// ── Configuration ──
+const API_BASE = window.D360_API_BASE || 'http://localhost:8000/api/v1';
 const MOCK_MODE = window.D360_API_MODE === 'mock';
 
-// ── Helpers ──
+// ── CSRF token stocké en mémoire (plus fiable que document.cookie) ──
+let _csrfToken = '';
 
-function isProblemResponse(headers, body) {
-    const ct = headers.get('content-type') || '';
-    return ct.includes('application/problem+json');
+/**
+ * Appelez ce script au chargement de chaque page pour récupérer le jeton CSRF.
+ * Les requêtes POST/PUT/PATCH/DELETE l'enveront automatiquement dans l'en-tête X-CSRF-Token.
+ */
+export async function getCsrf() {
+    try {
+        const res = await fetch(API_BASE + '/auth/csrf', { credentials: 'include' });
+        const data = await res.json();
+        _csrfToken = data.csrf_token || '';
+        return data;
+    } catch (e) {
+        console.warn('[D360] CSRF fetch failed:', e);
+        return { csrf_token: '' };
+    }
 }
+
+function setCsrfToken(token) {
+    _csrfToken = token;
+}
+
+function defaultHeaders(extra = {}) {
+    const h = { 'Content-Type': 'application/json', ...extra };
+    if (_csrfToken) h['X-CSRF-Token'] = _csrfToken;
+    return h;
+}
+
+// ── Réponse : parse JSON ou renvoie l'erreur enrichie ──
 
 async function parseResponse(res) {
     const headers = res.headers;
     const bodyText = await res.text();
 
     if (!res.ok) {
-        if (bodyText && isProblemResponse(headers, bodyText)) {
-            try {
-                const problem = JSON.parse(bodyText);
-                const err = new Error(problem.title || `HTTP ${res.status}`);
-                err.status = res.status;
-                err.code = problem.code;
-                err.detail = problem.detail;
-                err.errors = problem.errors;
-                err.requestId = problem.request_id;
-                throw err;
-            } catch (_) {
-                throw new Error(`HTTP ${res.status}: ${bodyText.slice(0, 200)}`);
-            }
+        let problem = null;
+        const ct = headers.get('content-type') || '';
+        if (bodyText && ct.includes('application/problem+json')) {
+            try { problem = JSON.parse(bodyText); } catch (_) { /* corps illisible */ }
         }
-        throw new Error(`HTTP ${res.status}: ${bodyText.slice(0, 200)}`);
+        const err = new Error(problem?.detail || `HTTP ${res.status}`);
+        Object.assign(err, {
+            status: res.status,
+            code: problem?.code,
+            detail: problem?.detail,
+            errors: problem?.errors,
+            requestId: problem?.request_id,
+        });
+        throw err;
     }
 
     if (!bodyText) return null;
-    if (isProblemResponse(headers, bodyText)) {
-        return JSON.parse(bodyText);
-    }
-    try {
-        return JSON.parse(bodyText);
-    } catch (_) {
-        return bodyText;
-    }
+    try { return JSON.parse(bodyText); } catch (_) { return bodyText; }
 }
 
-function getCsrfToken() {
-    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    return match ? match[1] : '';
-}
-
-function defaultHeaders(extra = {}) {
-    const h = { 'Content-Type': 'application/json', ...extra };
-    const csrf = getCsrfToken();
-    if (csrf) h['X-CSRF-Token'] = csrf;
-    return h;
-}
-
-// ── Generic request ──
+// ── Requête générique ──
 
 async function request(path, options = {}) {
     const url = API_BASE + path;
@@ -79,68 +90,103 @@ async function request(path, options = {}) {
     return fetch(url, opts).then(parseResponse);
 }
 
-// ── Public endpoints (no auth needed) ──
+// ── Endpoints Auth ──
 
-export const api = {
-    // Diagnostic
-    getQuestionnaire()     { return request('/public/questionnaire'); },
-    createDiagnostic()     { return request('/public/diagnostics', { method: 'POST' }); },
-    saveAnswers(id, answers) {
+const auth = {
+    getCsrf,
+    register(body) {
+        return request('/auth/register', { method: 'POST', body }).then(data => {
+            if (data?.csrf_token) setCsrfToken(data.csrf_token);
+            return data;
+        });
+    },
+    login(body) {
+        return request('/auth/login', { method: 'POST', body }).then(data => {
+            if (data?.csrf_token) setCsrfToken(data.csrf_token);
+            return data;
+        });
+    },
+    logout() { return request('/auth/logout', { method: 'POST' }); },
+    getMe()        { return request('/me'); },
+    updateMe(body) { return request('/me', { method: 'PATCH', body }); },
+};
+
+// ── Endpoints Public (diagnostic + catalog) ──
+
+const diagnostic = {
+    getQuestionnaire()  { return request('/public/questionnaire'); },
+    createDiagnostic()  { return request('/public/diagnostics', { method: 'POST' }); },
+    saveAnswers(id, answers, token) {
         return request(`/public/diagnostics/${id}/answers`, {
-            method: 'PUT', body: { answers }
+            method: 'PUT',
+            headers: token ? { 'X-Diagnostic-Token': token } : {},
+            body: { answers }
         });
     },
-    saveContact(id, contact) {
+    saveContact(id, contact, token) {
         return request(`/public/diagnostics/${id}/contact`, {
-            method: 'PUT', body: contact
+            method: 'PUT',
+            headers: token ? { 'X-Diagnostic-Token': token } : {},
+            body: contact
         });
     },
-    completeDiagnostic(id) {
+    completeDiagnostic(id, token) {
         return request(`/public/diagnostics/${id}/complete`, {
-            method: 'POST'
+            method: 'POST',
+            headers: token ? { 'X-Diagnostic-Token': token } : {},
         });
     },
-    getDiagnosticResult(id) {
-        return request(`/public/diagnostics/${id}/result`);
-    },
-
-    // Catalog / pricing
-    getCatalog(currency) {
-        return request(`/public/catalog${currency ? `?currency=${currency}` : ''}`);
-    },
-
-    // Org (authenticated)
-    getMe()               { return request('/me'); },
-    getOrg(orgId)         { return request(`/orgs/${orgId}`); },
-    getPassport(orgId)    { return request(`/orgs/${orgId}/passport`); },
-    getActionPlan(orgId)  { return request(`/orgs/${orgId}/action-plan`); },
-    getEntitlements(orgId){ return request(`/orgs/${orgId}/entitlements`); },
-    getWebsiteProjects(orgId) {
-        return request(`/orgs/${orgId}/website-projects`);
-    },
-    claimDiagnostic(diagId) {
-        return request('/orgs', {
-            method: 'POST',
-            body: { diagnostic_id: diagId }
+    getDiagnosticResult(id, token) {
+        return request(`/public/diagnostics/${id}/result`, {
+            headers: token ? { 'X-Diagnostic-Token': token } : {},
         });
     },
 };
 
+const catalog = {
+    getCatalog(currency) {
+        return request(`/public/catalog${currency ? `?currency=${currency}` : ''}`);
+    },
+};
+
+// ── Endpoints Organisation (authentifié) ──
+
+const orgs = {
+    createOrg(body) {
+        return request('/orgs', { method: 'POST', body });
+    },
+    getOrg(orgId)         { return request(`/orgs/${orgId}`); },
+    updateOrg(orgId, body) { return request(`/orgs/${orgId}`, { method: 'PATCH', body }); },
+    getMembers(orgId)     { return request(`/orgs/${orgId}/members`); },
+};
+
+// ── Endpoints Admin (staff uniquement) ──
+
+const admin = {
+    listOrgs(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return request(`/admin/organizations${qs ? `?${qs}` : ''}`);
+    },
+    getOrg(id) { return request(`/admin/organizations/${id}`); },
+};
+
+// ── Export public ──
+
+export const api = { ...auth, ...diagnostic, ...catalog, ...orgs, ...admin };
+
 // ── Currency formatting ──
-// Prices come from the API as { amount, currency }.
-// Display rules: XOF/XAF → "NNN FCFA HT", EUR → "NN,NN € HT"
+// Prices come from the API as { amount, currency } (amount en unité mineure).
+// XOF/XAF → "NNN FCFA HT"  ·  EUR → "NN,NN € HT"
 
 export function formatPrice(amount, currency) {
     if (amount == null) return '—';
     const amt = typeof amount === 'object' ? amount.amount : amount;
     const cur = typeof amount === 'object' ? (amount.currency || currency) : currency;
-
     if (cur === 'EUR') {
         return new Intl.NumberFormat('fr-FR', {
-            style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2
+            minimumFractionDigits: 2, maximumFractionDigits: 2
         }).format(amt / 100) + ' € HT';
     }
-    // XOF / XAF
     return new Intl.NumberFormat('fr-FR').format(amt) + ' FCFA HT';
 }
 
@@ -152,7 +198,7 @@ export function formatPriceShort(amount, currency) {
     return amt.toLocaleString('fr-FR') + ' F';
 }
 
-// ── Mock mode loader ──
+// ── Mock mode ──
 
 let _mockData = null;
 

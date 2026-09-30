@@ -48,7 +48,7 @@
             <li><a href="#services" data-scroll>Services</a></li>
             <li><a href="#how" data-scroll>Comment ça marche</a></li>
             <li><a href="#pricing" data-scroll>Tarifs</a></li>
-            <li><a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-sm">Mon espace</a></li>
+            <li><a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
             <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm">Diagnostic gratuit</a></li>
         </ul>
         <div class="currency-selector" style="margin-right:1rem;">
@@ -319,7 +319,62 @@
     <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
     <script>
     // ── Configuration ──
-    let currentCurrency = 'XOF';
+    const API_BASE = window.D360_API_BASE || 'http://localhost:8000/api/v1';
+    const MOCK_MODE = window.D360_API_MODE === 'mock';
+
+    // ── API client (inline) ──
+    let _csrfToken = '';
+    function csrfHeaders() {
+        return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
+    }
+    const api = {
+        getCsrf() {
+            return fetch(API_BASE + '/auth/csrf', { credentials: 'include' }).then(r => r.json()).then(data => { _csrfToken = data.csrf_token || ''; return data; });
+        },
+        register(b) {
+            return fetch(API_BASE + '/auth/register', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json', ...csrfHeaders()}, body: JSON.stringify(b) }).then(r => {
+                if (!r.ok) throw Object.assign(new Error('Registration failed'), { status: r.status });
+                return r.json().then(d => { _csrfToken = d.csrf_token || _csrfToken; return d; });
+            });
+        },
+        login(b) {
+            return fetch(API_BASE + '/auth/login', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json', ...csrfHeaders()}, body: JSON.stringify(b) }).then(r => {
+                if (!r.ok) throw Object.assign(new Error('Login failed'), { status: r.status });
+                return r.json().then(d => { _csrfToken = d.csrf_token || _csrfToken; return d; });
+            });
+        },
+        logout() { return fetch(API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {}); },
+        getMe() { return fetch(API_BASE + '/me', { credentials: 'include' }).then(r => { if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' }); return r.json(); }); },
+        createOrg(b) {
+            return fetch(API_BASE + '/orgs', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json', ...csrfHeaders()}, body: JSON.stringify(b) }).then(r => r.json());
+        },
+        getOrg(id) { return fetch(API_BASE + '/orgs/' + id, { credentials: 'include' }).then(r => r.json()); },
+        getQuestionnaire() { return fetch(API_BASE + '/public/questionnaire', { credentials: 'include' }).then(r => r.json()); },
+        createDiagnostic() { return fetch(API_BASE + '/public/diagnostics', { method: 'POST', credentials: 'include' }).then(r => r.json()); },
+        saveAnswers(id, answers, token) {
+            return fetch(API_BASE + '/public/diagnostics/' + id + '/answers', {
+                method: 'PUT', credentials: 'include',
+                headers: {'Content-Type':'application/json', ...csrfHeaders(), ...(token ? {'X-Diagnostic-Token': token} : {})},
+                body: JSON.stringify({ answers })
+            }).then(r => r.json());
+        },
+        saveContact(id, contact, token) {
+            return fetch(API_BASE + '/public/diagnostics/' + id + '/contact', {
+                method: 'PUT', credentials: 'include',
+                headers: {'Content-Type':'application/json', ...csrfHeaders(), ...(token ? {'X-Diagnostic-Token': token} : {})},
+                body: JSON.stringify(contact)
+            }).then(r => r.json());
+        },
+        completeDiagnostic(id, token) {
+            return fetch(API_BASE + '/public/diagnostics/' + id + '/complete', {
+                method: 'POST', credentials: 'include',
+                headers: {'Content-Type':'application/json', ...csrfHeaders(), ...(token ? {'X-Diagnostic-Token': token} : {})},
+            }).then(r => r.json());
+        },
+        getCatalog(currency) {
+            return fetch(API_BASE + '/public/catalog' + (currency ? '?currency=' + currency : ''), { credentials: 'include' }).then(r => r.json());
+        },
+    };
     let currentDiagStep = 0;
     let totalSteps = 0;
     let diagData = {};
@@ -331,26 +386,6 @@
     let passportData = null;
     let actionPlanData = null;
     let catalogData = null;
-
-    // ── API client (inline for single-file deployment; replaces external module) ──
-    const API_BASE = '/api/v1';
-    const MOCK_MODE = window.D360_API_MODE === 'mock';
-
-    async function apiRequest(path, options = {}) {
-        const url = API_BASE + path;
-        const csrf = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)?.[1] || '';
-        const headers = { 'Content-Type': 'application/json', ...(csrf ? { 'X-CSRF-Token': csrf } : {}), ...options.headers };
-        const opts = { credentials: 'include', headers, ...options };
-        if (options.body && !(options.body instanceof FormData)) opts.body = JSON.stringify(options.body);
-        const res = await fetch(url, opts);
-        const text = await res.text();
-        if (!res.ok) {
-            if (text) { try { const p = JSON.parse(text); throw Object.assign(new Error(p.title || `HTTP ${res.status}`), { status: res.status, code: p.code, detail: p.detail, errors: p.errors, requestId: p.request_id }); } catch (_) { throw new Error(`HTTP ${res.status}`); } }
-            throw new Error(`HTTP ${res.status}`);
-        }
-        if (!text) return null;
-        try { return JSON.parse(text); } catch (_) { return text; }
-    }
 
     // ── Mock data ──
     const MOCK_QUESTIONNAIRE = {
@@ -528,7 +563,7 @@
     async function loadCatalog() {
         try {
             if (MOCK_MODE) { catalogData = MOCK_CATALOG; renderPricing(); return; }
-            catalogData = await apiRequest(`/public/catalog?currency=${currentCurrency}`);
+            catalogData = await api.getCatalog(currentCurrency);
             renderPricing();
         } catch (e) {
             console.warn('[D360] Catalogue non chargé, utilisation des valeurs par défaut', e);
@@ -639,7 +674,7 @@
     async function loadQuestionnaire() {
         try {
             if (MOCK_MODE) { questionnaireData = MOCK_QUESTIONNAIRE; }
-            else { questionnaireData = await apiRequest('/public/questionnaire'); }
+            else { questionnaireData = await api.getQuestionnaire(); }
             totalSteps = questionnaireData.sections.length;
             buildStepper();
             renderCurrentStep();
@@ -818,20 +853,16 @@
         // Save answers to session
         try {
             if (!diagSessionId) {
-                const session = await apiRequest('/public/diagnostics', { method: 'POST' });
+                const session = await api.createDiagnostic();
                 diagSessionId = session.id;
                 diagToken = session.token;
                 localStorage.setItem('d360_diag_token', diagToken);
                 localStorage.setItem('d360_diag_id', diagSessionId);
             }
             // Save answers
-            await apiRequest(`/public/diagnostics/${diagSessionId}/answers`, {
-                method: 'PUT', body: { answers: currentAnswers }
-            });
+            await api.saveAnswers(diagSessionId, currentAnswers, diagToken);
             // Save contact
-            await apiRequest(`/public/diagnostics/${diagSessionId}/contact`, {
-                method: 'PUT', body: { company: currentAnswers.company, email: currentAnswers.email, phone: currentAnswers.phone, whatsapp: currentAnswers.whatsapp }
-            });
+            await api.saveContact(diagSessionId, { company: currentAnswers.company, email: currentAnswers.email, phone: currentAnswers.phone, whatsapp: currentAnswers.whatsapp }, diagToken);
         } catch (e) { console.warn('[D360] Sauvegarde réponses échouée:', e); }
 
         // Complete
@@ -839,7 +870,7 @@
             if (MOCK_MODE) {
                 scoreResult = MOCK_COMPLETE;
             } else {
-                scoreResult = await apiRequest(`/public/diagnostics/${diagSessionId}/complete`, { method: 'POST' });
+                scoreResult = await api.completeDiagnostic(diagSessionId, diagToken);
             }
         } catch (e) {
             console.warn('[D360] Erreur complétion, utilisation mock:', e);
@@ -1088,10 +1119,8 @@
             { num: '05', name: 'FIDÉLISER', items: ['Base clients structurée', 'Email marketing', 'Automatisation'] }
         ];
         container.innerHTML = '';
-        phases.forEach(p => {
-            const phase = document.createElement('div');
-            phase.className = 'plan-phase';
-            const phase = document.createElement('div');
+         phases.forEach(p => {
+             const phase = document.createElement('div');
              phase.className = 'plan-phase';
              const header = document.createElement('div');
              header.className = 'plan-phase-header';
@@ -1146,6 +1175,127 @@
     // ── Init ──
     loadCatalog();
     renderPlanPricingCta();
+    // Charger le jeton CSRF dès l'ouverture de la page
+    getCsrf().catch(() => {});
+
+    // ── CSRF (déplacé au-dessus dans api.getCsrf) ──
+    // ── Auth state ──
+    let _user = null;
+    async function refreshAuth() {
+        try {
+            const data = await api.getMe();
+            _user = data?.user || null;
+            updateAuthUI();
+        } catch (e) {
+            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
+                _user = null;
+                updateAuthUI();
+            }
+        }
+    }
+    function updateAuthUI() {
+        const btn = document.getElementById('navAuthBtn');
+        if (btn) btn.style.display = _user ? 'inline-flex' : 'none';
+    }
+
+    // ── Auth modal ──
+    function openAuthModal(mode) {
+        document.getElementById('authModalMode').value = mode || 'login';
+        document.getElementById('authError').textContent = '';
+        document.getElementById('authLoginForm').style.display = mode === 'register' ? 'none' : 'block';
+        document.getElementById('authRegisterForm').style.display = mode === 'register' ? 'block' : 'none';
+        document.getElementById('authModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeAuthModal() {
+        document.getElementById('authModal').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('authLoginEmail').value.trim();
+        const password = document.getElementById('authLoginPassword').value;
+        try {
+            const data = await api.login({ email, password });
+            _csrfToken = data?.csrf_token || _csrfToken;
+            await refreshAuth();
+            closeAuthModal();
+        } catch (err) {
+            document.getElementById('authError').textContent = err?.detail || 'Identifiants incorrects.';
+        }
+    }
+    async function handleRegister(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('authRegName').value.trim();
+        const email = document.getElementById('authRegEmail').value.trim();
+        const password = document.getElementById('authRegPassword').value;
+        try {
+            const data = await api.register({ full_name: fullName, email, password });
+            _csrfToken = data?.csrf_token || _csrfToken;
+            await refreshAuth();
+            closeAuthModal();
+        } catch (err) {
+            document.getElementById('authError').textContent = err?.detail || 'Erreur lors de l\'inscription.';
+        }
+    }
+    async function handleLogout() {
+        try { await api.logout(); } catch (_) {}
+        _user = null;
+        updateAuthUI();
+        showPage('landing');
+    }
     </script>
+
+    <!-- ═══════════════ AUTH MODAL ═══════════════ -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-box" style="max-width:420px;">
+            <button class="modal-close" onclick="closeAuthModal()">✕</button>
+            <div id="authError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
+            <div id="authLoginForm">
+                <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:0.5rem;">Connexion</h2>
+                <p style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;">Accédez à votre espace client ou admin.</p>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="authLoginEmail" required placeholder="vous@entreprise.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mot de passe</label>
+                        <input type="password" class="form-input" id="authLoginPassword" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top:0.5rem;">Se connecter</button>
+                </form>
+                <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.5rem;">
+                    Pas encore de compte ?
+                    <a href="#" onclick="openAuthModal('register');return false;" style="color:var(--accent);">S'inscrire</a>
+                </p>
+            </div>
+            <div id="authRegisterForm" style="display:none;">
+                <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:0.5rem;">Inscription</h2>
+                <p style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;">Créez votre compte BENILAB Digital360.</p>
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label">Nom complet</label>
+                        <input type="text" class="form-input" id="authRegName" required placeholder="Awa Koné">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="authRegEmail" required placeholder="vous@entreprise.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mot de passe</label>
+                        <input type="password" class="form-input" id="authRegPassword" required placeholder="Min. 8 caractères">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top:0.5rem;">S'inscrire</button>
+                </form>
+                <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.5rem;">
+                    Déjà inscrit ?
+                    <a href="#" onclick="openAuthModal('login');return false;" style="color:var(--accent);">Se connecter</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="authModalMode" value="login">
 </body>
 </html>
