@@ -18,8 +18,10 @@
 .lp-logo em { font-style: italic; color: var(--accent); font-family: var(--font-display); }
 .lp-logo-sub { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-secondary); display: block; margin-top: 2px; }
 .lp-nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-.lp-nav-links a { font-size: 14px; color: var(--text-secondary); transition: color 0.3s; }
-.lp-nav-links a:hover { color: var(--accent); }
+/* :not(.btn) : la couleur des liens ne doit pas écraser celle des boutons (Connexion, Diagnostic) */
+.lp-nav-links a:not(.btn) { font-size: 14px; color: var(--text-secondary); transition: color 0.3s; }
+.lp-nav-links a:not(.btn):hover { color: var(--accent); }
+.lp-nav-links .btn { font-size: 13px; }
 .lp-menu-toggle {
     display: none; background: none; border: 1px solid var(--border);
     color: var(--text-primary); width: 40px; height: 40px;

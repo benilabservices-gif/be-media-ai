@@ -13,6 +13,8 @@ Deux agents travaillent **en parallèle** sur BENILAB Digital360. Ces règles é
 
 - Ne modifie pas un fichier du dossier de l'autre agent. S'il faut y changer quelque chose, écris la demande dans ta réponse à l'utilisateur.
 - Ne committe que tes propres fichiers (`git add <chemins>`, jamais `git add -A` ni `git add .`).
+- **Après chaque commit, pousse aussitôt** : `git push` (commande qui se termine). Vercel republie alors le site automatiquement en une à deux minutes : c'est ainsi que l'utilisateur voit tes corrections en ligne. Si le push est refusé parce que la branche distante a avancé, fais `git pull --rebase` puis `git push` ; en cas de conflit, arrête-toi et signale-le à l'utilisateur au lieu de forcer.
+- Ne jamais utiliser `git push --force`.
 
 ## Contrat entre frontend et backend
 
