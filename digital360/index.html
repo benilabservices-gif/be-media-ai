@@ -582,6 +582,19 @@
     }
 
     // ── Navigation ──
+    // Hoist revealObserver so dynamically-added .reveal elements can be observed
+    let revealObserver = null;
+    try {
+        revealObserver = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+        }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+    } catch(e) {
+        console.warn('[D360] Reveal observer failed:', e);
+        revealObserver = { observe() {}, disconnect() {} };
+    }
+    // Observe all existing reveals on load
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         const page = document.getElementById('page-' + pageId);
@@ -592,8 +605,8 @@
                 if (el.getBoundingClientRect().top < window.innerHeight * 0.9) el.classList.add('active');
             });
         }, 100);
-        // Update hash
-        history.replaceState(null, '', '#' + pageId);
+        // Push to history (not replace) so back-button works
+        history.pushState({ page: pageId }, '', '#' + pageId);
     }
 
     function isInViewport(el) { return el.getBoundingClientRect().top < window.innerHeight * 0.9; }
@@ -603,12 +616,41 @@
         const hash = window.location.hash.slice(1);
         if (hash && document.getElementById('page-' + hash)) {
             showPage(hash);
+        } else {
+            showPage('landing');
         }
     }
     window.addEventListener('hashchange', handleHash);
+    // Handle browser back/forward
+    window.addEventListener('popstate', (e) => {
+        const hash = window.location.hash.slice(1);
+        if (hash && document.getElementById('page-' + hash)) {
+            showPage(hash);
+        } else {
+            showPage('landing');
+        }
+    });
 
     function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
-    function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
+    function scrollToSection(id) {
+        const currentPage = window.location.hash.slice(1) || 'landing';
+        if (currentPage !== 'landing') {
+            showPage('landing');
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        } else {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    // ── Helper: observe dynamically-added .reveal elements ──
+    function observeReveals(container) {
+        if (!revealObserver || !container) return;
+        container.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    }
 
     // ── Scroll reveal ──
     try {
@@ -686,15 +728,18 @@
              a.href = '#';
              a.onclick = (e) => { e.preventDefault(); startDiagnostic(); };
              a.className = `btn ${isFeatured ? 'btn-primary' : 'btn-outline'} btn-block`;
-             a.textContent = 'Choisir';
-             card.appendChild(a);
-             grid.appendChild(card);
-         });
-    }
+              a.textContent = 'Choisir';
+              card.appendChild(a);
+              grid.appendChild(card);
+          });
+         observeReveals(grid);
+     }
 
     function renderPricingDefault() {
         // Fallback static rendering with HT
         const grid = document.getElementById('pricingGrid');
+        if (!grid) { console.error('[D360] renderPricingDefault: pricingGrid not found'); return; }
+        console.log('[D360] renderPricingDefault called');
         const products = [
              { code: 'DIGITAL_START', name: 'Digital Start', price: { amount: 89900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
              { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
@@ -726,11 +771,12 @@
              a.href = '#';
              a.onclick = (e) => { e.preventDefault(); startDiagnostic(); };
              a.className = `btn ${p.featured ? 'btn-primary' : 'btn-outline'} btn-block`;
-             a.textContent = 'Commencer';
-             card.appendChild(a);
-             grid.appendChild(card);
-         });
-    }
+              a.textContent = 'Commencer';
+              card.appendChild(a);
+              grid.appendChild(card);
+          });
+         observeReveals(grid);
+     }
 
     function renderPlanPricingCta() {
         const el = document.getElementById('planPricingCta');
@@ -1349,12 +1395,13 @@
                     if (fieldKey === 'description') value.style.cssText = 'font-size:14px;color:var(--text-secondary);';
                 }
                 field.appendChild(label);
-                field.appendChild(value);
-                div.appendChild(field);
-            });
-            grid.appendChild(div);
-        });
-    }
+                 field.appendChild(value);
+                 div.appendChild(field);
+             });
+             grid.appendChild(div);
+         });
+         observeReveals(grid);
+     }
 
     // ── Render plan from API ──
     function renderPlan() {
@@ -1430,14 +1477,15 @@
                   row.appendChild(rightEl);
                  body.appendChild(row);
              });
-            container.appendChild(phase);
-        });
+             container.appendChild(phase);
+         });
+         observeReveals(container);
 
-        // If no plan items from API, show default structure
-        if (Object.keys(byModule).length === 0) {
-            showDefaultPlan();
-        }
-    }
+         // If no plan items from API, show default structure
+         if (Object.keys(byModule).length === 0) {
+             showDefaultPlan();
+         }
+     }
 
     function showDefaultPlan() {
         const container = document.getElementById('planPhases');
