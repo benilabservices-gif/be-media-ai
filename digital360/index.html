@@ -633,6 +633,7 @@
         try {
             if (MOCK_MODE) { catalogData = MOCK_CATALOG; renderPricing(); return; }
             catalogData = await api.getCatalog(currentCurrency);
+            console.log('[D360] Catalog loaded:', catalogData);
             renderPricing();
         } catch (e) {
             console.warn('[D360] Catalogue non chargé, utilisation des valeurs par défaut', e);
@@ -641,8 +642,10 @@
     }
 
     function renderPricing() {
-        if (!catalogData) { renderPricingDefault(); return; }
+        if (!catalogData) { console.warn('[D360] renderPricing: no catalogData, using default'); renderPricingDefault(); return; }
+        console.log('[D360] renderPricing called with', catalogData.products?.length || 0, 'products');
         const grid = document.getElementById('pricingGrid');
+        if (!grid) { console.error('[D360] pricingGrid element not found!'); return; }
         const featureMap = {
             DIGITAL_START: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'],
             DIGITAL_ESSENTIAL: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'],
