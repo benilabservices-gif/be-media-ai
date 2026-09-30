@@ -524,12 +524,15 @@
     };
 
     // ── Currency helpers ──
-    function formatPrice(amount, currency) {
-        if (amount == null) return '—';
-        const cur = currency || currentCurrency;
+    // Prices from API: EUR = centimes (÷100), XOF/XAF = francs (déjà en unité mineure)
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return '—';
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || currentCurrency;
         if (cur === 'EUR') {
-            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount) + ' € HT';
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
         }
+        // XOF / XAF
         return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
     }
 
@@ -602,7 +605,7 @@
         grid.innerHTML = '';
          catalogData.products.forEach((prod, i) => {
              const isFeatured = prod.code === 'DIGITAL_GROWTH';
-             const period = prod.price.period ? (prod.price.period === 'MONTH' ? ' / mois' : ' / an') : '';
+             const period = prod.price?.period ? (prod.price.period === 'MONTH' ? ' / mois' : ' / an') : '';
              const features = featureMap[prod.code] || [];
              const card = document.createElement('div');
              card.className = `card price-card${isFeatured ? ' featured' : ''} reveal delay-${i + 1}`;
@@ -614,7 +617,7 @@
              // Price
              const priceDiv = document.createElement('div');
              priceDiv.className = 'price-amount';
-             priceDiv.appendChild(document.createTextNode(formatPrice(prod.price.amount, prod.price.currency)));
+             priceDiv.appendChild(document.createTextNode(formatPrice(prod.price, prod.price?.currency)));
              if (period) { const span = document.createElement('span'); span.textContent = period; priceDiv.appendChild(span); }
              card.appendChild(priceDiv);
              // Period text
@@ -643,11 +646,11 @@
         // Fallback static rendering with HT
         const grid = document.getElementById('pricingGrid');
         const products = [
-            { code: 'DIGITAL_START', name: 'Digital Start', price: 89900, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
-            { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', price: 25000, period: ' / mois', featured: false, features: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
-            { code: 'DIGITAL_GROWTH', name: 'Digital Growth', price: 50000, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
-            { code: 'DIGITAL_PERFORMANCE', name: 'Digital Performance', price: 100000, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
-        ];
+             { code: 'DIGITAL_START', name: 'Digital Start', price: { amount: 89900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
+             { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
+             { code: 'DIGITAL_GROWTH', name: 'Digital Growth', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
+             { code: 'DIGITAL_PERFORMANCE', name: 'Digital Performance', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
+         ];
         grid.innerHTML = '';
          products.forEach((p, i) => {
              const card = document.createElement('div');
@@ -658,7 +661,7 @@
              card.appendChild(h3);
              const priceDiv = document.createElement('div');
              priceDiv.className = 'price-amount';
-             priceDiv.appendChild(document.createTextNode(formatPrice(p.price)));
+             priceDiv.appendChild(document.createTextNode(formatPrice(p.price, 'XOF')));
              if (p.period) { const span = document.createElement('span'); span.textContent = p.period; priceDiv.appendChild(span); }
              card.appendChild(priceDiv);
              const pEl = document.createElement('p');
@@ -683,9 +686,9 @@
         const el = document.getElementById('planPricingCta');
         if (catalogData) {
             const start = catalogData.products.find(p => p.code === 'DIGITAL_START');
-            el.textContent = start ? formatPrice(start.price.amount, start.price.currency) : formatPrice(89900);
+             el.textContent = start ? formatPrice(start.price, start.price?.currency) : formatPrice({ amount: 89900, currency: 'XOF' });
         } else {
-            el.textContent = formatPrice(89900);
+             el.textContent = formatPrice({ amount: 89900, currency: 'XOF' });
         }
     }
 
@@ -1204,21 +1207,34 @@
              phase.appendChild(header);
              phase.appendChild(body);
              header.addEventListener('click', () => phase.classList.toggle('open'));
-            items.forEach(item => {
-                const row = document.createElement('div');
-                 row.className = 'plan-item';
-                 const statusLabel = item.status === 'PROPOSED' ? 'À activer' : item.status === 'ACCEPTED' ? 'Accepté' : item.status === 'DONE' ? 'Terminé' : item.status;
-                 const statusBadge = item.status === 'PROPOSED' ? 'badge-warning' : item.status === 'DONE' ? 'badge-success' : 'badge-muted';
-                 const nameEl = document.createElement('span');
-                 nameEl.className = 'plan-item-name';
-                 nameEl.textContent = item.recommended_action || item.reason;
-                 const statusBadgeEl = document.createElement('span');
-                 statusBadgeEl.className = 'plan-item-status badge ' + statusBadge;
-                 statusBadgeEl.textContent = statusLabel;
-                 row.appendChild(nameEl);
-                 row.appendChild(statusBadgeEl);
-                body.appendChild(row);
-            });
+             items.forEach(item => {
+                 const row = document.createElement('div');
+                  row.className = 'plan-item';
+                  const statusLabel = item.status === 'PROPOSED' ? 'À activer' : item.status === 'ACCEPTED' ? 'Accepté' : item.status === 'DONE' ? 'Terminé' : item.status;
+                  const statusBadge = item.status === 'PROPOSED' ? 'badge-warning' : item.status === 'DONE' ? 'badge-success' : 'badge-muted';
+                  const nameEl = document.createElement('span');
+                  nameEl.className = 'plan-item-name';
+                  nameEl.textContent = item.recommended_action || item.reason;
+                  const rightEl = document.createElement('span');
+                  rightEl.className = 'plan-item-status';
+                  // Price from item
+                  if (item.price) {
+                      const priceText = formatPrice(item.price, currentCurrency);
+                      const priceSpan = document.createElement('span');
+                      priceSpan.className = 'badge badge-accent';
+                      priceSpan.textContent = priceText;
+                      rightEl.appendChild(priceSpan);
+                  }
+                  // Status badge
+                  const statusBadgeEl = document.createElement('span');
+                  statusBadgeEl.className = 'plan-item-status badge ' + statusBadge;
+                  statusBadgeEl.textContent = statusLabel;
+                  if (item.price) rightEl.appendChild(statusBadgeEl);
+                  else rightEl.appendChild(statusBadgeEl);
+                  row.appendChild(nameEl);
+                  row.appendChild(rightEl);
+                 body.appendChild(row);
+             });
             container.appendChild(phase);
         });
 
