@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Be Media AI – Agence Web & Intelligence Artificielle</title>
+    <meta name="description" content="Be Media AI : agence digitale spécialisée en développement web, design et solutions IA sur mesure pour entreprises et créateurs.">
+    <meta property="og:title" content="Be Media AI – Agence Web & IA">
+    <meta property="og:description" content="Nous concevons des sites web modernes et des solutions IA qui transforment votre présence digitale.">
+    <meta property="og:image" content="">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#7C3AED',
+                            light: '#A78BFA',
+                            dark: '#5B21B6',
+                            bg: '#0D0B14',
+                            soft: '#1A1525',
+                        },
+                        neon: {
+                            blue: '#00D4FF',
+                            purple: '#7C3AED',
+                            pink: '#EC4899',
+                            green: '#10B981',
+                        },
+                        dark: {
+                            900: '#08070E',
+                            800: '#0F0D1A',
+                            700: '#1A1528',
+                            600: '#252035',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                        space: ['Space Grotesk', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 4s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s ease-in-out infinite',
+                        'shimmer': 'shimmer 3s linear infinite',
+                        'fade-in-up': 'fadeInUp 0.7s ease forwards',
+                        'gradient-x': 'gradientX 4s ease infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-16px)' } },
+                        shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(50px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        gradientX: { '0%, 100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
+                        glow: { '0%': { boxShadow: '0 0 20px rgba(124,58,237,0.3)' }, '100%': { boxShadow: '0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(0,212,255,0.2)' } },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .hero-gradient {
+            background: linear-gradient(135deg, #08070E 0%, #0F0D1A 30%, #1A1028 60%, #0D0B14 100%);
+        }
+        .cta-gradient {
+            background: linear-gradient(135deg, #7C3AED 0%, #00D4FF 50%, #7C3AED 100%);
+            background-size: 200% 200%;
+            animation: gradientX 4s ease infinite;
+        }
+        .text-gradient {
+            background: linear-gradient(90deg, #A78BFA, #00D4FF, #EC4899);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+        }
+        .glass {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .glass-strong {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-hover {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .card-hover:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 60px -15px rgba(124, 58, 237, 0.3), 0 0 40px rgba(0, 212, 255, 0.1);
+            border-color: rgba(124, 58, 237, 0.4);
+        }
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.9s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+        .reveal-delay-6 { transition-delay: 0.6s; }
+        .glow-purple { box-shadow: 0 0 60px rgba(124, 58, 237, 0.3); }
+        .mesh-gradient {
+            background:
+                radial-gradient(at 30% 20%, rgba(124,84,237,0.12) 0px, transparent 50%),
+                radial-gradient(at 80% 0%, rgba(0,212,255,0.08) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, rgba(236,72,153,0.06) 0px, transparent 50%),
+                radial-gradient(at 80% 100%, rgba(124,84,237,0.08) 0px, transparent 50%);
+        }
+        .grid-bg {
+            background-image:
+                linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px);
+            background-size: 80px 80px;
+        }
+        .neon-line {
+            background: linear-gradient(90deg, transparent, #7C3AED, #00D4FF, transparent);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #08070E; }
+        ::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 4px; }
+        .service-icon {
+            background: linear-gradient(135deg, rgba(124,58,237,0.2) 0%, rgba(0,212,255,0.1) 100%);
+        }
+        .pricing-popular {
+            background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(0,212,255,0.08) 100%);
+            border: 1px solid rgba(124,58,237,0.5);
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(124, 58, 237, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-dark-900 text-white overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full z-50 transition-all duration-400" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl cta-gradient flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="font-space font-bold text-white text-lg block leading-none">Be Media</span>
+                    <span class="text-neon-blue text-[10px] font-semibold tracking-[0.25em] uppercase">AI Agency</span>
+                </div>
+            </a>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#services" class="text-white/60 hover:text-white text-sm font-medium transition-colors">Services</a>
+                <a href="#portfolio" class="text-white/60 hover:text-white text-sm font-medium transition-colors">Réalisations</a>
+                <a href="#about" class="text-white/60 hover:text-white text-sm font-medium transition-colors">À propos</a>
+                <a href="#pricing" class="text-white/60 hover:text-white text-sm font-medium transition-colors">Tarifs</a>
+                <a href="#contact"
+                   class="cta-gradient text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-purple-500/30 flex items-center gap-2">
+                    Démarrer un projet
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </a>
+            </div>
+            <button id="mobile-menu-btn" class="md:hidden text-white/70 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden glass-strong mx-4 rounded-2xl p-6 mb-4">
+            <div class="flex flex-col gap-4">
+                <a href="#services" class="text-white/70 hover:text-white text-sm font-medium transition-colors mobile-link">Services</a>
+                <a href="#portfolio" class="text-white/70 hover:text-white text-sm font-medium transition-colors mobile-link">Réalisations</a>
+                <a href="#about" class="text-white/70 hover:text-white text-sm font-medium transition-colors mobile-link">À propos</a>
+                <a href="#pricing" class="text-white/70 hover:text-white text-sm font-medium transition-colors mobile-link">Tarifs</a>
+                <a href="#contact" class="cta-gradient text-white px-6 py-3 rounded-full font-semibold text-sm text-center mt-2">Démarrer un projet</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient min-h-screen flex items-center justify-center pt-20 relative overflow-hidden grid-bg">
+        <!-- Animated orbs -->
+        <div class="orb top-1/4 -left-32 w-[500px] h-[500px] bg-brand/10 animate-float"></div>
+        <div class="orb bottom-1/4 -right-32 w-[400px] h-[400px] bg-neon-blue/8 animate-float" style="animation-delay: 2s;"></div>
+        <div class="orb top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neon-pink/5 animate-float" style="animation-delay: 1s;"></div>
+        <div class="orb bottom-0 left-1/3 w-[300px] h-[300px] bg-brand/8 animate-float" style="animation-delay: 3s;"></div>
+
+        <!-- Particles -->
+        <div class="particle top-[20%] left-[15%]" style="animation-delay: 0s;"></div>
+        <div class="particle top-[30%] right-[20%]" style="animation-delay: 1s;"></div>
+        <div class="particle top-[60%] left-[10%]" style="animation-delay: 2s;"></div>
+        <div class="particle top-[70%] right-[15%]" style="animation-delay: 3s;"></div>
+        <div class="particle top-[40%] left-[80%]" style="animation-delay: 1.5s;"></div>
+        <div class="particle top-[80%] left-[40%]" style="animation-delay: 2.5s;"></div>
+
+        <!-- Grid overlay -->
+        <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(rgba(124,58,237,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,.3) 1px, transparent 1px); background-size: 80px 80px;"></div>
+
+        <div class="max-w-7xl mx-auto px-6 py-20 text-center relative z-10">
+            <!-- Badge -->
+            <div class="inline-flex items-center gap-2 glass rounded-full px-5 py-2.5 mb-8 animate-fade-in-up">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
+                </span>
+                <span class="text-white/70 text-sm font-medium">Agence Web & IA — Disponible pour vos projets</span>
+            </div>
+
+            <!-- Main headline -->
+            <h1 class="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-[1.05] mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+                Nous créons le<br>
+                <span class="text-gradient">futur digital</span><br>
+                <span class="text-white/30 text-2xl md:text-4xl lg:text-5xl font-space font-medium">de votre entreprise</span>
+            </h1>
+
+            <!-- Subheadline -->
+            <p class="text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-in-up" style="animation-delay: 0.2s;">
+                Be Media AI conçoit des sites web performants, des interfaces immersives
+                et des solutions d'intelligence artificielle qui propulsent votre croissance.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style="animation-delay: 0.3s;">
+                <a href="#contact"
+                   class="cta-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-all duration-300 shadow-2xl hover:shadow-purple-500/40 flex items-center gap-3 group animate-glow">
+                    <span>Parler de votre projet</span>
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </a>
+                <a href="#portfolio"
+                   class="text-white/60 hover:text-white border border-white/15 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:bg-white/5">
+                    Voir nos réalisations
+                </a>
+            </div>
+
+            <!-- Trust badges -->
+            <div class="mt-16 flex flex-wrap justify-center gap-8 text-white/30 text-sm animate-fade-in-up" style="animation-delay: 0.4s;">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-neon-purple" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    Sites web performants
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-neon-blue" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    Solutions IA sur mesure
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-neon-pink" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    Design immersif
+                </div>
+            </div>
+
+            <!-- Floating stats cards -->
+            <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto animate-fade-in-up" style="animation-delay: 0.5s;">
+                <div class="glass rounded-2xl p-5 card-hover">
+                    <div class="text-3xl font-black text-gradient mb-1">50+</div>
+                    <div class="text-white/40 text-sm">Projets livrés</div>
+                </div>
+                <div class="glass rounded-2xl p-5 card-hover reveal-delay-1">
+                    <div class="text-3xl font-black text-gradient mb-1">98%</div>
+                    <div class="text-white/40 text-sm">Clients satisfaits</div>
+                </div>
+                <div class="glass rounded-2xl p-5 card-hover reveal-delay-2">
+                    <div class="text-3xl font-black text-gradient mb-1">3x</div>
+                    <div class="text-white/40 text-sm">Conversion moyenne</div>
+                </div>
+                <div class="glass rounded-2xl p-5 card-hover reveal-delay-3">
+                    <div class="text-3xl font-black text-gradient mb-1">24/7</div>
+                    <div class="text-white/40 text-sm">Support dédié</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+            <span class="text-white/20 text-xs tracking-[0.3em] uppercase">Scroll</span>
+            <svg class="w-5 h-5 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-32 bg-dark-800 relative overflow-hidden">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <span class="inline-block bg-brand/10 text-brand-light font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">Nos services</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-6 reveal">
+                    Des solutions <span class="text-gradient">complètes</span> pour<br class="hidden md:block"> votre transformation digitale
+                </h2>
+                <p class="text-white/40 text-lg max-w-2xl mx-auto reveal">Du concept à la mise en ligne, nous couvrons chaque aspect de votre présence digitale avec expertise et innovation.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Service 1 -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-1 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-brand/5 rounded-full blur-3xl group-hover:bg-brand/10 transition-all duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="w-14 h-14 rounded-2xl service-icon flex items-center justify-center text-2xl mb-6 shadow-lg">
+                            <svg class="w-7 h-7 text-neon-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Développement Web</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Sites vitrines, e-commerce, applications web sur mesure. Performance, SEO et design responsive garantis.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs bg-brand/10 text-brand-light px-3 py-1 rounded-full">React</span>
+                            <span class="text-xs bg-brand/10 text-brand-light px-3 py-1 rounded-full">Next.js</span>
+                            <span class="text-xs bg-brand/10 text-brand-light px-3 py-1 rounded-full">WordPress</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 2 -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-2 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-neon-blue/5 rounded-full blur-3xl group-hover:bg-neon-blue/10 transition-all duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-neon-blue/20 to-blue-500/10 flex items-center justify-center text-2xl mb-6 shadow-lg">
+                            <svg class="w-7 h-7 text-neon-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Design UI/UX</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Interfaces utilisateur intuitives et modernes. Prototypes interactifs, design system complet et expérience utilisateur optimisée.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs bg-neon-blue/10 text-neon-blue px-3 py-1 rounded-full">Figma</span>
+                            <span class="text-xs bg-neon-blue/10 text-neon-blue px-3 py-1 rounded-full">Prototyping</span>
+                            <span class="text-xs bg-neon-blue/10 text-neon-blue px-3 py-1 rounded-full">Design System</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 3 -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-3 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-neon-pink/5 rounded-full blur-3xl group-hover:bg-neon-pink/10 transition-all duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-neon-pink/20 to-pink-500/10 flex items-center justify-center text-2xl mb-6 shadow-lg">
+                            <svg class="w-7 h-7 text-neon-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Solutions IA</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Chatbots intelligents, automatisation, intégration de modèles IA. Boostez votre productivité avec l'intelligence artificielle.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs bg-neon-pink/10 text-neon-pink px-3 py-1 rounded-full">Chatbots</span>
+                            <span class="text-xs bg-neon-pink/10 text-neon-pink px-3 py-1 rounded-full">Automation</span>
+                            <span class="text-xs bg-neon-pink/10 text-neon-pink px-3 py-1 rounded-full">LLM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 4 -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-4 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-neon-green/5 rounded-full blur-3xl group-hover:bg-neon-green/10 transition-all duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-neon-green/20 to-green-500/10 flex items-center justify-center text-2xl mb-6 shadow-lg">
+                            <svg class="w-7 h-7 text-neon-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">SEO & Performance</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Audit technique, optimisation du référencement naturel et amélioration des Core Web Vitals pour dominer les résultats.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs bg-neon-green/10 text-neon-green px-3 py-1 rounded-full">Audit SEO</span>
+                            <span class="text-xs bg-neon-green/10 text-neon-green px-3 py-1 rounded-full">Core Web Vitals</span>
+                            <span class="text-xs bg-neon-green/10 text-neon-green px-3 py-1 rounded-full">Analytics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 5 -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-yellow-500/5 rounded-full blur-3xl group-hover:bg-yellow-500/10 transition-all duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/10 flex items-center justify-center text-2xl mb-6 shadow-lg">
+                            <svg class="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0h5a2 2 0 012 2v3a2 2 0 01-2 2h-3l-1 1m-6 0l-1 1m0 0H4a2 2 0 01-2-2V6a2 2 0 012-2h3m7 13v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2M7 14h4m-4 0a2 2 0 00-2 2v1a2 2 0 002 2h8a2 2 0 002-2v-1a2 2 0 00-2-2m-4-3l-2-2m0 0l-2 2m2-2l2 2"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Branding & Identité</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Logo, charte graphique, identité visuelle complète. Créez une marque mémorable qui reflète vos valeurs.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs bg-yellow-500/10 text-yellow-400 px-3 py-1 rounded-full">Logo</span>
+                            <span class="text-xs bg-yellow-500/10 text-yellow-400 px-3 py-1 rounded-full">Charte</span>
+                            <span class="text-xs bg-yellow-500/10 text-yellow-400 px-3 py-1 rounded-full">Brand Guide</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 6 -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-6 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-all duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-rose-500/10 flex items-center justify-center text-2xl mb-6 shadow-lg">
+                            <svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">E-Commerce</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Boutiques en ligne complètes, paiement sécurisé, gestion des stocks. Vendez partout, 24h/24.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs bg-red-500/10 text-red-400 px-3 py-1 rounded-full">Shopify</span>
+                            <span class="text-xs bg-red-500/10 text-red-400 px-3 py-1 rounded-full">WooCommerce</span>
+                            <span class="text-xs bg-red-500/10 text-red-400 px-3 py-1 rounded-full">Stripe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="py-32 bg-dark-900 relative overflow-hidden">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <span class="inline-block bg-neon-blue/10 text-neon-blue font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">Portfolio</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-6 reveal">
+                    Nos <span class="text-gradient">réalisations</span> récentes
+                </h2>
+                <p class="text-white/40 text-lg max-w-2xl mx-auto reveal">Chaque projet est une histoire de collaboration, d'innovation et de résultats concrets.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Project 1 -->
+                <div class="glass rounded-3xl overflow-hidden card-hover reveal group">
+                    <div class="relative h-64 bg-gradient-to-br from-brand/30 via-dark-700 to-neon-blue/20 flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 grid-bg opacity-30"></div>
+                        <div class="text-center relative z-10">
+                            <div class="text-6xl mb-3 group-hover:scale-110 transition-transform duration-500">🛒</div>
+                            <p class="text-white/60 text-sm">E-Commerce Platform</p>
+                        </div>
+                        <div class="absolute top-4 right-4 glass rounded-full px-3 py-1 text-xs font-semibold text-neon-purple">E-Commerce</div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold text-white mb-2">AfriShop Market</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Marketplace e-commerce complète pour artisans africains. Paiement mobile, gestion des commandes et livraison intégrée.</p>
+                        <div class="flex flex-wrap gap-2 mb-5">
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">React</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Node.js</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Stripe</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Tailwind</span>
+                        </div>
+                        <a href="#" class="text-brand-light hover:text-white text-sm font-semibold flex items-center gap-2 transition-colors group/link">
+                            Voir le projet
+                            <svg class="w-4 h-4 group-hover/link:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="glass rounded-3xl overflow-hidden card-hover reveal reveal-delay-1 group">
+                    <div class="relative h-64 bg-gradient-to-br from-neon-pink/20 via-dark-700 to-brand/20 flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 grid-bg opacity-30"></div>
+                        <div class="text-center relative z-10">
+                            <div class="text-6xl mb-3 group-hover:scale-110 transition-transform duration-500">🤖</div>
+                            <p class="text-white/60 text-sm">IA Chatbot</p>
+                        </div>
+                        <div class="absolute top-4 right-4 glass rounded-full px-3 py-1 text-xs font-semibold text-neon-pink">IA</div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold text-white mb-2">SmartAssist AI</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Chatbot IA multimodal pour service client. Traitement du langage naturel, intégration CRM et analyse sentiment en temps réel.</p>
+                        <div class="flex flex-wrap gap-2 mb-5">
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Python</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">LangChain</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">OpenAI</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">WebSocket</span>
+                        </div>
+                        <a href="#" class="text-neon-pink hover:text-white text-sm font-semibold flex items-center gap-2 transition-colors group/link">
+                            Voir le projet
+                            <svg class="w-4 h-4 group-hover/link:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="glass rounded-3xl overflow-hidden card-hover reveal group">
+                    <div class="relative h-64 bg-gradient-to-br from-neon-green/20 via-dark-700 to-neon-blue/15 flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 grid-bg opacity-30"></div>
+                        <div class="text-center relative z-10">
+                            <div class="text-6xl mb-3 group-hover:scale-110 transition-transform duration-500">📊</div>
+                            <p class="text-white/60 text-sm">Dashboard Analytics</p>
+                        </div>
+                        <div class="absolute top-4 right-4 glass rounded-full px-3 py-1 text-xs font-semibold text-neon-green">Dashboard</div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold text-white mb-2">DataViz Pro</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Dashboard analytique en temps réel avec visualisations interactives, alertes intelligentes et rapports automatisés par IA.</p>
+                        <div class="flex flex-wrap gap-2 mb-5">
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Vue.js</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">D3.js</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">PostgreSQL</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">TensorFlow</span>
+                        </div>
+                        <a href="#" class="text-neon-green hover:text-white text-sm font-semibold flex items-center gap-2 transition-colors group/link">
+                            Voir le projet
+                            <svg class="w-4 h-4 group-hover/link:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project 4 -->
+                <div class="glass rounded-3xl overflow-hidden card-hover reveal reveal-delay-1 group">
+                    <div class="relative h-64 bg-gradient-to-br from-yellow-500/15 via-dark-700 to-brand/20 flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 grid-bg opacity-30"></div>
+                        <div class="text-center relative z-10">
+                            <div class="text-6xl mb-3 group-hover:scale-110 transition-transform duration-500">🎨</div>
+                            <p class="text-white/60 text-sm">Branding & Web</p>
+                        </div>
+                        <div class="absolute top-4 right-4 glass rounded-full px-3 py-1 text-xs font-semibold text-yellow-400">Branding</div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold text-white mb-2">Artisan Collection</h3>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Identité visuelle complète et site vitrine haut de gamme pour une marque de mode africaine contemporaine.</p>
+                        <div class="flex flex-wrap gap-2 mb-5">
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Figma</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Next.js</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">GSAP</span>
+                            <span class="text-xs bg-dark-600 text-white/50 px-3 py-1 rounded-full">Three.js</span>
+                        </div>
+                        <a href="#" class="text-yellow-400 hover:text-white text-sm font-semibold flex items-center gap-2 transition-colors group/link">
+                            Voir le projet
+                            <svg class="w-4 h-4 group-hover/link:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-32 bg-dark-800 relative overflow-hidden">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div>
+                    <span class="inline-block bg-neon-purple/10 text-brand-light font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">À propos</span>
+                    <h2 class="text-3xl md:text-5xl font-black text-white mb-6 reveal">
+                        L'alliance du <span class="text-gradient">design</span> et de<br>l'<span class="text-gradient">intelligence artificielle</span>
+                    </h2>
+                    <p class="text-white/50 text-lg leading-relaxed mb-6 reveal">
+                        Be Media AI est née de la conviction que le digital de demain se construit à l'intersection
+                        de la créativité humaine et de la puissance de l'IA. Notre équipe de designers, développeurs
+                        et ingénieurs IA work collaborativement pour donner vie à des projets ambitieux.
+                    </p>
+                    <p class="text-white/40 leading-relaxed mb-8 reveal">
+                        Depuis notre création, nous accompagnons startups, PME et grandes entreprises dans leur
+                        transformation digitale. Chaque projet est unique, chaque solution est pensée sur mesure.
+                    </p>
+                    <div class="grid grid-cols-2 gap-6 reveal">
+                        <div class="glass rounded-2xl p-5">
+                            <div class="text-3xl font-black text-gradient mb-1">5+</div>
+                            <div class="text-white/40 text-sm">Années d'expérience</div>
+                        </div>
+                        <div class="glass rounded-2xl p-5">
+                            <div class="text-3xl font-black text-gradient mb-1">15+</div>
+                            <div class="text-white/40 text-sm">Experts dans l'équipe</div>
+                        </div>
+                        <div class="glass rounded-2xl p-5">
+                            <div class="text-3xl font-black text-gradient mb-1">12</div>
+                            <div class="text-white/40 text-sm">Pays servis</div>
+                        </div>
+                        <div class="glass rounded-2xl p-5">
+                            <div class="text-3xl font-black text-gradient mb-1">∞</div>
+                            <div class="text-white/40 text-sm">Idées créatives</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative reveal">
+                    <div class="glass-strong rounded-3xl p-8 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent"></div>
+                        <div class="absolute -top-20 -right-20 w-60 h-60 bg-brand/10 rounded-full blur-3xl"></div>
+                        <div class="absolute -bottom-20 -left-20 w-60 h-60 bg-neon-blue/10 rounded-full blur-3xl"></div>
+
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="w-16 h-16 rounded-2xl cta-gradient flex items-center justify-center shadow-2xl animate-glow">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-space font-bold text-white text-xl">Be Media AI</p>
+                                    <p class="text-neon-blue text-sm font-medium">Agence Digitale & IA</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4 glass rounded-xl p-4">
+                                    <div class="w-10 h-10 rounded-xl bg-neon-purple/20 flex items-center justify-center text-lg">🎯</div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-white/60">Innovation</span>
+                                            <span class="text-brand-light font-semibold">98%</span>
+                                        </div>
+                                        <div class="w-full bg-dark-600 rounded-full h-1.5">
+                                            <div class="bg-gradient-to-r from-brand to-neon-purple h-1.5 rounded-full" style="width: 98%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 glass rounded-xl p-4">
+                                    <div class="w-10 h-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-lg">⚡</div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-white/60">Performance</span>
+                                            <span class="text-neon-blue font-semibold">95%</span>
+                                        </div>
+                                        <div class="w-full bg-dark-600 rounded-full h-1.5">
+                                            <div class="bg-gradient-to-r from-neon-blue to-neon-green h-1.5 rounded-full" style="width: 95%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 glass rounded-xl p-4">
+                                    <div class="w-10 h-10 rounded-xl bg-neon-pink/20 flex items-center justify-center text-lg">💡</div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-white/60">Créativité</span>
+                                            <span class="text-neon-pink font-semibold">97%</span>
+                                        </div>
+                                        <div class="w-full bg-dark-600 rounded-full h-1.5">
+                                            <div class="bg-gradient-to-r from-neon-pink to-brand h-1.5 rounded-full" style="width: 97%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section class="py-32 bg-dark-900 relative overflow-hidden">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <span class="inline-block bg-neon-green/10 text-neon-green font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">Notre processus</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-6 reveal">
+                    De l'idée au <span class="text-gradient">lancement</span>
+                </h2>
+                <p class="text-white/40 text-lg max-w-2xl mx-auto reveal">Un processus éprouvé en 4 étapes pour transformer votre vision en réalité digitale.</p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="reveal reveal-delay-1">
+                    <div class="glass rounded-3xl p-8 card-hover h-full relative">
+                        <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full cta-gradient flex items-center justify-center font-black text-sm shadow-lg">1</div>
+                        <div class="text-4xl mb-5 mt-2">💬</div>
+                        <h3 class="text-lg font-bold text-white mb-3">Découverte</h3>
+                        <p class="text-white/40 text-sm leading-relaxed">Nous analisons vos besoins, objectifs et audience cible pour définir la stratégie parfaite.</p>
+                    </div>
+                </div>
+                <div class="reveal reveal-delay-2">
+                    <div class="glass rounded-3xl p-8 card-hover h-full relative">
+                        <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full cta-gradient flex items-center justify-center font-black text-sm shadow-lg">2</div>
+                        <div class="text-4xl mb-5 mt-2">✏️</div>
+                        <h3 class="text-lg font-bold text-white mb-3">Conception</h3>
+                        <p class="text-white/40 text-sm leading-relaxed">Design des maquettes, prototypage interactif et validation de l'expérience utilisateur.</p>
+                    </div>
+                </div>
+                <div class="reveal reveal-delay-3">
+                    <div class="glass rounded-3xl p-8 card-hover h-full relative">
+                        <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full cta-gradient flex items-center justify-center font-black text-sm shadow-lg">3</div>
+                        <div class="text-4xl mb-5 mt-2">⚙️</div>
+                        <h3 class="text-lg font-bold text-white mb-3">Développement</h3>
+                        <p class="text-white/40 text-sm leading-relaxed">Coding, intégration IA, tests rigoureux et optimisation des performances.</p>
+                    </div>
+                </div>
+                <div class="reveal reveal-delay-4">
+                    <div class="glass rounded-3xl p-8 card-hover h-full relative">
+                        <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full cta-gradient flex items-center justify-center font-black text-sm shadow-lg">4</div>
+                        <div class="text-4xl mb-5 mt-2">🚀</div>
+                        <h3 class="text-lg font-bold text-white mb-3">Lancement</h3>
+                        <p class="text-white/40 text-sm leading-relaxed">Mise en production, formation et accompagnement continu après le déploiement.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-32 bg-dark-800 relative overflow-hidden">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <span class="inline-block bg-brand/10 text-brand-light font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">Tarifs</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-6 reveal">
+                    Des formules <span class="text-gradient">adaptées</span> à vos ambitions
+                </h2>
+                <p class="text-white/40 text-lg max-w-2xl mx-auto reveal">Choisissez le pack qui correspond à vos besoins, ou contactez-nous pour un devis personnalisé.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Starter -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-1">
+                    <div class="text-white/40 text-sm font-semibold uppercase tracking-wider mb-2">Starter</div>
+                    <div class="flex items-baseline gap-1 mb-1">
+                        <span class="text-white/50 text-lg">À partir de</span>
+                    </div>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-5xl font-black text-white">250K</span>
+                        <span class="text-white/40 text-lg">FCFA</span>
+                    </div>
+                    <p class="text-white/30 text-sm mb-8">Parfait pour les indépendants et petites entreprises qui veulent une présence en ligne professionnelle.</p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Site vitrine jusqu'à 5 pages
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Design responsive
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            SEO de base
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Formulaire de contact
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-white/20 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            <span class="text-white/20">Solution IA incluse</span>
+                        </li>
+                    </ul>
+                    <a href="#contact" class="block text-center border border-white/15 text-white/70 hover:text-white hover:border-brand/50 px-6 py-3 rounded-full font-semibold transition-all duration-300">
+                        Choisir Starter
+                    </a>
+                </div>
+
+                <!-- Pro (Popular) -->
+                <div class="pricing-popular rounded-3xl p-8 card-hover reveal reveal-delay-2 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 cta-gradient"></div>
+                    <div class="absolute top-4 right-4 bg-gradient-to-r from-brand to-neon-blue text-white text-xs font-bold px-3 py-1 rounded-full">
+                        POPULAIRE
+                    </div>
+                    <div class="text-neon-blue text-sm font-semibold uppercase tracking-wider mb-2">Pro</div>
+                    <div class="flex items-baseline gap-1 mb-1">
+                        <span class="text-white/50 text-lg">À partir de</span>
+                    </div>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-5xl font-black text-gradient">650K</span>
+                        <span class="text-white/40 text-lg">FCFA</span>
+                    </div>
+                    <p class="text-white/30 text-sm mb-8">Pour les entreprises qui veulent un site performant avec des fonctionnalités IA intégrées.</p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-white/70 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Site jusqu'à 15 pages
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Design premium sur mesure
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Chatbot IA intégré
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            SEO avancé + Analytics
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Support 3 mois inclus
+                        </li>
+                    </ul>
+                    <a href="#contact" class="block text-center cta-gradient text-white px-6 py-3 rounded-full font-bold transition-all duration-300 shadow-lg hover:shadow-purple-500/40">
+                        Choisir Pro
+                    </a>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="glass rounded-3xl p-8 card-hover reveal reveal-delay-3">
+                    <div class="text-neon-purple text-sm font-semibold uppercase tracking-wider mb-2">Enterprise</div>
+                    <div class="flex items-baseline gap-1 mb-1">
+                        <span class="text-white/50 text-lg">Sur devis</span>
+                    </div>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-5xl font-black text-white">Custom</span>
+                    </div>
+                    <p class="text-white/30 text-sm mb-8">Solutions complètes pour les grandes entreprises avec besoins spécifiques et volume important.</p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Pages illimitées
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Application web / SaaS
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            IA custom & automations
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Chef de projet dédié
+                        </li>
+                        <li class="flex items-center gap-3 text-white/60 text-sm">
+                            <svg class="w-5 h-5 text-neon-green flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Support 12 mois inclus
+                        </li>
+                    </ul>
+                    <a href="#contact" class="block text-center border border-white/15 text-white/70 hover:text-white hover:border-brand/50 px-6 py-3 rounded-full font-semibold transition-all duration-300">
+                        Nous contacter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-32 bg-dark-900 relative overflow-hidden">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <span class="inline-block bg-neon-pink/10 text-neon-pink font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">Témoignages</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-6 reveal">
+                    Ce que disent <span class="text-gradient">nos clients</span>
+                </h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="glass rounded-2xl p-8 card-hover reveal">
+                    <div class="flex gap-1 mb-5">
+                        <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
+                    </div>
+                    <p class="text-white/70 text-sm leading-relaxed mb-6">"Be Media AI a transformé notre présence en ligne. Le site est magnifique, rapide, et le chatbot IA a réduit nos temps de réponse de 80%. Une équipe exceptionnelle !"</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-neon-blue flex items-center justify-center font-bold text-sm">AK</div>
+                        <div>
+                            <p class="font-semibold text-white text-sm">Aminata K.</p>
+                            <p class="text-white/30 text-xs">CEO, AfriShop</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-hover reveal reveal-delay-1">
+                    <div class="flex gap-1 mb-5">
+                        <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
+                    </div>
+                    <p class="text-white/70 text-sm leading-relaxed mb-6">"Professionnalisme et créativité au rendez-vous. Ils ont compris notre vision dès le premier échange et l'ont dépassée. Notre taux de conversion a triplé en 3 mois."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-pink to-brand flex items-center justify-center font-bold text-sm">JD</div>
+                        <div>
+                            <p class="font-semibold text-white text-sm">Jean D.</p>
+                            <p class="text-white/30 text-xs">Directeur, TechHub</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-hover reveal reveal-delay-2">
+                    <div class="flex gap-1 mb-5">
+                        <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
+                    </div>
+                    <p class="text-white/70 text-sm leading-relaxed mb-6">"Le dashboard analytics avec prédictions IA nous a donné une longueur d'avance sur notre concurrence. L'équipe est réactive, à l'écoute et vraiment compétente."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center font-bold text-sm">FM</div>
+                        <div>
+                            <p class="font-semibold text-white text-sm">Fatou M.</p>
+                            <p class="text-white/30 text-xs">COO, DataFlow</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-32 bg-dark-800 relative overflow-hidden">
+        <div class="max-w-3xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="inline-block bg-brand/10 text-brand-light font-semibold px-4 py-2 rounded-full text-sm mb-6 reveal">FAQ</span>
+                <h2 class="text-3xl md:text-4xl font-black text-white mb-4 reveal">Questions fréquentes</h2>
+                <p class="text-white/40 reveal">Tout ce que vous devez savoir avant de commencer.</p>
+            </div>
+
+            <div class="space-y-3">
+                <div class="glass rounded-2xl overflow-hidden reveal">
+                    <details class="group">
+                        <summary class="flex justify-between items-center cursor-pointer p-6 hover:bg-white/5 transition-colors">
+                            <span class="font-semibold text-white">Quel est le délai moyen pour un projet ?</span>
+                            <svg class="w-5 h-5 text-brand group-open:rotate-180 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-white/50 text-sm leading-relaxed">
+                            Cela dépend de la complexité. Un site vitrine prend généralement 2 à 4 semaines. Un projet avec intégration IA peut nécessiter 4 à 8 semaines. Nous fixons ensemble un calendrier réaliste dès le début.
+                        </div>
+                    </details>
+                </div>
+
+                <div class="glass rounded-2xl overflow-hidden reveal reveal-delay-1">
+                    <details class="group">
+                        <summary class="flex justify-between items-center cursor-pointer p-6 hover:bg-white/5 transition-colors">
+                            <span class="font-semibold text-white">Travaillez-vous avec des clients en dehors de l'Afrique ?</span>
+                            <svg class="w-5 h-5 text-brand group-open:rotate-180 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-white/50 text-sm leading-relaxed">
+                            Absolument ! Nous travaillons avec des clients en Europe, en Amérique du Nord et dans toute l'Afrique francophone. Toutes nos collaborations se font à distance avec des outils de suivi modernes.
+                        </div>
+                    </details>
+                </div>
+
+                <div class="glass rounded-2xl overflow-hidden reveal reveal-delay-2">
+                    <details class="group">
+                        <summary class="flex justify-between items-center cursor-pointer p-6 hover:bg-white/5 transition-colors">
+                            <span class="font-semibold text-white">Proposez-vous un accompagnement après la livraison ?</span>
+                            <svg class="w-5 h-5 text-brand group-open:rotate-180 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-white/50 text-sm leading-relaxed">
+                            Oui ! Tous nos packs incluent une période de support après livraison. Nous proposons également des contrats de maintenance mensuelle pour assurer la pérennité et l'évolution de votre projet.
+                        </div>
+                    </details>
+                </div>
+
+                <div class="glass rounded-2xl overflow-hidden reveal reveal-delay-3">
+                    <details class="group">
+                        <summary class="flex justify-between items-center cursor-pointer p-6 hover:bg-white/5 transition-colors">
+                            <span class="font-semibold text-white">Quels sont les modes de paiement acceptés ?</span>
+                            <svg class="w-5 h-5 text-brand group-open:rotate-180 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-white/50 text-sm leading-relaxed">
+                            Nous acceptons les virements bancaires, les paiements Mobile Money (MTN, Moov), ainsi que les cartes bancaires internationales. Un acompte de 50% est demandé à la signature, le solde à la livraison.
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA / Contact Section -->
+    <section id="contact" class="py-32 hero-gradient relative overflow-hidden">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-brand/10 rounded-full blur-[150px]"></div>
+        <div class="absolute bottom-0 right-1/4 w-80 h-80 bg-neon-blue/10 rounded-full blur-[120px]"></div>
+        <div class="absolute inset-0 grid-bg opacity-20"></div>
+
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+            <span class="inline-block bg-brand/20 text-brand-light font-bold px-4 py-2 rounded-full text-sm mb-8 reveal animate-pulse-slow">🚀 Prêt à démarrer ?</span>
+
+            <h2 class="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-6 reveal">
+                Transformons votre <span class="text-gradient">vision</span><br>en réalité digitale
+            </h2>
+            <p class="text-white/50 text-lg md:text-xl mb-12 max-w-2xl mx-auto reveal">
+                Discutons de votre projet. Première consultation gratuite, sans engagement.
+            </p>
+
+            <div class="glass-strong rounded-3xl p-8 md:p-12 reveal glow-purple relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent"></div>
+                <div class="absolute -top-20 -right-20 w-40 h-40 bg-brand/20 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-neon-blue/20 rounded-full blur-3xl"></div>
+
+                <div class="relative z-10">
+                    <div class="flex flex-col md:flex-row gap-8 items-center justify-center mb-10">
+                        <a href="https://wa.me/2290162210154" target="_blank"
+                           class="flex items-center gap-3 glass rounded-2xl px-6 py-4 hover:bg-white/10 transition-all duration-300 group">
+                            <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-white font-semibold">WhatsApp</p>
+                                <p class="text-white/40 text-sm">+229 01 62 21 01 54</p>
+                            </div>
+                        </a>
+
+                        <a href="mailto:contact@bemediiai.com"
+                           class="flex items-center gap-3 glass rounded-2xl px-6 py-4 hover:bg-white/10 transition-all duration-300 group">
+                            <div class="w-12 h-12 rounded-xl bg-brand/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-brand-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-white font-semibold">Email</p>
+                                <p class="text-white/40 text-sm">contact@bemediiai.com</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <a href="https://wa.me/2290162210154" target="_blank"
+                       class="cta-gradient text-white px-12 py-4 rounded-full font-black text-lg hover:opacity-90 transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 inline-flex items-center gap-3 group animate-glow">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Démarrer mon projet maintenant
+                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </a>
+
+                    <p class="text-white/30 text-sm mt-6">Consultation gratuite · Réponse sous 24h · Devis personnalisé</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark-900 border-t border-white/5 py-16">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-12 mb-12">
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-10 h-10 rounded-xl cta-gradient flex items-center justify-center shadow-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-space font-bold text-white text-lg">Be Media AI</p>
+                            <p class="text-neon-blue text-xs font-semibold tracking-[0.2em] uppercase">Digital & Intelligence Artificielle</p>
+                        </div>
+                    </div>
+                    <p class="text-white/30 text-sm leading-relaxed max-w-md mb-6">
+                        Agence digitale spécialisée dans la création de sites web performants
+                        et de solutions d'intelligence artificielle sur mesure.
+                    </p>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-10 h-10 rounded-full glass flex items-center justify-center text-white/40 hover:text-neon-purple hover:border-brand/30 transition-all duration-300">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full glass flex items-center justify-center text-white/40 hover:text-neon-purple hover:border-brand/30 transition-all duration-300">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.52 1.49-3.9 3.78-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.45 2.9h-2.33v7a10 10 0 008.44-9.9c0-5.53-4.5-10.02-10-10.02z"/></svg>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full glass flex items-center justify-center text-white/40 hover:text-neon-purple hover:border-brand/30 transition-all duration-300">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full glass flex items-center justify-center text-white/40 hover:text-neon-purple hover:border-brand/30 transition-all duration-300">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-space font-bold text-white mb-5">Services</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#services" class="text-white/30 hover:text-white text-sm transition-colors">Développement Web</a></li>
+                        <li><a href="#services" class="text-white/30 hover:text-white text-sm transition-colors">Design UI/UX</a></li>
+                        <li><a href="#services" class="text-white/30 hover:text-white text-sm transition-colors">Solutions IA</a></li>
+                        <li><a href="#services" class="text-white/30 hover:text-white text-sm transition-colors">E-Commerce</a></li>
+                        <li><a href="#services" class="text-white/30 hover:text-white text-sm transition-colors">SEO & Performance</a></li>
+                        <li><a href="#services" class="text-white/30 hover:text-white text-sm transition-colors">Branding</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-space font-bold text-white mb-5">Contact</h4>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-2 text-white/30 text-sm">
+                            <svg class="w-4 h-4 text-brand-light flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            contact@bemediiai.com
+                        </li>
+                        <li class="flex items-center gap-2 text-white/30 text-sm">
+                            <svg class="w-4 h-4 text-brand-light flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            +229 01 62 21 01 54
+                        </li>
+                        <li class="flex items-center gap-2 text-white/30 text-sm">
+                            <svg class="w-4 h-4 text-brand-light flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Bénin · Afrique de l'Ouest
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-white/20 text-sm">© 2026 Be Media AI — Tous droits réservés.</p>
+                <div class="flex gap-6">
+                    <a href="#" class="text-white/20 hover:text-white/50 text-sm transition-colors">Mentions légales</a>
+                    <a href="#" class="text-white/20 hover:text-white/50 text-sm transition-colors">Politique de confidentialité</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Scroll reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 50) {
+                navbar.classList.add('bg-dark-900/90', 'backdrop-blur-xl', 'shadow-lg', 'shadow-black/30');
+            } else {
+                navbar.classList.remove('bg-dark-900/90', 'backdrop-blur-xl', 'shadow-lg', 'shadow-black/30');
+            }
+        });
+
+        // Mobile menu
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        document.querySelectorAll('.mobile-link').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Be Media AI — Agence Web & Intelligence Artificielle</title>
+    <meta name="description" content="Agence digitale spécialisée en développement web, design et solutions IA sur mesure.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- Custom cursor -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-follower" id="cursorFollower"></div>
+
+    <!-- Overlays -->
+    <div class="noise"></div>
+    <div class="mesh-bg"></div>
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Nav -->
+    <nav class="nav" id="navbar">
+        <a href="#" class="nav-logo">Be<em>.</em>Media<em>.</em>AI</a>
+        <ul class="nav-links">
+            <li><a href="#about" data-hover>À propos</a></li>
+            <li><a href="#services" data-hover>Services</a></li>
+            <li><a href="#portfolio" data-hover>Portfolio</a></li>
+            <li><a href="#tarifs" data-hover>Tarifs</a></li>
+            <li><a href="#blog" data-hover>Actualités</a></li>
+            <li><a href="#contact" class="nav-cta" data-hover>Contact</a></li>
+        </ul>
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#about" class="mobile-link" data-hover>À propos</a>
+        <a href="#services" class="mobile-link" data-hover>Services</a>
+        <a href="#portfolio" class="mobile-link" data-hover>Portfolio</a>
+        <a href="#tarifs" class="mobile-link" data-hover>Tarifs</a>
+        <a href="#blog" class="mobile-link" data-hover>Actualités</a>
+        <a href="#contact" class="mobile-link" data-hover>Contact</a>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge reveal">
+                <span class="pulse"></span>
+                Agence Web & Intelligence Artificielle
+            </div>
+            <h1 class="reveal delay-1">
+                Nous créons<br>
+                <span class="italic">l'expérience</span><br>
+                <span class="stroke">digital de demain</span>
+            </h1>
+            <p class="hero-desc reveal delay-2">
+                Be Media AI combine design sophistiqué et intelligence artificielle
+                pour construire des sites web performants et des solutions qui transforment votre présence en ligne.
+            </p>
+            <div class="hero-actions reveal delay-3">
+                <a href="#contact" class="btn-primary" data-hover>
+                    Démarrer un projet
+                </a>
+                <a href="#portfolio" class="btn-outline" data-hover>Voir nos réalisations →</a>
+            </div>
+        </div>
+        <div class="hero-visual reveal-scale delay-2">
+            <div class="float-element">
+                <span style="color:var(--accent-teal)">⬡</span> IA intégrée
+            </div>
+            <div class="float-element">
+                <span style="color:var(--accent-warm)">◇</span> Design premium
+            </div>
+            <div class="float-element">
+                <span style="color:var(--accent-rose)">△</span> Performance 99/100
+            </div>
+            <div class="card-3d" id="card3d">
+                <div class="card-3d-content">
+                    <div class="card-3d-icon">⚡</div>
+                    <h3>Votre projet</h3>
+                    <p>Un site web conçu pour convertir, accéléré par l'intelligence artificielle.</p>
+                    <div class="card-3d-metric">
+                        <div>
+                            <div class="num">3x</div>
+                            <div class="label">Conversion</div>
+                        </div>
+                        <div>
+                            <div class="num">99</div>
+                            <div class="label">Performance</div>
+                        </div>
+                        <div>
+                            <div class="num">24/7</div>
+                            <div class="label">IA active</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-line"></div>
+            <span>Scroll</span>
+        </div>
+    </section>
+
+    <!-- Marquee -->
+    <div class="marquee">
+        <div class="marquee-inner">
+            <span class="marquee-item">Développement Web</span>
+            <span class="marquee-item">Design UI/UX</span>
+            <span class="marquee-item">Intelligence Artificielle</span>
+            <span class="marquee-item">E-Commerce</span>
+            <span class="marquee-item">Branding</span>
+            <span class="marquee-item">SEO & Performance</span>
+            <span class="marquee-item">Chatbots IA</span>
+            <span class="marquee-item">Automatisation</span>
+            <span class="marquee-item">Développement Web</span>
+            <span class="marquee-item">Design UI/UX</span>
+            <span class="marquee-item">Intelligence Artificielle</span>
+            <span class="marquee-item">E-Commerce</span>
+            <span class="marquee-item">Branding</span>
+            <span class="marquee-item">SEO & Performance</span>
+            <span class="marquee-item">Chatbots IA</span>
+            <span class="marquee-item">Automatisation</span>
+        </div>
+    </div>
+
+    <!-- About -->
+    <section class="about-section" id="about">
+        <div class="about-grid">
+            <div class="reveal-left">
+                <div class="section-label">Qui sommes-nous</div>
+                <h2 class="section-title">L'alliance de la <span class="em">créativité</span> et de l'<span class="em">intelligence</span></h2>
+                <div style="margin-top:4vh;display:flex;flex-direction:column;gap:2vh;">
+                    <div style="display:flex;align-items:center;gap:1.5rem;">
+                        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(196,168,130,0.15),rgba(196,168,130,0.05));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🎯</div>
+                        <div>
+                            <div style="font-weight:600;margin-bottom:4px;">Notre mission</div>
+                            <div style="font-size:13px;color:var(--text-secondary);">Transformer votre vision digitale en réalité performante grâce à l'IA.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1.5rem;">
+                        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(127,181,168,0.15),rgba(127,181,168,0.05));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">⚡</div>
+                        <div>
+                            <div style="font-weight:600;margin-bottom:4px;">Notre approche</div>
+                            <div style="font-size:13px;color:var(--text-secondary);">Design sur mesure, code propre, intégration IA native.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1.5rem;">
+                        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(184,169,201,0.15),rgba(184,169,201,0.05));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🤝</div>
+                        <div>
+                            <div style="font-weight:600;margin-bottom:4px;">Notre engagement</div>
+                            <div style="font-size:13px;color:var(--text-secondary);">Accompagnement continu, support réactif, résultats mesurables.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="about-text reveal">
+                <p>
+                    Be Media AI est une agence digitale née de la conviction que le web de demain
+                    se construit à l'intersection de la créativité humaine et de la puissance de l'IA.
+                    Notre équipe de designers, développeurs et ingénieurs IA collabore pour donner vie
+                    à des projets ambitieux.
+                </p>
+                <p>
+                    Depuis notre création, nous accompagnons startups, PME et grandes entreprises
+                    dans leur transformation digitale — avec une exigence de qualité et d'innovation
+                    qui fait la différence.
+                </p>
+                <div class="stats-row">
+                    <div class="stat-item reveal delay-1">
+                        <div class="stat-num" data-count="50">0</div>
+                        <div class="stat-label">Projets livrés</div>
+                    </div>
+                    <div class="stat-item reveal delay-2">
+                        <div class="stat-num" data-count="98">0</div>
+                        <div class="stat-label">% Satisfaction</div>
+                    </div>
+                    <div class="stat-item reveal delay-3">
+                        <div class="stat-num" data-count="12">0</div>
+                        <div class="stat-label">Pays servis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services -->
+    <section class="services-section" id="services">
+        <div class="reveal">
+            <div class="section-label">Nos services</div>
+            <h2 class="section-title">Des solutions <span class="em">sur mesure</span><br>pour chaque ambition</h2>
+        </div>
+        <div class="services-grid">
+            <div class="service-card reveal delay-1" data-hover>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(196,168,130,0.15),rgba(196,168,130,0.05))">🌐</div>
+                <h3>Développement Web</h3>
+                <p>Sites vitrines, applications web, e-commerce. Architecture performante, code propre, design responsive.</p>
+                <div class="service-tags">
+                    <span class="service-tag">React</span>
+                    <span class="service-tag">Next.js</span>
+                    <span class="service-tag">Node.js</span>
+                    <span class="service-tag">WordPress</span>
+                </div>
+            </div>
+            <div class="service-card reveal delay-2" data-hover>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(127,181,168,0.15),rgba(127,181,168,0.05))">🤖</div>
+                <h3>Solutions IA</h3>
+                <p>Chatbots intelligents, automatisation, intégration LLM. L'intelligence artificielle au service de votre business.</p>
+                <div class="service-tags">
+                    <span class="service-tag">Chatbots</span>
+                    <span class="service-tag">LangChain</span>
+                    <span class="service-tag">OpenAI</span>
+                </div>
+            </div>
+            <div class="service-card reveal delay-3" data-hover>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(184,169,201,0.15),rgba(184,169,201,0.05))">✏️</div>
+                <h3>Design UI/UX</h3>
+                <p>Interfaces intuitives, prototypage interactif, design system complet. Chaque pixel est pensé pour convertir.</p>
+                <div class="service-tags">
+                    <span class="service-tag">Figma</span>
+                    <span class="service-tag">Prototyping</span>
+                    <span class="service-tag">Motion</span>
+                </div>
+            </div>
+            <div class="service-card reveal delay-1" data-hover>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(212,165,116,0.15),rgba(212,165,116,0.05))">📈</div>
+                <h3>SEO & Performance</h3>
+                <p>Audit technique, optimisation Core Web Vitals, stratégie de contenu. Dominez les résultats de recherche.</p>
+                <div class="service-tags">
+                    <span class="service-tag">Audit SEO</span>
+                    <span class="service-tag">Analytics</span>
+                    <span class="service-tag">CWV</span>
+                </div>
+            </div>
+            <div class="service-card reveal delay-2" data-hover>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(196,168,130,0.15),rgba(127,181,168,0.05))">🛒</div>
+                <h3>E-Commerce</h3>
+                <p>Boutiques en ligne complètes, paiements sécurisés, gestion des stocks. Vendez partout, 24h/24.</p>
+                <div class="service-tags">
+                    <span class="service-tag">Shopify</span>
+                    <span class="service-tag">WooCommerce</span>
+                    <span class="service-tag">Stripe</span>
+                </div>
+            </div>
+            <div class="service-card reveal delay-3" data-hover>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(184,169,201,0.15),rgba(196,168,130,0.05))">🎨</div>
+                <h3>Branding</h3>
+                <p>Identité visuelle complète, logo, charte graphique. Une marque mémorable qui reflète vos valeurs.</p>
+                <div class="service-tags">
+                    <span class="service-tag">Logo</span>
+                    <span class="service-tag">Charte</span>
+                    <span class="service-tag">Brand Guide</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tarifs -->
+    <section class="services-section" id="tarifs" style="background:var(--bg-secondary);">
+        <div class="reveal">
+            <div class="section-label" style="justify-content:center;">Tarifs</div>
+            <h2 class="section-title" style="text-align:center;">Des formules <span class="em">adaptées</span><br>à chaque ambition</h2>
+            <p class="reveal" style="text-align:center;color:var(--text-secondary);max-width:500px;margin:0 auto 6vh;font-size:15px;line-height:1.7;">Choisissez le pack qui correspond à vos besoins, ou contactez-nous pour un devis personnalisé.</p>
+        </div>
+        <div class="services-grid" style="max-width:1100px;margin:0 auto;">
+            <!-- Starter -->
+            <div class="service-card reveal delay-1" data-hover style="text-align:center;">
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(196,168,130,0.1),rgba(196,168,130,0.03));margin:0 auto 2rem;width:56px;height:56px;">🌱</div>
+                <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;">Starter</div>
+                <div style="margin-bottom:0.5rem;"><span style="font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:var(--accent-warm);">250K</span><span style="color:var(--text-muted);font-size:14px;"> FCFA</span></div>
+                <div style="font-size:13px;color:var(--text-muted);margin-bottom:2rem;">À partir de</div>
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">Parfait pour les indépendants et petites entreprises qui veulent une présence en ligne professionnelle.</p>
+                <ul style="list-style:none;text-align:left;margin-bottom:2.5rem;">
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Site vitrine jusqu'à 5 pages</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Design responsive</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> SEO de base</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Formulaire de contact</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-muted);display:flex;align-items:center;gap:10px;"><span style="color:var(--text-muted);">—</span> Solution IA incluse</li>
+                </ul>
+                <a href="#contact" class="btn-outline" style="display:inline-block;" data-hover>Choisir Starter →</a>
+            </div>
+            <!-- Pro -->
+            <div class="service-card reveal delay-2" data-hover style="text-align:center;border-color:rgba(196,168,130,0.25);position:relative;">
+                <div style="position:absolute;top:-1px;left:20%;right:20%;height:2px;background:linear-gradient(90deg,transparent,var(--accent-warm),transparent);"></div>
+                <div style="position:absolute;top:1.5rem;right:1.5rem;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-warm);border:1px solid rgba(196,168,130,0.3);padding:4px 12px;border-radius:100px;">Populaire</div>
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(196,168,130,0.2),rgba(127,181,168,0.1));margin:0 auto 2rem;width:56px;height:56px;">🚀</div>
+                <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent-warm);margin-bottom:1rem;">Pro</div>
+                <div style="margin-bottom:0.5rem;"><span style="font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:var(--accent-warm);">650K</span><span style="color:var(--text-muted);font-size:14px;"> FCFA</span></div>
+                <div style="font-size:13px;color:var(--text-muted);margin-bottom:2rem;">À partir de</div>
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">Pour les entreprises qui veulent un site performant avec des fonctionnalités IA intégrées.</p>
+                <ul style="list-style:none;text-align:left;margin-bottom:2.5rem;">
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-primary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Site jusqu'à 15 pages</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-primary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Design premium sur mesure</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-primary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Chatbot IA intégré</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-primary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> SEO avancé + Analytics</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-primary);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Support 3 mois inclus</li>
+                </ul>
+                <a href="#contact" class="btn-primary" data-hover>Choisir Pro</a>
+            </div>
+            <!-- Enterprise -->
+            <div class="service-card reveal delay-3" data-hover style="text-align:center;">
+                <div class="service-icon" style="background:linear-gradient(135deg,rgba(184,169,201,0.15),rgba(196,168,130,0.05));margin:0 auto 2rem;width:56px;height:56px;">💎</div>
+                <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;">Enterprise</div>
+                <div style="margin-bottom:0.5rem;"><span style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--accent-rose);">Sur mesure</span></div>
+                <div style="font-size:13px;color:var(--text-muted);margin-bottom:2rem;">Devis personnalisé</div>
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">Pour les projets ambitieux nécessitant une solution complète : plateforme sur mesure, IA avancée, accompagnement dédié.</p>
+                <ul style="list-style:none;text-align:left;margin-bottom:2.5rem;">
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Architecture personnalisée</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Solutions IA avancées</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Intégrations sur mesure</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Support prioritaire 12 mois</li>
+                    <li style="padding:8px 0;font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:10px;"><span style="color:var(--accent-teal);">✓</span> Consultant dédié</li>
+                </ul>
+                <a href="#contact" class="btn-outline" style="display:inline-block;" data-hover>Nous contacter →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio -->
+    <section class="portfolio-section" id="portfolio">
+        <div class="reveal">
+            <div class="section-label">Portfolio</div>
+            <h2 class="section-title">Nos <span class="em">réalisations</span> récentes</h2>
+        </div>
+        <div class="portfolio-showcase">
+            <div class="portfolio-card reveal-scale delay-1" data-hover>
+                <div class="portfolio-card-bg" style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);position:absolute;inset:0;">
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:clamp(4rem,10vw,8rem);font-weight:700;color:rgba(196,168,130,0.07);letter-spacing:-0.05em;user-select:none;">AFRI</span>
+                    </div>
+                </div>
+                <div class="portfolio-card-overlay">
+                    <div class="portfolio-card-cat">E-Commerce · IA</div>
+                    <div class="portfolio-card-title">AfriShop Market</div>
+                    <div class="portfolio-card-desc">Marketplace e-commerce avec recommandations IA pour artisans africains.</div>
+                </div>
+                <div class="portfolio-card-arrow">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                </div>
+            </div>
+            <div class="portfolio-card reveal-scale delay-2" data-hover>
+                <div class="portfolio-card-bg" style="background:linear-gradient(135deg,#1a0a2e,#2d1b4e,#1a0a2e);position:absolute;inset:0;">
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:clamp(3rem,8vw,6rem);font-weight:700;color:rgba(184,169,201,0.07);letter-spacing:-0.05em;user-select:none;">SMART</span>
+                    </div>
+                </div>
+                <div class="portfolio-card-overlay">
+                    <div class="portfolio-card-cat">IA · Chatbot</div>
+                    <div class="portfolio-card-title">SmartAssist AI</div>
+                    <div class="portfolio-card-desc">Chatbot multimodal avec NLP et analyse sentiment.</div>
+                </div>
+                <div class="portfolio-card-arrow">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                </div>
+            </div>
+            <div class="portfolio-card reveal-scale delay-3" data-hover>
+                <div class="portfolio-card-bg" style="background:linear-gradient(135deg,#0a1a1a,#1a2a2a,#0a1a1a);position:absolute;inset:0;">
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:clamp(3rem,8vw,6rem);font-weight:700;color:rgba(127,181,168,0.07);letter-spacing:-0.05em;user-select:none;">DATA</span>
+                    </div>
+                </div>
+                <div class="portfolio-card-overlay">
+                    <div class="portfolio-card-cat">Dashboard · Analytics</div>
+                    <div class="portfolio-card-title">DataViz Pro</div>
+                    <div class="portfolio-card-desc">Dashboard analytique avec visualisations et prédictions IA.</div>
+                </div>
+                <div class="portfolio-card-arrow">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog / Actualités -->
+    <section class="blog-section" id="blog">
+        <div class="blog-header reveal">
+            <div>
+                <div class="section-label">Actualités</div>
+                <h2 class="section-title">Notre <span class="em">blog</span></h2>
+            </div>
+            <a href="#" class="btn-outline" data-hover>Tous les articles →</a>
+        </div>
+        <div class="blog-grid">
+            <div class="blog-card reveal delay-1" data-hover>
+                <div class="blog-card-img">
+                    <div class="blog-card-img-inner" style="background:linear-gradient(135deg,#1a1a2e,#0f3460);display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:4rem;font-weight:700;color:rgba(196,168,130,0.08);">L'IA</span>
+                    </div>
+                </div>
+                <div class="blog-card-body">
+                    <div class="blog-card-meta">
+                        <span class="blog-card-tag">Intelligence Artificielle</span>
+                        <span>15 Sept 2026</span>
+                        <span>8 min de lecture</span>
+                    </div>
+                    <h3>Comment l'IA transforme le design web en 2026</h3>
+                    <p>Des outils génératifs aux chatbots intelligents, découvrez comment l'intelligence artificielle redéfinit notre façon de concevoir et développer des expériences digitales.</p>
+                    <a href="#" class="blog-card-link" data-hover>
+                        Lire l'article
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="blog-card reveal delay-2" data-hover>
+                <div class="blog-card-img">
+                    <div class="blog-card-img-inner" style="background:linear-gradient(135deg,#1a0a2e,#2d1b4e);display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:rgba(184,169,201,0.08);">SEO</span>
+                    </div>
+                </div>
+                <div class="blog-card-body">
+                    <div class="blog-card-meta">
+                        <span class="blog-card-tag">SEO</span>
+                        <span>8 Sept 2026</span>
+                    </div>
+                    <h3>5 stratégies SEO incontournables pour 2026</h3>
+                    <p>Optimisez votre visibilité et dominez les résultats de recherche avec ces techniques éprouvées.</p>
+                    <a href="#" class="blog-card-link" data-hover>
+                        Lire l'article
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="blog-card reveal delay-3" data-hover>
+                <div class="blog-card-img">
+                    <div class="blog-card-img-inner" style="background:linear-gradient(135deg,#0a1a1a,#1a2a2a);display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:rgba(127,181,168,0.08);">UI</span>
+                    </div>
+                </div>
+                <div class="blog-card-body">
+                    <div class="blog-card-meta">
+                        <span class="blog-card-tag">Design</span>
+                        <span>1 Sept 2026</span>
+                    </div>
+                    <h3>Tendances design web : ce qui compte cette année</h3>
+                    <p>Minimalisme, micro-interactions, 3D immersive… les tendances qui façonnent le web.</p>
+                    <a href="#" class="blog-card-link" data-hover>
+                        Lire l'article
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="blog-card reveal delay-4" data-hover>
+                <div class="blog-card-img">
+                    <div class="blog-card-img-inner" style="background:linear-gradient(135deg,#1a1510,#2a1f15);display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:rgba(212,165,116,0.08);">WEB</span>
+                    </div>
+                </div>
+                <div class="blog-card-body">
+                    <div class="blog-card-meta">
+                        <span class="blog-card-tag">Développement</span>
+                        <span>25 Août 2026</span>
+                    </div>
+                    <h3>Next.js vs React : quel framework choisir ?</h3>
+                    <p>Comparatif complet pour faire le bon choix technique selon vos besoins.</p>
+                    <a href="#" class="blog-card-link" data-hover>
+                        Lire l'article
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="blog-card reveal delay-5" data-hover>
+                <div class="blog-card-img">
+                    <div class="blog-card-img-inner" style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);display:flex;align-items:center;justify-content:center;">
+                        <span style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:rgba(245,245,240,0.05);">AI</span>
+                    </div>
+                </div>
+                <div class="blog-card-body">
+                    <div class="blog-card-meta">
+                        <span class="blog-card-tag">Innovation</span>
+                        <span>18 Août 2026</span>
+                    </div>
+                    <h3>Les chatbots IA : guide pratique pour entreprises</h3>
+                    <p>Everything you need to know about implementing AI chatbots in your business.</p>
+                    <a href="#" class="blog-card-link" data-hover>
+                        Lire l'article
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section">
+        <div class="reveal" style="text-align:center;">
+            <div class="section-label" style="justify-content:center;">Témoignages</div>
+            <h2 class="section-title">Ce que disent <span class="em">nos clients</span></h2>
+        </div>
+        <div class="testimonials-track">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Be Media AI a transformé notre présence en ligne. Le site est magnifique, rapide, et le chatbot IA a réduit nos temps de réponse de 80%. Une équipe exceptionnelle !"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(196,168,130,0.3),rgba(196,168,130,0.1));color:var(--accent-warm);">AK</div>
+                    <div>
+                        <div class="testimonial-name">Aminata K.</div>
+                        <div class="testimonial-role">CEO, AfriShop</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Professionnalisme et créativité au rendez-vous. Notre taux de conversion a triplé en 3 mois. L'équipe est réactive et vraiment compétente."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(184,169,201,0.3),rgba(184,169,201,0.1));color:var(--accent-rose);">JD</div>
+                    <div>
+                        <div class="testimonial-name">Jean D.</div>
+                        <div class="testimonial-role">Directeur, TechHub</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Le dashboard analytics avec prédictions IA nous a donné une longueur d'avance sur notre concurrence. Un investissement qui vaut chaque centime."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(127,181,168,0.3),rgba(127,181,168,0.1));color:var(--accent-teal);">FM</div>
+                    <div>
+                        <div class="testimonial-name">Fatou M.</div>
+                        <div class="testimonial-role">COO, DataFlow</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Un travail remarquable sur notre identité de marque. Le branding est cohérent, moderne et parfaitement aligné avec nos valeurs."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(212,165,116,0.3),rgba(212,165,116,0.1));color:var(--accent-gold);">PO</div>
+                    <div>
+                        <div class="testimonial-name">Patrick O.</div>
+                        <div class="testimonial-role">Fondateur, Lumina</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Duplicate for infinite scroll -->
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Be Media AI a transformé notre présence en ligne. Le site est magnifique, rapide, et le chatbot IA a réduit nos temps de réponse de 80%. Une équipe exceptionnelle !"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(196,168,130,0.3),rgba(196,168,130,0.1));color:var(--accent-warm);">AK</div>
+                    <div>
+                        <div class="testimonial-name">Aminata K.</div>
+                        <div class="testimonial-role">CEO, AfriShop</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Professionnalisme et créativité au rendez-vous. Notre taux de conversion a triplé en 3 mois. L'équipe est réactive et vraiment compétente."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(184,169,201,0.3),rgba(184,169,201,0.1));color:var(--accent-rose);">JD</div>
+                    <div>
+                        <div class="testimonial-name">Jean D.</div>
+                        <div class="testimonial-role">Directeur, TechHub</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Le dashboard analytics avec prédictions IA nous a donné une longueur d'avance sur notre concurrence. Un investissement qui vaut chaque centime."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(127,181,168,0.3),rgba(127,181,168,0.1));color:var(--accent-teal);">FM</div>
+                    <div>
+                        <div class="testimonial-name">Fatou M.</div>
+                        <div class="testimonial-role">COO, DataFlow</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Un travail remarquable sur notre identité de marque. Le branding est cohérent, moderne et parfaitement aligné avec nos valeurs."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,rgba(212,165,116,0.3),rgba(212,165,116,0.1));color:var(--accent-gold);">PO</div>
+                    <div>
+                        <div class="testimonial-name">Patrick O.</div>
+                        <div class="testimonial-role">Fondateur, Lumina</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="newsletter-section" id="newsletter">
+        <div class="newsletter-container reveal-scale">
+            <div class="newsletter-left">
+                <div class="section-label">Newsletter</div>
+                <h2>Restez informé de nos <span class="em">dernières actualités</span></h2>
+                <p>Recevez chaque semaine nos articles sur le web, le design et l'intelligence artificielle. Pas de spam, que du contenu de valeur.</p>
+            </div>
+            <div class="newsletter-form">
+                <form id="newsletterForm" onsubmit="handleNewsletter(event)">
+                    <div class="newsletter-input-group">
+                        <input type="email" class="newsletter-input" placeholder="Votre adresse email" required>
+                        <button type="submit" class="newsletter-btn" data-hover>S'abonner</button>
+                    </div>
+                    <p class="newsletter-note">En vous inscrivant, vous acceptez de recevoir nos communications. Désabonnement possible à tout moment.</p>
+                </form>
+                <div id="newsletterSuccess" style="display:none;margin-top:1rem;padding:1rem 1.5rem;background:rgba(127,181,168,0.08);border:1px solid rgba(127,181,168,0.2);border-radius:12px;color:var(--accent-teal);font-size:14px;">
+                    ✓ Merci ! Vous êtes maintenant inscrit à notre newsletter.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="cta-section" id="contact">
+        <div class="reveal">
+            <div class="section-label" style="justify-content:center;">Contact</div>
+        </div>
+        <h2 class="cta-title reveal delay-1">
+            Prêt à créer<br>
+            <span class="outline" data-hover>quelque chose</span><br>
+            <span style="font-family:'Playfair Display',serif;font-style:italic;color:var(--accent-warm);">d'extraordinaire ?</span>
+        </h2>
+        <p class="cta-sub reveal delay-2">Première consultation gratuite. Discutons de votre projet et construisons ensemble l'avenir digital de votre entreprise.</p>
+        <div class="reveal delay-3" style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;">
+            <a href="https://wa.me/2290162210154" target="_blank" class="btn-primary" data-hover style="background:var(--accent-teal);">
+                WhatsApp
+            </a>
+            <a href="mailto:contact@bemediiai.com" class="btn-primary" data-hover style="background:transparent;border:1px solid var(--accent-warm);color:var(--accent-warm);">
+                Envoyer un email
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <a href="#" class="nav-logo" style="font-size:22px;">Be<em>.</em>Media<em>.</em>AI</a>
+                <p>Agence digitale spécialisée dans la création de sites web performants et de solutions d'intelligence artificielle sur mesure.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Services</h4>
+                <ul>
+                    <li><a href="#services" data-hover>Développement Web</a></li>
+                    <li><a href="#services" data-hover>Solutions IA</a></li>
+                    <li><a href="#services" data-hover>Design UI/UX</a></li>
+                    <li><a href="#services" data-hover>E-Commerce</a></li>
+                    <li><a href="#services" data-hover>SEO & Performance</a></li>
+                    <li><a href="#services" data-hover>Branding</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Agence</h4>
+                <ul>
+                    <li><a href="#about" data-hover>À propos</a></li>
+                    <li><a href="#portfolio" data-hover>Portfolio</a></li>
+                    <li><a href="#tarifs" data-hover>Tarifs</a></li>
+                    <li><a href="#blog" data-hover>Actualités</a></li>
+                    <li><a href="#" data-hover>Carrières</a></li>
+                    <li><a href="#contact" data-hover>Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:contact@bemediiai.com" data-hover>contact@bemediiai.com</a></li>
+                    <li><a href="https://wa.me/2290162210154" target="_blank" data-hover>+229 01 62 21 01 54</a></li>
+                    <li><a href="#" data-hover>Bénin, Afrique de l'Ouest</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Be Media AI — Tous droits réservés.</p>
+            <div class="footer-socials">
+                <a href="#" class="footer-social" data-hover>LI</a>
+                <a href="#" class="footer-social" data-hover>IG</a>
+                <a href="#" class="footer-social" data-hover>TW</a>
+                <a href="#" class="footer-social" data-hover>GH</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to top -->
+    <button class="scroll-top" id="scrollTop" aria-label="Retour en haut" data-hover>
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+    </button>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
