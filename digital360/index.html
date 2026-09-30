@@ -51,20 +51,20 @@
             <li><a href="#services" data-scroll>Services</a></li>
             <li><a href="#how" data-scroll>Comment ça marche</a></li>
             <li><a href="#pricing" data-scroll>Tarifs</a></li>
-             <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
-             <li><a href="#" onclick="window.location.href='dashboard.html';return false;" class="btn btn-outline btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
-            <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm">Diagnostic gratuit</a></li>
+     <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
+     <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm" id="navDiagBtn">Diagnostic gratuit</a></li>
+     <li><a href="#" onclick="window.location.href='dashboard.html';return false;" class="btn btn-primary btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
         </ul>
         <button class="lp-menu-toggle" onclick="toggleMobileMenu()">☰</button>
     </nav>
 
     <div class="lp-mobile-menu" id="mobileMenu">
         <button class="modal-close" onclick="toggleMobileMenu()" style="position:absolute;top:1.5rem;right:1.5rem;">✕</button>
-        <a href="#services" onclick="toggleMobileMenu();scrollToSection('services');return false;">Services</a>
-        <a href="#how" onclick="toggleMobileMenu();scrollToSection('how');return false;">Comment ça marche</a>
-        <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing');return false;">Tarifs</a>
-        <a href="#" onclick="toggleMobileMenu();startDiagnostic()">Diagnostic gratuit</a>
-         <a href="#" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;">Mon espace client</a>
+         <a href="#services" onclick="toggleMobileMenu();scrollToSection('services');return false;">Services</a>
+         <a href="#how" onclick="toggleMobileMenu();scrollToSection('how');return false;">Comment ça marche</a>
+         <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing');return false;">Tarifs</a>
+         <a href="#" onclick="toggleMobileMenu();startDiagnostic();return false;" id="mobileDiagBtn">Diagnostic gratuit</a>
+         <a href="#" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;" id="mobileAuthBtn" style="display:none;">Mon espace</a>
     </div>
 
     <!-- ═══════════════ PAGE: LANDING ═══════════════ -->
@@ -83,10 +83,10 @@
                     BENILAB Digital360 aide les TPE/PME à construire leur système digital :
                     présence, visibilité, acquisition, conversion et fidélisation — étape par étape.
                 </p>
-                <div class="lp-hero-actions reveal delay-3">
-                    <a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-lg">Faire mon diagnostic gratuit</a>
-                    <a href="#services" data-scroll class="lp-hero-secondary">Découvrir les services →</a>
-                </div>
+                 <div class="lp-hero-actions reveal delay-3" id="heroActions">
+                     <a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-lg" id="heroCtaBtn">Faire mon diagnostic gratuit</a>
+                     <a href="#services" data-scroll class="lp-hero-secondary">Découvrir les services →</a>
+                 </div>
                 <p class="reveal delay-4 lp-hero-sub" style="margin-top:1.5rem;font-size:13px;color:var(--text-secondary);">3 minutes · gratuit · sans inscription</p>
             </div>
             <div class="lp-hero-visual reveal delay-2">
@@ -205,16 +205,16 @@
             <div class="modules-grid">
                 <div class="module-card available"><div class="module-icon">🌐</div><div class="module-name">Site web</div><div class="module-status badge badge-success">Disponible</div></div>
                 <div class="module-card available"><div class="module-icon">📧</div><div class="module-name">Email professionnel</div><div class="module-status badge badge-success">Disponible</div></div>
-                <div class="module-card available"><div class="module-icon">📍</div><div class="module-name">Google Business</div><div class="module-status badge badge-warning">Activation</div></div>
-                <div class="module-card available"><div class="module-icon">📘</div><div class="module-name">Facebook</div><div class="module-status badge badge-muted">À connecter</div></div>
-                <div class="module-card available"><div class="module-icon">📸</div><div class="module-name">Instagram</div><div class="module-status badge badge-muted">À connecter</div></div>
-                <div class="module-card available"><div class="module-icon">🎵</div><div class="module-name">TikTok</div><div class="module-status badge badge-muted">À connecter</div></div>
-                <div class="module-card available"><div class="module-icon">🎯</div><div class="module-name">Meta Ads</div><div class="module-status badge badge-muted">Module V2</div></div>
-                <div class="module-card available"><div class="module-icon">🔍</div><div class="module-name">SEO local</div><div class="module-status badge badge-warning">En cours</div></div>
+                <div class="module-card available"><div class="module-icon">📍</div><div class="module-name">Google Business</div><div class="module-status badge badge-warning">Bientôt disponible</div></div>
+                <div class="module-card available"><div class="module-icon">📘</div><div class="module-name">Facebook</div><div class="module-status badge badge-muted">Bientôt disponible</div></div>
+                <div class="module-card available"><div class="module-icon">📸</div><div class="module-name">Instagram</div><div class="module-status badge badge-muted">Bientôt disponible</div></div>
+                <div class="module-card available"><div class="module-icon">🎵</div><div class="module-name">TikTok</div><div class="module-status badge badge-muted">Bientôt disponible</div></div>
+                <div class="module-card available"><div class="module-icon">🎯</div><div class="module-name">Meta Ads</div><div class="module-status badge badge-muted">Bientôt disponible</div></div>
+                <div class="module-card available"><div class="module-icon">🔍</div><div class="module-name">SEO local</div><div class="module-status badge badge-warning">Bientôt disponible</div></div>
                 <div class="module-card available"><div class="module-icon">💬</div><div class="module-name">WhatsApp Business</div><div class="module-status badge badge-success">Disponible</div></div>
                 <div class="module-card available"><div class="module-icon">📝</div><div class="module-name">Formulaires</div><div class="module-status badge badge-success">Disponible</div></div>
-                <div class="module-card available"><div class="module-icon">📧</div><div class="module-name">Email marketing</div><div class="module-status badge badge-muted">Module V2</div></div>
-                <div class="module-card available"><div class="module-icon">👥</div><div class="module-name">CRM / Prospects</div><div class="module-status badge badge-muted">Module V2</div></div>
+                <div class="module-card available"><div class="module-icon">📧</div><div class="module-name">Email marketing</div><div class="module-status badge badge-muted">Bientôt disponible</div></div>
+                <div class="module-card available"><div class="module-icon">👥</div><div class="module-name">CRM / Prospects</div><div class="module-status badge badge-muted">Bientôt disponible</div></div>
             </div>
         </section>
 
@@ -299,10 +299,10 @@
                  <div class="reveal" style="text-align:center;margin-top:4rem;padding:3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);">
                      <h2 class="section-title" style="margin-bottom:1rem;">Votre diagnostic est <span style="color:var(--accent);font-style:italic;">enregistré</span></h2>
                      <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Créez votre espace pour garder ce résultat et suivre votre transformation.</p>
-                     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-                         <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary">Créer mon espace gratuit</a>
-                         <a href="#" onclick="openAuthModal('login');return false;" class="btn btn-ghost">J'ai déjà un compte</a>
-                     </div>
+                      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;" id="scoreCtaGroup">
+                          <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary" id="scoreCtaPrimary">Créer mon espace gratuit</a>
+                          <a href="#" onclick="openAuthModal('login');return false;" class="btn btn-ghost" id="scoreCtaSecondary">J'ai déjà un compte</a>
+                      </div>
                  </div>
             </div>
         </div>
@@ -1081,12 +1081,26 @@
             return;
         }
 
-         diagData = { ...currentAnswers, company: currentAnswers.company };
-         renderScorePage(scoreResult.score);
-         renderPassportFromScore(scoreResult.passport);
-         renderPlanFromScore(scoreResult.action_plan);
-         showPage('score');
-    }
+          diagData = { ...currentAnswers, company: currentAnswers.company };
+          renderScorePage(scoreResult.score);
+          renderPassportFromScore(scoreResult.passport);
+          renderPlanFromScore(scoreResult.action_plan);
+          // If user is connected, auto-claim diagnostic to their org
+          if (_user && diagSessionId && diagToken && !MOCK_MODE) {
+              try {
+                  const meData = await api.getMe();
+                  const membership = meData?.memberships?.[0];
+                  if (membership) {
+                      try {
+                          await api.claimDiagnostic(membership.organization_id, { diagnostic_id: diagSessionId }, diagToken);
+                          localStorage.removeItem('d360_diag_id');
+                          localStorage.removeItem('d360_diag_token');
+                      } catch (_) {}
+                  }
+              } catch (_) {}
+          }
+          showPage('score');
+     }
 
     // Enregistre les réponses puis termine. Une ancienne session (déjà terminée ou expirée,
     // gardée en localStorage) est remplacée une fois par une session neuve.
@@ -1600,12 +1614,39 @@
             }
         }
     }
-    function updateAuthUI() {
-        const btn = document.getElementById('navAuthBtn');
-        if (btn) btn.style.display = _user ? 'inline-flex' : 'none';
-        const loginBtn = document.getElementById('navLoginBtn');
-        if (loginBtn) loginBtn.style.display = _user ? 'none' : 'inline-flex';
-    }
+     function updateAuthUI() {
+         const btn = document.getElementById('navAuthBtn');
+         const loginBtn = document.getElementById('navLoginBtn');
+         const diagBtn = document.getElementById('navDiagBtn');
+         const mobileAuth = document.getElementById('mobileAuthBtn');
+         const mobileDiag = document.getElementById('mobileDiagBtn');
+         const heroCta = document.getElementById('heroCtaBtn');
+         const scorePrimary = document.getElementById('scoreCtaPrimary');
+         const scoreSecondary = document.getElementById('scoreCtaSecondary');
+         const ctaGroup = document.getElementById('scoreCtaGroup');
+         if (!btn) return;
+         if (_user) {
+             btn.style.display = 'inline-flex';
+             if (loginBtn) loginBtn.style.display = 'none';
+             if (diagBtn) diagBtn.style.display = 'none';
+             if (mobileAuth) mobileAuth.style.display = '';
+             if (mobileDiag) mobileDiag.style.display = 'none';
+             if (heroCta) { heroCta.textContent = 'Accéder à mon espace'; heroCta.setAttribute('onclick', "window.location.href='dashboard.html';return false;"); }
+             if (ctaGroup) {
+                 ctaGroup.innerHTML = '<a href="dashboard.html" class="btn btn-primary">Voir dans mon espace</a>';
+             }
+         } else {
+             btn.style.display = 'none';
+             if (loginBtn) loginBtn.style.display = 'inline-flex';
+             if (diagBtn) diagBtn.style.display = 'inline-flex';
+             if (mobileAuth) mobileAuth.style.display = 'none';
+             if (mobileDiag) mobileDiag.style.display = '';
+             if (heroCta) { heroCta.textContent = 'Faire mon diagnostic gratuit'; heroCta.setAttribute('onclick', "startDiagnostic();return false;"); }
+             if (ctaGroup) {
+                 ctaGroup.innerHTML = '<a href="#" onclick="openAuthModal(\'register\');return false;" class="btn btn-primary">Créer mon espace gratuit</a><a href="#" onclick="openAuthModal(\'login\');return false;" class="btn btn-ghost">J\'ai déjà un compte</a>';
+             }
+         }
+     }
 
     // ── Auth modal ──
     function openAuthModal(mode) {
