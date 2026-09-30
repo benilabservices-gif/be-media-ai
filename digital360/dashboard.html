@@ -143,10 +143,11 @@
                              <div class="label">Prochaine action</div>
                              <p id="dashNextActionText">—</p>
                              <button class="btn btn-primary btn-sm" id="dashNextActionBtn">Voir</button>
-                         </div>
-                     </div>
+                          </div>
+                      </div>
+                      <div id="dashDiagAction" style="display:none;margin-bottom:2rem;"></div>
 
-                     <!-- Stats -->
+                      <!-- Stats -->
                      <div class="dash-stats reveal delay-2" id="dashStats">
                          <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change">Module Analytics</div></div>
                          <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Leads captés</div><div class="dash-stat-change">Module CRM</div></div>
@@ -564,64 +565,16 @@
                     </div>
                 </div>
 
-                <!-- ═══ ABONNEMENT ═══ -->
-                <div class="dash-page" id="page-abonnement">
-                    <div class="page-header reveal">
-                        <h1>Mon abonnement</h1>
-                        <p>Gérez votre offre et consultez vos factures.</p>
-                    </div>
-                    <div class="reveal delay-1">
-                        <div class="card" style="margin-bottom:2rem;border-color:var(--border-strong);">
-                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-                                <div>
-                                    <div class="label" style="margin-bottom:0.5rem;">Offre actuelle</div>
-                                    <div style="font-size:1.5rem;font-weight:700;">Digital Growth</div>
-                                    <div style="font-size:14px;color:var(--text-muted);">50 000 FCFA HT / mois</div>
-                                </div>
-                                <div style="text-align:right;">
-                                    <div class="label" style="margin-bottom:0.5rem;">Prochaine échéance</div>
-                                    <div style="font-size:1.1rem;font-weight:600;">1er octobre 2025</div>
-                                    <span class="badge badge-success" style="margin-top:0.5rem;">Actif</span>
-                                </div>
-                            </div>
-                            <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;gap:1rem;flex-wrap:wrap;">
-                                <button class="btn btn-outline btn-sm">Changer d'offre</button>
-                                <button class="btn btn-ghost btn-sm">Télécharger une facture</button>
-                            </div>
-                        </div>
-
-                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Comparer les offres</h3>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-                            <div class="card" style="text-align:center;opacity:0.6;">
-                                <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">Essential</div>
-                                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;">25K</div>
-                                <div style="font-size:12px;color:var(--text-muted);">FCFA HT/mois</div>
-                            </div>
-                            <div class="card featured" style="text-align:center;border-color:var(--accent);">
-                                <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;">Growth ← Vous êtes ici</div>
-                                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--accent);">50K</div>
-                                <div style="font-size:12px;color:var(--text-muted);">FCFA HT/mois</div>
-                            </div>
-                            <div class="card" style="text-align:center;">
-                                <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">Performance</div>
-                                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;">100K</div>
-                                <div style="font-size:12px;color:var(--text-muted);">FCFA HT/mois</div>
-                            </div>
-                        </div>
-
-                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Historique des factures</h3>
-                        <div class="table-wrap">
-                            <table>
-                                <thead><tr><th>Date</th><th>Description</th><th>Montant</th><th>Statut</th></tr></thead>
-                                <tbody>
-                                    <tr><td>1 sept 2025</td><td>Abonnement Growth — Septembre</td><td>50 000 FCFA HT</td><td><span class="badge badge-success">Payé</span></td></tr>
-                                    <tr><td>1 août 2025</td><td>Abonnement Growth — Août</td><td>50 000 FCFA HT</td><td><span class="badge badge-success">Payé</span></td></tr>
-                                    <tr><td>15 juillet 2025</td><td>Digital Start — Pack complet</td><td>89 900 FCFA HT</td><td><span class="badge badge-success">Payé</span></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                 <!-- ═══ ABONNEMENT ═══ -->
+                 <div class="dash-page" id="page-abonnement">
+                     <div class="page-header reveal">
+                         <h1>Mon abonnement</h1>
+                         <p>Gérez votre offre et consultez vos factures.</p>
+                     </div>
+                     <div class="reveal delay-1" id="subscriptionContent">
+                         <!-- Chargement des données -->
+                     </div>
+                 </div>
 
                 <!-- ═══ SUPPORT ═══ -->
                 <div class="dash-page" id="page-support">
@@ -824,6 +777,41 @@
              document.getElementById('dashNextAction').style.display = 'none';
          }
 
+         // Score evolution and diagnostic info
+         if (diagnosticsData?.scores && diagnosticsData.scores.length > 0) {
+             const scores = diagnosticsData.scores;
+             const latest = scores[scores.length - 1];
+             const first = scores[0];
+             // Evolution
+             const evEl = document.getElementById('dashScoreEvolution');
+             if (scores.length >= 2 && first.total != null && latest.total != null) {
+                 const diff = latest.total - first.total;
+                 const dateStr = latest.completed_at ? new Date(latest.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+                 const sign = diff >= 0 ? '+' : '';
+                 evEl.textContent = sign + diff + ' points depuis le ' + dateStr;
+                 evEl.style.display = '';
+             }
+             // Update "Aucun diagnostic" msg if we have data
+             document.getElementById('dashScoreMsg').textContent =
+                 'Votre présence digitale est à <strong style="color:var(--accent);">' + latest.total + '%</strong> — ' + (latest.maturity_label || '');
+         }
+
+         // Diagnostic action button (show below score banner)
+         const diagActionEl = document.getElementById('dashDiagAction');
+         if (diagActionEl) {
+             if (diagnosticsData?.scores?.length > 0) {
+                 const last = diagnosticsData.scores[diagnosticsData.scores.length - 1];
+                 const dateStr = last.completed_at
+                     ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+                     : '';
+                 diagActionEl.innerHTML = '<span style="font-size:13px;color:var(--text-muted);">Dernier diagnostic : ' + dateStr + ' · </span><a href="index.html#diagnostic" class="btn btn-outline btn-sm" style="margin-left:0.5rem;">Mettre à jour mon diagnostic</a>';
+                 diagActionEl.style.display = '';
+             } else {
+                 diagActionEl.innerHTML = '<a href="index.html#diagnostic" class="btn btn-primary btn-sm">Faire mon premier diagnostic</a>';
+                 diagActionEl.style.display = '';
+             }
+         }
+
         // Next action from action plan
         if (actionPlanData?.items) {
             const proposed = actionPlanData.items.find(i => i.status === 'PROPOSED');
@@ -928,6 +916,8 @@
                     const entRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
                     if (entRes.ok) entitlementsData = await entRes.json();
                 } catch (_) {}
+                // Load catalog for subscription page
+                await loadCatalogForDashboard();
             }
             // Update UI with real data
             if (_user) {
@@ -942,14 +932,121 @@
                 }
             }
             renderDashboard();
+            renderSubscriptionPage();
         } catch (e) {
             console.error('[D360] Dashboard init error:', e);
         }
     })();
 
-    // ── Passport renderer for entreprise page ──
-    function renderPassportData(items) {
-        // Passport already rendered on dashboard; this is a fallback for the entreprise page
+    // ── Price formatter ──
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return '—';
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || 'XOF';
+        if (cur === 'EUR') {
+            const decimals = amount % 100 === 0 ? 0 : 2;
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    // ── Load catalog for subscription page ──
+    let _catalogData = null;
+    async function loadCatalogForDashboard() {
+        try {
+            const res = await fetch(D360_API_BASE + '/public/catalog', { credentials: 'include' });
+            if (res.ok) _catalogData = await res.json();
+        } catch (_) {}
+    }
+
+    function renderSubscriptionPage() {
+        const container = document.getElementById('subscriptionContent');
+        if (!container) return;
+
+        // Check if user has an active subscription
+        const subscription = _orgData?.subscription;
+        const hasSubscription = subscription && subscription.plan_code;
+
+        let html = '';
+
+        if (hasSubscription) {
+            const planCode = subscription.plan_code;
+            const product = _catalogData?.products?.find(p => p.code === planCode);
+            const productName = product?.name || planCode;
+            const priceText = product?.price ? formatPrice(product.price, subscription.currency) : '—';
+            const nextBilling = subscription.next_billing_date
+                ? new Date(subscription.next_billing_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '—';
+
+            html = `
+                <div class="card" style="margin-bottom:2rem;border-color:var(--border-strong);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                        <div>
+                            <div class="label" style="margin-bottom:0.5rem;">Offre actuelle</div>
+                            <div style="font-size:1.5rem;font-weight:700;">${productName}</div>
+                            <div style="font-size:14px;color:var(--text-muted);">${priceText}${subscription.period ? ' / ' + subscription.period.toLowerCase() : ''}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="label" style="margin-bottom:0.5rem;">Prochaine échéance</div>
+                            <div style="font-size:1.1rem;font-weight:600;">${nextBilling}</div>
+                            <span class="badge badge-success" style="margin-top:0.5rem;">Actif</span>
+                        </div>
+                    </div>
+                </div>
+                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Offres disponibles</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
+                    ${(_catalogData?.products || []).map(p => {
+                        const isCurrent = p.code === planCode;
+                        const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
+                        return `
+                        <div class="card" style="text-align:center;${isCurrent ? 'border-color:var(--accent);' : 'opacity:0.7;'}">
+                            <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
+                            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;${isCurrent ? 'color:var(--accent);' : ''}">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
+                            ${isCurrent ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">← Vous êtes ici</div>' : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <div>La facturation et le changement d'offre seront disponibles prochainement. Contactez-nous pour en discuter.</div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="empty-state" style="padding:3rem;">
+                    <div class="empty-state-icon">💳</div>
+                    <h3>Aucun abonnement actif</h3>
+                    <p>Vous n'avez pas encore souscrit à un accompagnement mensuel.</p>
+                </div>
+                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Nos offres</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+                    ${(_catalogData?.products || []).map(p => {
+                        const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
+                        return `
+                        <div class="card" style="text-align:center;">
+                            <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
+                            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--accent);">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div style="margin-top:2rem;">
+                    <a href="index.html#diagnostic" class="btn btn-primary">Faire mon diagnostic</a>
+                </div>
+            `;
+        }
+
+        // Invoices section (placeholder)
+        html += `
+            <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Historique des factures</h3>
+            <div class="empty-state" style="padding:2rem;">
+                <div class="empty-state-icon">🧾</div>
+                <p>La facturation sera disponible avec l'étape M5.</p>
+            </div>
+        `;
+
+        container.innerHTML = html;
     }
 
     // ── Logout ──
