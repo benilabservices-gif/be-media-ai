@@ -409,7 +409,8 @@
         },
         logout() { return apiFetch('/auth/logout', { method: 'POST' }).catch(() => {}); },
         getMe() { return apiFetch('/me'); },
-        createOrg(body, diagToken) { return apiFetch('/orgs', { method: 'POST', body, headers: diagHeaders(diagToken) }); },
+         createOrg(body, diagToken) { return apiFetch('/orgs', { method: 'POST', body, headers: diagHeaders(diagToken) }); },
+         claimDiagnostic(orgId, body, diagToken) { return apiFetch('/orgs/' + orgId + '/diagnostics/claim', { method: 'POST', body, headers: diagHeaders(diagToken) }); },
         getOrg(id) { return apiFetch('/orgs/' + id); },
         getQuestionnaire() { return apiFetch('/public/questionnaire'); },
         createDiagnostic() { return apiFetch('/public/diagnostics', { method: 'POST', body: {} }); },
@@ -1539,18 +1540,57 @@
         document.body.style.overflow = '';
     }
     async function handleLogin(e) {
-        e.preventDefault();
-        const email = document.getElementById('authLoginEmail').value.trim();
-        const password = document.getElementById('authLoginPassword').value;
-        try {
-            const data = await api.login({ email, password });
-            _csrfToken = data?.csrf_token || _csrfToken;
-            await refreshAuth();
-            closeAuthModal();
-        } catch (err) {
-            document.getElementById('authError').textContent = describeApiError(err);
-        }
-    }
+         e.preventDefault();
+         const email = document.getElementById('authLoginEmail').value.trim();
+         const password = document.getElementById('authLoginPassword').value;
+         try {
+             const data = await api.login({ email, password });
+             _csrfToken = data?.csrf_token || _csrfToken;
+             await refreshAuth();
+             closeAuthModal();
+             // Attach diagnostic if one is pending in localStorage
+             const pendingId = localStorage.getItem('d360_diag_id');
+             const pendingToken = localStorage.getItem('d360_diag_token');
+             if (pendingId && pendingToken) {
+                 try {
+                     const meData = await api.getMe();
+                     const membership = meData?.memberships?.[0];
+                     if (membership) {
+                         // Claim onto existing org
+                         try {
+                             await api.claimDiagnostic(membership.organization_id, { diagnostic_id: pendingId }, pendingToken);
+                             localStorage.removeItem('d360_diag_id');
+                             localStorage.removeItem('d360_diag_token');
+                             showNotice('Diagnostic rattaché à « ' + (_orgData?.commercial_name || membership.organization_id) + ' ».');
+                         } catch (claimErr) {
+                             if (claimErr.code === 'DIAGNOSTIC_ALREADY_CLAIMED') {
+                                 localStorage.removeItem('d360_diag_id');
+                                 localStorage.removeItem('d360_diag_token');
+                                 showNotice('Ce diagnostic est déjà rattaché à une entreprise.');
+                             } else {
+                                 showNotice('Rattachement du diagnostic échoué : ' + describeApiError(claimErr));
+                             }
+                         }
+                     } else {
+                         // No org yet — create one
+                         try {
+                             const org = await api.createOrg({ diagnostic_id: pendingId }, pendingToken);
+                             localStorage.removeItem('d360_diag_id');
+                             localStorage.removeItem('d360_diag_token');
+                             showNotice('Espace créé pour « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.');
+                         } catch (err) {
+                             showNotice('Compte connecté, mais le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err));
+                         }
+                     }
+                 } catch (meErr) {
+                     console.error('[D360] Failed to get user after login:', meErr);
+                 }
+             }
+             window.location.href = 'dashboard.html?welcome=1';
+         } catch (err) {
+             document.getElementById('authError').textContent = describeApiError(err);
+         }
+     }
     async function handleRegister(e) {
         e.preventDefault();
         const fullName = document.getElementById('authRegName').value.trim();
