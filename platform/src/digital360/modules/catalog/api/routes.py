@@ -112,8 +112,8 @@ async def get_catalog(
                 family=product.family,
                 description=product.description,
                 includes=list(product.includes),
-                price=price_payload(product, view.currency),
-                available=product.price_in(view.currency) is not None,
+                price=price_payload(view.catalog, product, view.currency),
+                available=view.catalog.price_for(product, view.currency) is not None,
             )
             for product in view.products
         ],

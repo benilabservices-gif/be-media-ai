@@ -43,8 +43,10 @@ async def current_catalog_or_none(session: AsyncSession) -> Catalog | None:
         raise
 
 
-def price_payload(product: Product | None, currency: Currency) -> dict[str, Any] | None:
-    price = product.price_in(currency) if product else None
+def price_payload(
+    catalog: Catalog, product: Product | None, currency: Currency
+) -> dict[str, Any] | None:
+    price = catalog.price_for(product, currency) if product else None
     if price is None:
         return None
     return {"amount": price.amount, "currency": price.currency.value, "period": price.period.value}
@@ -52,6 +54,7 @@ def price_payload(product: Product | None, currency: Currency) -> dict[str, Any]
 
 @dataclass(frozen=True)
 class CatalogView:
+    catalog: Catalog
     currency: Currency
     available_currencies: list[Currency]
     products: list[Product]
@@ -82,11 +85,13 @@ class CatalogService:
         async with self._session_factory() as session:
             catalog = await current_catalog(session)
         public = [product for product in catalog.products if product.public]
-        available = sorted(
-            {price.currency for product in public for price in product.prices},
-            key=list(Currency).index,
-        )
+        available = [
+            currency
+            for currency in Currency
+            if any(catalog.price_for(product, currency) for product in public)
+        ]
         return CatalogView(
+            catalog=catalog,
             currency=currency or catalog.default_currency,
             available_currencies=available,
             products=public,

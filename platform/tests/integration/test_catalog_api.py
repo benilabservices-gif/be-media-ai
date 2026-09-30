@@ -40,7 +40,7 @@ def test_should_serve_public_catalog_in_xof_by_default(api: ApiClient) -> None:
     body = api.get("/public/catalog").json()
 
     assert body["currency"] == "XOF"
-    assert body["available_currencies"] == ["XOF"]
+    assert body["available_currencies"] == ["XOF", "XAF", "EUR"]
     products = {product["code"]: product for product in body["products"]}
     assert set(products) == {
         "DIGITAL_START",
@@ -57,13 +57,14 @@ def test_should_serve_public_catalog_in_xof_by_default(api: ApiClient) -> None:
     assert "ANNUAL_RENEWAL" not in products  # offre interne, non publique
 
 
-def test_should_mark_products_unavailable_in_currency_without_prices(api: ApiClient) -> None:
+def test_should_convert_prices_to_euros_on_request(api: ApiClient) -> None:
     body = api.get("/public/catalog?currency=EUR").json()
 
     assert body["currency"] == "EUR"
-    assert all(
-        product["price"] is None and not product["available"] for product in body["products"]
-    )
+    prices = {product["code"]: product["price"] for product in body["products"]}
+    assert prices["DIGITAL_START"] == {"amount": 13800, "currency": "EUR", "period": "NONE"}
+    assert prices["DIGITAL_ESSENTIAL"] == {"amount": 3900, "currency": "EUR", "period": "MONTH"}
+    assert all(product["available"] for product in body["products"])
 
 
 def test_should_reject_unknown_currency(api: ApiClient) -> None:
@@ -83,10 +84,12 @@ def test_should_price_recommendations_in_local_currency(api: ApiClient) -> None:
     assert prices["no_online_booking"] is None  # recommandation sans produit associé
 
 
-def test_should_leave_price_empty_where_currency_is_not_sold(api: ApiClient) -> None:
-    prices = _plan_prices(api, {**BEGINNER_ANSWERS, "country": "CM"})  # XAF, pas encore de prix
+def test_should_price_recommendations_in_xaf_and_eur_by_country(api: ApiClient) -> None:
+    cameroon = _plan_prices(api, {**BEGINNER_ANSWERS, "country": "CM"})
+    france = _plan_prices(api, {**BEGINNER_ANSWERS, "country": "FR"})
 
-    assert prices["no_website"] is None
+    assert cameroon["no_website"] == {"amount": 89900, "currency": "XAF", "period": "NONE"}
+    assert france["no_website"] == {"amount": 13800, "currency": "EUR", "period": "NONE"}
 
 
 # ── Droits (entitlements) ──

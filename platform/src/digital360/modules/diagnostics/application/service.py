@@ -463,7 +463,7 @@ class DiagnosticService:
         def with_price(view: PlanItemView) -> PlanItemView:
             if catalog is None or currency is None or view.product_code is None:
                 return view
-            price = price_payload(catalog.product(view.product_code), currency)
+            price = price_payload(catalog, catalog.product(view.product_code), currency)
             return dataclasses.replace(view, price=price)
 
         return DiagnosticResult(

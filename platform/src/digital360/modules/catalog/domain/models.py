@@ -3,6 +3,7 @@
 Montants en unité mineure (FCFA pour XOF/XAF, centimes pour EUR), toujours HT.
 """
 
+from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from typing import Annotated, Literal, Self
 
@@ -43,6 +44,27 @@ class Price(_Frozen):
     currency: Currency
     amount: Annotated[int, Field(ge=0)]
     period: BillingPeriod = BillingPeriod.NONE
+
+
+class DerivedPricing(_Frozen):
+    """Prix d'une devise calculé depuis une autre, pour les parités fixes (1 EUR = 655,957 XOF).
+
+    `rate` : unités de la devise source pour UNE unité de la devise cible.
+    `rounding` : CEIL_MAJOR arrondit à l'unité supérieure (138 € plutôt que 137,05 €) ;
+    NEAREST_MINOR garde la valeur exacte à l'unité mineure près.
+    """
+
+    source: Currency
+    rate: Annotated[Decimal, Field(gt=0)]
+    rounding: Literal["CEIL_MAJOR", "NEAREST_MINOR"] = "CEIL_MAJOR"
+
+    def convert(self, source_amount: int, target: Currency) -> int:
+        source_major = Decimal(source_amount) / (10 ** CURRENCY_EXPONENT[self.source])
+        target_major = source_major / self.rate
+        if self.rounding == "CEIL_MAJOR":
+            target_major = target_major.to_integral_value(rounding=ROUND_CEILING)
+        target_minor = target_major * (10 ** CURRENCY_EXPONENT[target])
+        return int(target_minor.to_integral_value(rounding=ROUND_HALF_UP))
 
 
 class EntitlementDefinition(_Frozen):
@@ -88,12 +110,21 @@ class Catalog(_Frozen):
     currency_by_country: dict[Annotated[str, Field(pattern=r"^[A-Z]{2}$")], Currency]
     entitlements: tuple[EntitlementDefinition, ...]
     products: tuple[Product, ...]
+    # Devises dont le prix est calculé (parité fixe) quand aucun prix explicite n'existe
+    derived_pricing: dict[Currency, DerivedPricing] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _check(self) -> Self:
         codes = [product.code for product in self.products]
         if len(codes) != len(set(codes)):
             raise ValueError("codes produits en double")
+        for target, rule in self.derived_pricing.items():
+            if rule.source is target:
+                raise ValueError(f"{target} ne peut pas être calculé depuis lui-même")
+            if rule.source in self.derived_pricing:
+                raise ValueError(
+                    f"{target} : la devise source {rule.source} doit avoir des prix explicites"
+                )
         definitions = {definition.key: definition for definition in self.entitlements}
         for product in self.products:
             for key, value in product.entitlements.items():
@@ -103,6 +134,19 @@ class Catalog(_Frozen):
                 if (definition.type == "BOOLEAN") != isinstance(value, bool):
                     raise ValueError(f"{product.code} : {key} attend une valeur {definition.type}")
         return self
+
+    def price_for(self, product: Product, currency: Currency) -> Price | None:
+        """Prix explicite s'il existe, sinon prix calculé par parité fixe, sinon None."""
+        explicit = product.price_in(currency)
+        if explicit is not None:
+            return explicit
+        rule = self.derived_pricing.get(currency)
+        source = product.price_in(rule.source) if rule else None
+        if rule is None or source is None:
+            return None
+        return Price(
+            currency=currency, amount=rule.convert(source.amount, currency), period=source.period
+        )
 
     def product(self, code: str) -> Product | None:
         return next((product for product in self.products if product.code == code), None)

@@ -15,7 +15,7 @@ from digital360.modules.diagnostics.domain.seeds import load_catalog
 
 @pytest.fixture(scope="module")
 def catalog() -> Catalog:
-    return load_catalog(Path("config/seeds/catalog.v1.yaml"))
+    return load_catalog(Path("config/seeds/catalog.v2.yaml"))
 
 
 def test_should_load_v1_catalog_with_official_xof_prices(catalog: Catalog) -> None:
@@ -33,8 +33,59 @@ def test_should_load_v1_catalog_with_official_xof_prices(catalog: Catalog) -> No
     }
 
 
-def test_should_not_sell_anything_in_currency_without_prices(catalog: Catalog) -> None:
-    assert all(product.price_in(Currency.EUR) is None for product in catalog.products)
+def test_should_derive_eur_prices_from_fixed_parity_rounded_up(catalog: Catalog) -> None:
+    prices = {
+        product.code: price.amount
+        for product in catalog.products
+        if (price := catalog.price_for(product, Currency.EUR))
+    }
+
+    # Centimes, arrondis à l'euro supérieur : 89 900 / 655,957 = 137,05 € → 138 €
+    assert prices == {
+        "DIGITAL_START": 13800,
+        "DIGITAL_ESSENTIAL": 3900,
+        "DIGITAL_GROWTH": 7700,
+        "DIGITAL_PERFORMANCE": 15300,
+    }
+
+
+def test_should_copy_xof_amounts_for_xaf_and_keep_billing_period(catalog: Catalog) -> None:
+    growth = catalog.product("DIGITAL_GROWTH")
+    assert growth is not None
+
+    price = catalog.price_for(growth, Currency.XAF)
+
+    assert price is not None
+    assert (price.amount, price.period) == (50000, "MONTH")
+
+
+def test_should_prefer_explicit_price_over_derived_one(catalog: Catalog) -> None:
+    data = catalog.model_dump(mode="json")
+    data["products"][0]["prices"].append({"currency": "EUR", "amount": 13900, "period": "NONE"})
+    custom = Catalog.model_validate(data)
+
+    price = custom.price_for(custom.products[0], Currency.EUR)
+
+    assert price is not None and price.amount == 13900
+
+
+def test_should_not_price_product_without_source_price(catalog: Catalog) -> None:
+    renewal = catalog.product("ANNUAL_RENEWAL")
+    assert renewal is not None
+
+    assert catalog.price_for(renewal, Currency.EUR) is None
+
+
+def test_should_reject_derivation_from_a_derived_currency(catalog: Catalog) -> None:
+    data = catalog.model_dump(mode="json")
+    data["derived_pricing"]["XAF"] = {
+        "source": "EUR",
+        "rate": "0.0015",
+        "rounding": "NEAREST_MINOR",
+    }
+
+    with pytest.raises(ValidationError, match="prix explicites"):
+        Catalog.model_validate(data)
 
 
 def test_should_map_country_to_currency(catalog: Catalog) -> None:
