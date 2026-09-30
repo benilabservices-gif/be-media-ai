@@ -184,7 +184,7 @@
             <div class="reveal" style="text-align:center;">
                 <div class="section-label" style="justify-content:center;">Nos offres</div>
                 <h2 class="section-title">Des formules <span style="color:var(--accent);font-style:italic;">claires</span></h2>
-                <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Commencez par Digital Start, puis choisissez votre accompagnement mensuel.</p>
+                <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Commencez par l'offre Start, puis choisissez votre accompagnement mensuel.</p>
                 <div class="currency-selector" style="justify-content:center;margin-top:1.5rem;">
                     <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">FCFA</button>
                     <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">€</button>
@@ -338,7 +338,7 @@
                 </div>
                 <div class="plan-phases reveal delay-1" id="planPhases"></div>
                 <div class="reveal delay-2" style="text-align:center;margin-top:3rem;padding:3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);">
-                    <h2 class="section-title" style="margin-bottom:1rem;">Commencez par <span style="color:var(--accent);font-style:italic;">Digital Start</span></h2>
+                    <h2 class="section-title" style="margin-bottom:1rem;">Commencez par l'offre <span style="color:var(--accent);font-style:italic;">Start</span></h2>
                     <p style="color:var(--text-secondary);margin-bottom:1rem;">Le pack complet pour construire votre première présence web professionnelle.</p>
                     <div id="planPricingCta" style="font-family:var(--font-display);font-size:2.5rem;font-weight:700;color:var(--accent);margin-bottom:0.5rem;"></div>
                     <div class="currency-selector" style="justify-content:center;margin-bottom:1.5rem;">
@@ -552,10 +552,10 @@
     const MOCK_CATALOG = {
         currency: 'XOF',
         products: [
-            { code: 'DIGITAL_START', name: 'Digital Start', kind: 'ONE_TIME', module: 'PRESENCE', price: { amount: 89900, currency: 'XOF' }, description: 'Pack complet : site web, domaine, hébergement, SEO de base.' },
-            { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', kind: 'SUBSCRIPTION', module: 'PRESENCE', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, description: 'Maintenance, mises à jour, 4 contenus/mois, suivi Google Business.' },
-            { code: 'DIGITAL_GROWTH', name: 'Digital Growth', kind: 'SUBSCRIPTION', module: 'VISIBILITY', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Essential + gestion réseaux, 8 contenus/mois, SEO local.' },
-            { code: 'DIGITAL_PERFORMANCE', name: 'Digital Performance', kind: 'SUBSCRIPTION', module: 'ACQUISITION', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Growth + publicité, email marketing, automatisations, reporting avancé.' }
+            { code: 'DIGITAL_START', name: 'Start', kind: 'ONE_TIME', module: 'PRESENCE', price: { amount: 89900, currency: 'XOF' }, description: 'Pack complet : site web, domaine, hébergement, SEO de base.' },
+            { code: 'DIGITAL_ESSENTIAL', name: 'Essential', kind: 'SUBSCRIPTION', module: 'PRESENCE', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, description: 'Maintenance, mises à jour, 4 contenus/mois, suivi Google Business.' },
+            { code: 'DIGITAL_GROWTH', name: 'Growth', kind: 'SUBSCRIPTION', module: 'VISIBILITY', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Essential + gestion réseaux, 8 contenus/mois, SEO local.' },
+            { code: 'DIGITAL_PERFORMANCE', name: 'Performance', kind: 'SUBSCRIPTION', module: 'ACQUISITION', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Growth + publicité, email marketing, automatisations, reporting avancé.' }
         ]
     };
 
@@ -566,18 +566,21 @@
         const amount = priceObj.amount;
         const cur = priceObj.currency || fallbackCurrency || currentCurrency;
         if (cur === 'EUR') {
-            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+            // Montant rond : « 138 € HT » ; sinon deux décimales : « 137,05 € HT »
+            const decimals = amount % 100 === 0 ? 0 : 2;
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
         }
         // XOF / XAF
         return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
     }
 
-    function setCurrency(cur) {
+    async function setCurrency(cur) {
         currentCurrency = cur;
         document.querySelectorAll('.currency-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.cur === cur);
         });
-        renderPricing();
+        // Les prix de chaque devise viennent de l'API (conversion par parité fixe côté serveur)
+        await loadCatalog();
         renderPlanPricingCta();
     }
 
@@ -703,14 +706,15 @@
         if (!grid) { console.error('[D360] pricingGrid element not found!'); return; }
         const featureMap = {
             DIGITAL_START: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'],
-            DIGITAL_ESSENTIAL: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'],
+            DIGITAL_ESSENTIAL: ['Tout le pack Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'],
             DIGITAL_GROWTH: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'],
             DIGITAL_PERFORMANCE: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé']
         };
         grid.innerHTML = '';
          catalogData.products.forEach((prod, i) => {
              const isFeatured = prod.code === 'DIGITAL_GROWTH';
-             const period = prod.price?.period ? (prod.price.period === 'MONTH' ? ' / mois' : ' / an') : '';
+             // NONE = paiement unique (Start) : aucune période affichée
+             const period = { MONTH: ' / mois', YEAR: ' / an' }[prod.price?.period] || '';
              const features = featureMap[prod.code] || [];
              const card = document.createElement('div');
              card.className = `card price-card${isFeatured ? ' featured' : ''} reveal delay-${i + 1}`;
@@ -753,10 +757,10 @@
          const grid = document.getElementById('pricingGrid');
          if (!grid) { console.error('[D360] renderPricingDefault: pricingGrid not found'); return; }
         const products = [
-             { code: 'DIGITAL_START', name: 'Digital Start', price: { amount: 89900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
-             { code: 'DIGITAL_ESSENTIAL', name: 'Digital Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Digital Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
-             { code: 'DIGITAL_GROWTH', name: 'Digital Growth', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
-             { code: 'DIGITAL_PERFORMANCE', name: 'Digital Performance', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
+             { code: 'DIGITAL_START', name: 'Start', price: { amount: 89900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
+             { code: 'DIGITAL_ESSENTIAL', name: 'Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
+             { code: 'DIGITAL_GROWTH', name: 'Growth', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
+             { code: 'DIGITAL_PERFORMANCE', name: 'Performance', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
          ];
         grid.innerHTML = '';
          products.forEach((p, i) => {
