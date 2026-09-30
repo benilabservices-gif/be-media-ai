@@ -60,9 +60,9 @@
 
     <div class="lp-mobile-menu" id="mobileMenu">
         <button class="modal-close" onclick="toggleMobileMenu()" style="position:absolute;top:1.5rem;right:1.5rem;">✕</button>
-        <a href="#services" onclick="toggleMobileMenu();scrollToSection('services')">Services</a>
-        <a href="#how" onclick="toggleMobileMenu();scrollToSection('how')">Comment ça marche</a>
-        <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing')">Tarifs</a>
+        <a href="#services" onclick="toggleMobileMenu();scrollToSection('services');return false;">Services</a>
+        <a href="#how" onclick="toggleMobileMenu();scrollToSection('how');return false;">Comment ça marche</a>
+        <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing');return false;">Tarifs</a>
         <a href="#" onclick="toggleMobileMenu();startDiagnostic()">Diagnostic gratuit</a>
          <a href="#" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;">Mon espace client</a>
     </div>
@@ -595,73 +595,88 @@
     // Observe all existing reveals on load
     document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-    function showPage(pageId) {
+    // ── Navigation ──
+    // Pages (accueil, diagnostic, résultats) : une étape d'historique chacune, pour que le
+    // bouton « retour » fonctionne. Sections de l'accueil (Services, Tarifs…) : simple
+    // défilement, sans toucher à l'historique.
+    // Le site gère lui-même le défilement : la restauration automatique du navigateur
+    // interromprait les défilements vers les sections après un « retour »
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    const PAGES = ['landing', 'diagnostic', 'score', 'passport', 'plan'];
+    const RESULT_PAGES = ['score', 'passport', 'plan'];
+
+    function showPage(pageId, { push = true } = {}) {
+        // Une page de résultat sans résultat en mémoire (ex. après rechargement) serait vide
+        if (RESULT_PAGES.includes(pageId) && !scoreResult) pageId = 'landing';
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         const page = document.getElementById('page-' + pageId);
         if (page) page.classList.add('active');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0 });
         setTimeout(() => {
             document.querySelectorAll('.page.active .reveal').forEach(el => {
-                if (el.getBoundingClientRect().top < window.innerHeight * 0.9) el.classList.add('active');
+                if (isInViewport(el)) el.classList.add('active');
             });
         }, 100);
-        // Push to history (not replace) so back-button works
-        history.pushState({ page: pageId }, '', '#' + pageId);
+        if (push && location.hash !== '#' + pageId) {
+            history.pushState({ page: pageId }, '', '#' + pageId);
+        }
     }
 
     function isInViewport(el) { return el.getBoundingClientRect().top < window.innerHeight * 0.9; }
 
-    // Hash-based navigation
-    function handleHash() {
-        const hash = window.location.hash.slice(1);
-        if (hash && document.getElementById('page-' + hash)) {
-            showPage(hash);
-        } else {
+    function scrollToSection(id) {
+        const landing = document.getElementById('page-landing');
+        const target = document.getElementById(id);
+        if (!target) return;
+        const go = () => {
+            // Arrêt juste sous la barre de menus fixe, qui masquerait sinon le titre de la section
+            const navHeight = document.getElementById('mainNav')?.offsetHeight || 0;
+            const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - navHeight - 16);
+            window.scrollTo({ top, behavior: 'smooth' });
+            // Un défilement doux peut être interrompu par le navigateur : on termine le trajet
+            setTimeout(() => {
+                if (Math.abs(window.scrollY - top) > 40) window.scrollTo({ top, behavior: 'instant' });
+                // Le contenu d'une section atteinte par le menu s'affiche toujours, même si
+                // l'animation d'apparition n'a pas pu se déclencher
+                target.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
+            }, 900);
+        };
+        if (!landing.classList.contains('active')) {
             showPage('landing');
+            setTimeout(go, 150);
+        } else {
+            go();
         }
     }
-    window.addEventListener('hashchange', handleHash);
-    // Handle browser back/forward
-    window.addEventListener('popstate', (e) => {
-        const hash = window.location.hash.slice(1);
-        if (hash && document.getElementById('page-' + hash)) {
-            showPage(hash);
+
+    // Réaffiche la page correspondant à l'adresse, sans ajouter d'étape (retour/avance)
+    function routeFromLocation() {
+        const hash = location.hash.slice(1);
+        if (PAGES.includes(hash)) {
+            showPage(hash, { push: false });
+        } else if (hash && document.getElementById(hash)) {
+            showPage('landing', { push: false });
+            setTimeout(() => document.getElementById(hash).scrollIntoView(), 150);
         } else {
-            showPage('landing');
+            showPage('landing', { push: false });
         }
+    }
+    window.addEventListener('popstate', routeFromLocation);
+
+    // Liens de section du menu et du hero (data-scroll) : défilement, pas de navigation
+    document.addEventListener('click', e => {
+        const link = e.target.closest('a[data-scroll]');
+        if (!link) return;
+        e.preventDefault();
+        scrollToSection(link.getAttribute('href').slice(1));
     });
 
     function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
-    function scrollToSection(id) {
-        const currentPage = window.location.hash.slice(1) || 'landing';
-        if (currentPage !== 'landing') {
-            showPage('landing');
-            setTimeout(() => {
-                const el = document.getElementById(id);
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 300);
-        } else {
-            const el = document.getElementById(id);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
 
-    // ── Helper: observe dynamically-added .reveal elements ──
+    // ── Contenu créé dynamiquement avec la classe reveal (tarifs, plan, passport) ──
     function observeReveals(container) {
         if (!revealObserver || !container) return;
         container.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-    }
-
-    // ── Scroll reveal ──
-    try {
-        const revealObserver = new IntersectionObserver(entries => {
-            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
-        }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
-        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-    } catch(e) {
-        console.warn('[D360] Reveal observer failed:', e);
-        // Fallback: activate all reveals
-        document.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
     }
 
     // ── Nav scroll ──
@@ -1533,11 +1548,12 @@
                  body.appendChild(row);
              });
              phase.appendChild(header);
-             phase.appendChild(body);
-             header.addEventListener('click', () => phase.classList.toggle('open'));
-            container.appendChild(phase);
-        });
-    }
+              phase.appendChild(body);
+              header.addEventListener('click', () => phase.classList.toggle('open'));
+             container.appendChild(phase);
+         });
+         observeReveals(container);
+     }
 
     // ── Start diagnostic flow ──
     function startDiagnostic() {
@@ -1553,7 +1569,7 @@
     // ── Init ──
     loadCatalog();
     renderPlanPricingCta();
-    handleHash();
+    routeFromLocation();
 
     // ── CSRF (déplacé au-dessus dans api.getCsrf) ──
     // ── Auth state ──
