@@ -1,0 +1,9 @@
+# Seuls les fichiers du frontend statique doivent être publiés.
+# outputDirectory = "." : tout ce qui n'est pas exclu ici est servi publiquement.
+platform/
+.github/
+.omc/
+.vscode/
+.env
+.env.*
+*.md

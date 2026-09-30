@@ -3,6 +3,7 @@
   "buildCommand": null,
   "outputDirectory": ".",
   "routes": [
+    { "handle": "filesystem" },
     { "src": "/digital360/(.*)", "dest": "/digital360/index.html" },
     { "src": "/academy360/(.*)", "dest": "/academy360/index.html" },
     { "src": "/booster360/(.*)", "dest": "/booster360/index.html" }
