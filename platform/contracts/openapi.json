@@ -64,6 +64,20 @@
         "title": "CategoryScoreOut",
         "type": "object"
       },
+      "ClaimDiagnosticRequest": {
+        "properties": {
+          "diagnostic_id": {
+            "format": "uuid",
+            "title": "Diagnostic Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "diagnostic_id"
+        ],
+        "title": "ClaimDiagnosticRequest",
+        "type": "object"
+      },
       "ClientRole": {
         "enum": [
           "CLIENT_OWNER",
@@ -3104,6 +3118,77 @@
           }
         },
         "summary": "List Organization Diagnostics",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/diagnostics/claim": {
+      "post": {
+        "description": "Rattache à cette entreprise un diagnostic fait avant la connexion (compte existant).\n\nJeton du diagnostic dans l'en-tête X-Diagnostic-Token, comme sur les routes publiques.",
+        "operationId": "claim_diagnostic_api_v1_orgs__org_id__diagnostics_claim_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-diagnostic-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Diagnostic-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimDiagnosticRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Claim Diagnostic",
         "tags": [
           "diagnostic"
         ]

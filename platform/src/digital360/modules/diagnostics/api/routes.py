@@ -3,6 +3,7 @@ from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
+from pydantic import BaseModel
 
 from digital360.core.actor import Actor
 from digital360.core.csrf import require_csrf
@@ -155,6 +156,33 @@ async def list_organization_diagnostics(access: ReadAccess, service: Service) ->
     return DiagnosticHistory(
         data=[to_result_out(result) for result in await service.history(access.tenant)]
     )
+
+
+class ClaimDiagnosticRequest(BaseModel):
+    diagnostic_id: uuid.UUID
+
+
+@router.post(
+    "/orgs/{org_id}/diagnostics/claim",
+    response_model=DiagnosticResultOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def claim_diagnostic(
+    body: ClaimDiagnosticRequest,
+    access: Annotated[
+        OrganizationAccess, Depends(require_org_permission(Permission.ORGANIZATION_UPDATE))
+    ],
+    service: Service,
+    token: Token,
+) -> DiagnosticResultOut:
+    """Rattache à cette entreprise un diagnostic fait avant la connexion (compte existant).
+
+    Jeton du diagnostic dans l'en-tête X-Diagnostic-Token, comme sur les routes publiques.
+    """
+    result = await service.claim_for_organization(
+        access.tenant, Actor.user(access.principal.user_id), body.diagnostic_id, token
+    )
+    return to_result_out(result)
 
 
 @router.get("/orgs/{org_id}/action-plan", response_model=ActionPlanOut)

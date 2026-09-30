@@ -396,3 +396,78 @@ def test_should_not_leak_diagnostic_via_unknown_id(api: ApiClient) -> None:
     response = api.get_with(f"/public/diagnostics/{uuid.uuid4()}/result", diagnostic.headers())
 
     assert response.status_code == 404
+
+
+# ── Rattachement à une entreprise existante (connexion après le diagnostic) ──
+
+
+def _claim_existing(api: ApiClient, org_id: str, diagnostic: Diagnostic) -> Any:
+    return api.post(
+        f"/orgs/{org_id}/diagnostics/claim",
+        {"diagnostic_id": diagnostic.id},
+        headers={"X-Diagnostic-Token": diagnostic.token},
+    )
+
+
+def test_should_attach_new_diagnostic_to_existing_organization(api: ApiClient) -> None:
+    api.register()
+    org_id = api.create_organization()["id"]
+    diagnostic = _completed_diagnostic(api)
+
+    response = _claim_existing(api, org_id, diagnostic)
+
+    assert response.status_code == 200, response.json()
+    assert response.json()["status"] == "CLAIMED"
+    history = api.get(f"/orgs/{org_id}/diagnostics").json()["data"]
+    assert [item["id"] for item in history] == [diagnostic.id]
+    passport = {i["key"]: i["status"] for i in api.get(f"/orgs/{org_id}/passport").json()["items"]}
+    assert passport["GOOGLE_BUSINESS"] == "IN_PROGRESS"
+    assert api.get(f"/orgs/{org_id}/action-plan").json()["items"][0]["rule_key"] == "no_website"
+
+
+def test_should_keep_verified_passport_items_when_attaching(
+    api: ApiClient, test_database_url: str
+) -> None:
+    api.register()
+    first = _completed_diagnostic(api)
+    org_id = _claim(api, first).json()["id"]
+    # L'équipe BENILAB a vérifié que le site est en ligne
+    _query(
+        test_database_url,
+        "UPDATE passport_items SET status = 'ACTIVE', source = 'VERIFIED' "
+        "WHERE organization_id = :org AND item_key = 'WEBSITE' RETURNING id",
+        org=org_id,
+    )
+    second = _completed_diagnostic(api)  # déclare toujours « pas de site »
+
+    assert _claim_existing(api, org_id, second).status_code == 200
+
+    items = {i["key"]: i for i in api.get(f"/orgs/{org_id}/passport").json()["items"]}
+    assert (items["WEBSITE"]["status"], items["WEBSITE"]["source"]) == ("ACTIVE", "VERIFIED")
+    assert len(api.get(f"/orgs/{org_id}/diagnostics").json()["data"]) == 2
+
+
+def test_should_refuse_attaching_twice_or_without_token(api: ApiClient) -> None:
+    api.register()
+    org_id = api.create_organization()["id"]
+    diagnostic = _completed_diagnostic(api)
+    assert _claim_existing(api, org_id, diagnostic).status_code == 200
+
+    again = _claim_existing(api, org_id, diagnostic)
+    without_token = api.post(f"/orgs/{org_id}/diagnostics/claim", {"diagnostic_id": diagnostic.id})
+
+    assert again.status_code == 409
+    assert again.json()["code"] == "DIAGNOSTIC_ALREADY_CLAIMED"
+    assert without_token.status_code == 404
+
+
+def test_should_refuse_attaching_an_unfinished_diagnostic(api: ApiClient) -> None:
+    api.register()
+    org_id = api.create_organization()["id"]
+    diagnostic = Diagnostic(api)
+    diagnostic.put_answers(BEGINNER_ANSWERS)
+
+    response = _claim_existing(api, org_id, diagnostic)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "DIAGNOSTIC_NOT_COMPLETED"

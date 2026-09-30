@@ -44,6 +44,7 @@ from digital360.modules.diagnostics.infrastructure.models import (
     DigitalScore,
     PlanItemStatus,
 )
+from digital360.modules.passport.application.service import initialize_from_declarations
 
 DIAGNOSTIC_COMPLETED_EVENT = "diagnostic.completed"
 
@@ -344,6 +345,34 @@ class DiagnosticService:
                 )
             ).scalars()
             return [await self._result(session, diagnostic) for diagnostic in diagnostics]
+
+    async def claim_for_organization(
+        self, context: TenantContext, actor: Actor, diagnostic_id: uuid.UUID, token: str
+    ) -> DiagnosticResult:
+        """Rattache un diagnostic terminé à une organisation EXISTANTE (visiteur qui se
+        connecte après son diagnostic) et met à jour le Passport déclaratif, sans écraser
+        les éléments vérifiés par BENILAB ou synchronisés."""
+        async with tenant_transaction(self._session_factory, context) as session:
+            claimed = await load_claimable(session, diagnostic_id, token)
+            await attach_to_organization(session, claimed.session_id, context.organization_id)
+            await initialize_from_declarations(
+                session, context.organization_id, claimed.passport_statuses
+            )
+            await record_audit(
+                session,
+                actor=actor,
+                action="diagnostic.claim",
+                entity_type="diagnostic",
+                entity_id=claimed.session_id,
+                organization_id=context.organization_id,
+            )
+            diagnostic = (
+                await session.execute(
+                    select(DiagnosticSession).where(DiagnosticSession.id == claimed.session_id)
+                )
+            ).scalar_one()
+            await session.refresh(diagnostic)
+            return await self._result(session, diagnostic)
 
     async def update_plan_item(
         self, context: TenantContext, actor: Actor, item_id: uuid.UUID, status: PlanItemStatus

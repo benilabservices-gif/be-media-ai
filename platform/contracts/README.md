@@ -29,6 +29,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /orgs/{id}/passport` | **Disponible** | 16 éléments, avec `source` |
 | `GET /orgs/{id}/action-plan` · `PATCH …/items/{item_id}` | **Disponible** | Le client peut écarter une recommandation |
 | `GET /orgs/{id}/diagnostics` | **Disponible** | Historique des diagnostics de l'entreprise |
+| `POST /orgs/{id}/diagnostics/claim` | **Disponible** | Rattache à une entreprise **existante** un diagnostic fait avant la connexion (corps `{"diagnostic_id"}`, en-tête `X-Diagnostic-Token`) |
 | `GET /admin/diagnostics` | **Disponible** | Staff : prospects captés (coordonnées, score, consentements) |
 | `GET /public/catalog?currency=XOF` | **Disponible** | Offres publiques, `price` (ou `null` si non vendue dans la devise), `available_currencies`. Pour l'instant **XOF uniquement** : XAF et EUR renvoient `price: null` |
 | `GET /orgs/{id}/entitlements` | **Disponible** | Droits effectifs de l'entreprise (`value` : booléen, entier ou `"UNLIMITED"`), avec leur `sources` |
@@ -176,6 +177,12 @@ function evaluate(cond, answers) {
 4. Dernière étape : case de consentement à la politique de confidentialité (obligatoire) et cases facultatives (offres par email, par WhatsApp), puis `POST /public/diagnostics/{id}/complete`. Un double appel renvoie le même résultat (double clic sans risque).
 5. Afficher `score`, `passport`, `action_plan`. Le texte `score.disclaimer` doit apparaître près du score (ce n'est pas une certification).
 6. **Inscription** : `POST /auth/register`, puis `POST /orgs` avec `{"diagnostic_id": "<id>"}` et l'en-tête `X-Diagnostic-Token`. Nom, pays, ville, téléphone, WhatsApp, email et description de l'entreprise sont repris des réponses (tout champ envoyé dans le corps les remplace). Le Passport et le plan d'action de l'entreprise sont créés dans la foulée. Supprimer ensuite `{id, token}` du `localStorage`.
+
+7. **Connexion avec un compte existant** (au lieu de l'inscription) : après `POST /auth/login`, si un diagnostic terminé est en `localStorage`, appeler `GET /me` :
+   - l'utilisateur a déjà une entreprise (`memberships` non vide) : `POST /orgs/{organization_id}/diagnostics/claim` avec `{"diagnostic_id": "<id>"}` et l'en-tête `X-Diagnostic-Token` ; le Passport est mis à jour (les éléments vérifiés par BENILAB sont conservés) ;
+   - aucune entreprise : `POST /orgs` avec `{"diagnostic_id"}` comme à l'inscription.
+
+   Dans les deux cas, supprimer ensuite `{id, token}` du `localStorage` et rediriger vers `dashboard.html`. Réponse `409 DIAGNOSTIC_ALREADY_CLAIMED` : le diagnostic est déjà rattaché, supprimer simplement la copie locale.
 
 Erreurs propres au diagnostic : `NOT_FOUND` (identifiant ou jeton faux, 404), `QUESTIONNAIRE_INCOMPLETE` (422, `errors[].field` = `answers.<clé>`), `CONSENT_REQUIRED` (422), `DIAGNOSTIC_ALREADY_COMPLETED` (409, réponses figées), `DIAGNOSTIC_NOT_COMPLETED` (409), `DIAGNOSTIC_ALREADY_CLAIMED` (409), `RATE_LIMITED` (429, 30 diagnostics par heure et par IP).
 
