@@ -23,10 +23,10 @@ services:
       timeout: 3s
       retries: 10
 
-  # Étape de release : les migrations passent avant le démarrage de l'API et du worker
+  # Étape de release : migrations puis publication de la configuration métier, avant l'API
   migrate:
     build: .
-    command: ["alembic", "upgrade", "head"]
+    command: ["sh", "-c", "alembic upgrade head && python -m digital360.cli seed-config"]
     environment: *app-env
     depends_on:
       postgres:

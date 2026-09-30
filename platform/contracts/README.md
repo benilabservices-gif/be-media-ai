@@ -20,9 +20,18 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /orgs/{org_id}` · `PATCH /orgs/{org_id}` | **Disponible** | PATCH partiel : seuls les champs envoyés changent |
 | `GET /orgs/{org_id}/members` | **Disponible** | |
 | `GET /admin/organizations` · `GET /admin/organizations/{id}` | **Disponible** | Staff uniquement ; pagination et filtres (§5) |
-| `GET /public/questionnaire`, `/public/diagnostics/*` | À mocker | Prochaine étape backend (M3) |
-| `GET /public/catalog` | À mocker | M4 |
-| `/orgs/{id}/passport`, `/action-plan`, `/entitlements`, `/website-projects` | À mocker | M3 à M6 |
+| `GET /public/questionnaire` | **Disponible** | Sections, questions, options, `visible_if` (§9) |
+| `POST /public/diagnostics` | **Disponible** | Renvoie `id` et `token` : les garder en `localStorage` |
+| `PUT /public/diagnostics/{id}/answers` | **Disponible** | Réponses partielles, en-tête `X-Diagnostic-Token` |
+| `POST /public/diagnostics/{id}/complete` | **Disponible** | Corps `{"consents": {...}}` ; renvoie score, passport, plan |
+| `GET /public/diagnostics/{id}/result` | **Disponible** | Même format que `complete` |
+| `POST /orgs` avec `diagnostic_id` | **Disponible** | Rattache le diagnostic à l'inscription (§9) |
+| `GET /orgs/{id}/passport` | **Disponible** | 16 éléments, avec `source` |
+| `GET /orgs/{id}/action-plan` · `PATCH …/items/{item_id}` | **Disponible** | Le client peut écarter une recommandation |
+| `GET /orgs/{id}/diagnostics` | **Disponible** | Historique des diagnostics de l'entreprise |
+| `GET /admin/diagnostics` | **Disponible** | Staff : prospects captés (coordonnées, score, consentements) |
+| `GET /public/catalog` | À mocker | M4. Les prix EUR de ton mock sont des conversions, pas des prix officiels |
+| `/orgs/{id}/entitlements`, `/website-projects` | À mocker | M4 à M6 |
 
 ## 2. Configuration
 
@@ -114,7 +123,56 @@ Page suivante : même requête avec `&cursor=<next_cursor>`. Tri : du plus réce
 2. `API_BASE` : rendre configurable (§2).
 3. Ajouter `register`, `login`, `logout`, `getCsrf`, `updateMe`, `createOrg`, `updateOrg`, `getMembers`, `adminListOrgs` (§1).
 4. Garder le jeton CSRF renvoyé par `/auth/csrf` et par la connexion en mémoire, plutôt que de relire le cookie (§3).
-5. Pour M3 : les endpoints `/public/diagnostics/{id}/*` exigeront l'en-tête `X-Diagnostic-Token` (jeton renvoyé par `POST /public/diagnostics`). Tu peux déjà prévoir le paramètre.
+5. Diagnostic : voir §9 (en-tête `X-Diagnostic-Token`, consentements, suppression de `saveContact`).
+
+## 9. Diagnostic : parcours et écarts avec tes mocks
+
+Les formats de réponse reprennent **tes mocks** (`getQuestionnaire`, `completeDiagnostic`) : les écrans existants n'ont presque rien à changer. Écarts à corriger :
+
+| Sujet | Ton mock | API réelle |
+|---|---|---|
+| `visible_if` | Portait sur des faits serveur (`has_google_business`) que le navigateur ne connaît pas | Porte sur les **réponses** : `{"fact": "site", "eq": "oui"}`, `{"fact": "gb", "in": ["oui", "en-cours"]}` |
+| Question « pays » | Absente | Ajoutée (`country`, obligatoire, valeurs `CI`, `SN`, `CM`…) : elle fixe la devise et le pays de l'entreprise |
+| Avis Google | Option `n/a` | Supprimée : la question n'apparaît que si `gb` vaut `oui` ou `en-cours` |
+| Libellés | Avec émojis | Sans émojis (ajoute tes icônes à l'affichage, en te basant sur `value`) |
+| Contact | `saveContact` vers `PUT /contact` | **Supprimé** : les coordonnées sont des questions de la section `identity` |
+| Consentement | Absent | `complete` exige `{"consents": {"privacy": true, "marketing_email": false, "marketing_whatsapp": false}}` ; sans `privacy: true`, réponse 422 `CONSENT_REQUIRED` |
+| Plan d'action | — | Chaque élément a en plus `id`, `phase` (`PRESENT`, `VISIBLE`, `ATTRACT`, `CONVERT`, `RETAIN`, pour grouper en 5 phases) et `price` (`null` jusqu'au catalogue, M4) |
+
+**Évaluer `visible_if` dans le navigateur**, avec la même grammaire que le serveur, sur l'objet des réponses courantes :
+
+```js
+function evaluate(cond, answers) {
+    if (cond.all) return cond.all.every(c => evaluate(c, answers));
+    if (cond.any) return cond.any.some(c => evaluate(c, answers));
+    if (cond.not) return !evaluate(cond.not, answers);
+    const value = answers[cond.fact];
+    if ('exists' in cond) return (value != null) === cond.exists;
+    if (value == null) return false;
+    if ('eq' in cond) return value === cond.eq;
+    if ('ne' in cond) return value !== cond.ne;
+    if ('in' in cond) return cond.in.includes(value);
+    if ('contains' in cond) {
+        return Array.isArray(value) ? value.includes(cond.contains) : String(value).includes(cond.contains);
+    }
+    if ('gt' in cond) return value > cond.gt;
+    if ('gte' in cond) return value >= cond.gte;
+    if ('lt' in cond) return value < cond.lt;
+    if ('lte' in cond) return value <= cond.lte;
+    return false;
+}
+```
+
+**Parcours** :
+
+1. `GET /public/questionnaire` : une étape par section, en masquant les questions dont `visible_if` est faux.
+2. `POST /public/diagnostics` : stocker `{id, token}` en `localStorage` (reprise possible si la page est rechargée).
+3. À chaque étape : `PUT /public/diagnostics/{id}/answers` avec `{"answers": {...}}` et l'en-tête `X-Diagnostic-Token: <token>`. Réponses partielles acceptées ; `null` ou `""` efface une réponse. La réponse donne `missing_required` (questions obligatoires encore vides) et les réponses normalisées (le téléphone `+225 07 00 00 00 00` devient `+2250700000000`).
+4. Dernière étape : case de consentement à la politique de confidentialité (obligatoire) et cases facultatives (offres par email, par WhatsApp), puis `POST /public/diagnostics/{id}/complete`. Un double appel renvoie le même résultat (double clic sans risque).
+5. Afficher `score`, `passport`, `action_plan`. Le texte `score.disclaimer` doit apparaître près du score (ce n'est pas une certification).
+6. **Inscription** : `POST /auth/register`, puis `POST /orgs` avec `{"diagnostic_id": "<id>"}` et l'en-tête `X-Diagnostic-Token`. Nom, pays, ville, téléphone, WhatsApp, email et description de l'entreprise sont repris des réponses (tout champ envoyé dans le corps les remplace). Le Passport et le plan d'action de l'entreprise sont créés dans la foulée. Supprimer ensuite `{id, token}` du `localStorage`.
+
+Erreurs propres au diagnostic : `NOT_FOUND` (identifiant ou jeton faux, 404), `QUESTIONNAIRE_INCOMPLETE` (422, `errors[].field` = `answers.<clé>`), `CONSENT_REQUIRED` (422), `DIAGNOSTIC_ALREADY_COMPLETED` (409, réponses figées), `DIAGNOSTIC_NOT_COMPLETED` (409), `DIAGNOSTIC_ALREADY_CLAIMED` (409), `RATE_LIMITED` (429, 30 diagnostics par heure et par IP).
 
 ## 7. Types
 

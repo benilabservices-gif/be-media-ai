@@ -68,6 +68,7 @@ jobs:
           alembic downgrade base
           alembic upgrade head
           alembic check
+          python -m digital360.cli seed-config
 
       - name: Tests (unitaires + intégration)
         run: pytest -ra

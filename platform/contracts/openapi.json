@@ -1,6 +1,40 @@
 {
   "components": {
     "schemas": {
+      "ActionPlanOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlanItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ActionPlanOut",
+        "type": "object"
+      },
+      "CategoryScoreOut": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "score",
+          "label"
+        ],
+        "title": "CategoryScoreOut",
+        "type": "object"
+      },
       "ClientRole": {
         "enum": [
           "CLIENT_OWNER",
@@ -8,6 +42,41 @@
         ],
         "title": "ClientRole",
         "type": "string"
+      },
+      "CompleteDiagnosticRequest": {
+        "properties": {
+          "consents": {
+            "$ref": "#/components/schemas/Consents"
+          }
+        },
+        "required": [
+          "consents"
+        ],
+        "title": "CompleteDiagnosticRequest",
+        "type": "object"
+      },
+      "Consents": {
+        "properties": {
+          "marketing_email": {
+            "default": false,
+            "title": "Marketing Email",
+            "type": "boolean"
+          },
+          "marketing_whatsapp": {
+            "default": false,
+            "title": "Marketing Whatsapp",
+            "type": "boolean"
+          },
+          "privacy": {
+            "title": "Privacy",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "privacy"
+        ],
+        "title": "Consents",
+        "type": "object"
       },
       "CsrfResponse": {
         "properties": {
@@ -20,6 +89,318 @@
           "csrf_token"
         ],
         "title": "CsrfResponse",
+        "type": "object"
+      },
+      "DiagnosticHistory": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticResultOut"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DiagnosticHistory",
+        "type": "object"
+      },
+      "DiagnosticPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticSummaryOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "required": [
+          "data",
+          "page"
+        ],
+        "title": "DiagnosticPage",
+        "type": "object"
+      },
+      "DiagnosticResultOut": {
+        "properties": {
+          "action_plan": {
+            "$ref": "#/components/schemas/ActionPlanOut"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "passport": {
+            "$ref": "#/components/schemas/digital360__modules__diagnostics__api__schemas__PassportOut"
+          },
+          "score": {
+            "$ref": "#/components/schemas/ScoreOut"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "completed_at",
+          "score",
+          "passport",
+          "action_plan"
+        ],
+        "title": "DiagnosticResultOut",
+        "type": "object"
+      },
+      "DiagnosticSource": {
+        "properties": {
+          "referrer": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referrer"
+          },
+          "utm_campaign": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Campaign"
+          },
+          "utm_medium": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Medium"
+          },
+          "utm_source": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Source"
+          }
+        },
+        "title": "DiagnosticSource",
+        "type": "object"
+      },
+      "DiagnosticStatus": {
+        "enum": [
+          "IN_PROGRESS",
+          "COMPLETED",
+          "CLAIMED"
+        ],
+        "title": "DiagnosticStatus",
+        "type": "string"
+      },
+      "DiagnosticSummaryOut": {
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "marketing_email_consent": {
+            "title": "Marketing Email Consent",
+            "type": "boolean"
+          },
+          "marketing_whatsapp_consent": {
+            "title": "Marketing Whatsapp Consent",
+            "type": "boolean"
+          },
+          "maturity_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maturity Level"
+          },
+          "organization_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Id"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "sector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Score"
+          },
+          "whatsapp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "organization_id",
+          "company",
+          "sector",
+          "country",
+          "city",
+          "phone",
+          "whatsapp",
+          "email",
+          "total_score",
+          "maturity_level",
+          "marketing_email_consent",
+          "marketing_whatsapp_consent",
+          "created_at",
+          "completed_at"
+        ],
+        "title": "DiagnosticSummaryOut",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -173,7 +554,26 @@
         "title": "MembershipOut",
         "type": "object"
       },
+      "OptionOut": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "OptionOut",
+        "type": "object"
+      },
       "OrganizationCreate": {
+        "description": "Sans diagnostic : `commercial_name` et `country` obligatoires. Avec `diagnostic_id`\n(et l'en-tête X-Diagnostic-Token), les champs absents sont repris des réponses.",
         "properties": {
           "address": {
             "anyOf": [
@@ -214,15 +614,29 @@
             "title": "City"
           },
           "commercial_name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Commercial Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial Name"
           },
           "country": {
-            "pattern": "^[A-Z]{2}$",
-            "title": "Country",
-            "type": "string"
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
           },
           "description": {
             "anyOf": [
@@ -235,6 +649,18 @@
               }
             ],
             "title": "Description"
+          },
+          "diagnostic_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnostic Id"
           },
           "email": {
             "anyOf": [
@@ -347,10 +773,6 @@
             "title": "Whatsapp"
           }
         },
-        "required": [
-          "commercial_name",
-          "country"
-        ],
         "title": "OrganizationCreate",
         "type": "object"
       },
@@ -830,6 +1252,106 @@
         "title": "Permission",
         "type": "string"
       },
+      "PlanItemOut": {
+        "properties": {
+          "cta": {
+            "title": "Cta",
+            "type": "string"
+          },
+          "current_state": {
+            "title": "Current State",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "module": {
+            "title": "Module",
+            "type": "string"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
+          "product_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Code"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "recommended_action": {
+            "title": "Recommended Action",
+            "type": "string"
+          },
+          "rule_key": {
+            "title": "Rule Key",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rule_key",
+          "module",
+          "phase",
+          "priority",
+          "reason",
+          "current_state",
+          "recommended_action",
+          "product_code",
+          "cta",
+          "status"
+        ],
+        "title": "PlanItemOut",
+        "type": "object"
+      },
+      "PlanItemUpdate": {
+        "properties": {
+          "status": {
+            "enum": [
+              "DISMISSED",
+              "PROPOSED"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "PlanItemUpdate",
+        "type": "object"
+      },
       "ProfileUpdate": {
         "properties": {
           "full_name": {
@@ -863,6 +1385,88 @@
           }
         },
         "title": "ProfileUpdate",
+        "type": "object"
+      },
+      "QuestionOut": {
+        "properties": {
+          "help_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Text"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "visible_if": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible If"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "help_text",
+          "type",
+          "required",
+          "options",
+          "visible_if"
+        ],
+        "title": "QuestionOut",
+        "type": "object"
+      },
+      "QuestionnaireOut": {
+        "properties": {
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/SectionOut"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "sections"
+        ],
+        "title": "QuestionnaireOut",
         "type": "object"
       },
       "RegisterRequest": {
@@ -905,6 +1509,105 @@
         "title": "RegisterRequest",
         "type": "object"
       },
+      "SaveAnswersRequest": {
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "maxProperties": 100,
+            "title": "Answers",
+            "type": "object"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "title": "SaveAnswersRequest",
+        "type": "object"
+      },
+      "SaveAnswersResponse": {
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "title": "Answers",
+            "type": "object"
+          },
+          "missing_required": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Required",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers",
+          "missing_required"
+        ],
+        "title": "SaveAnswersResponse",
+        "type": "object"
+      },
+      "ScoreOut": {
+        "properties": {
+          "categories": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CategoryScoreOut"
+            },
+            "title": "Categories",
+            "type": "object"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "maturity_label": {
+            "title": "Maturity Label",
+            "type": "string"
+          },
+          "maturity_level": {
+            "title": "Maturity Level",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "categories",
+          "maturity_level",
+          "maturity_label",
+          "disclaimer"
+        ],
+        "title": "ScoreOut",
+        "type": "object"
+      },
+      "SectionOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "questions"
+        ],
+        "title": "SectionOut",
+        "type": "object"
+      },
       "SessionResponse": {
         "properties": {
           "csrf_token": {
@@ -932,6 +1635,46 @@
         ],
         "title": "StaffRole",
         "type": "string"
+      },
+      "StartDiagnosticRequest": {
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagnosticSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "StartDiagnosticRequest",
+        "type": "object"
+      },
+      "StartDiagnosticResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "questionnaire_version": {
+            "title": "Questionnaire Version",
+            "type": "integer"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "questionnaire_version"
+        ],
+        "title": "StartDiagnosticResponse",
+        "type": "object"
       },
       "UserOut": {
         "properties": {
@@ -1014,6 +1757,126 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "digital360__modules__diagnostics__api__schemas__PassportItemOut": {
+        "properties": {
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "DECLARED",
+              "VERIFIED",
+              "SYNCED"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "status_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed At"
+          }
+        },
+        "required": [
+          "key",
+          "status",
+          "source",
+          "details"
+        ],
+        "title": "PassportItemOut",
+        "type": "object"
+      },
+      "digital360__modules__diagnostics__api__schemas__PassportOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/digital360__modules__diagnostics__api__schemas__PassportItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PassportOut",
+        "type": "object"
+      },
+      "digital360__modules__passport__api__routes__PassportItemOut": {
+        "properties": {
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "status_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed At"
+          }
+        },
+        "required": [
+          "key",
+          "status",
+          "source",
+          "details",
+          "status_changed_at"
+        ],
+        "title": "PassportItemOut",
+        "type": "object"
+      },
+      "digital360__modules__passport__api__routes__PassportOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/digital360__modules__passport__api__routes__PassportItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PassportOut",
+        "type": "object"
       }
     }
   },
@@ -1023,6 +1886,84 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/diagnostics": {
+      "get": {
+        "operationId": "admin_list_diagnostics_api_v1_admin_diagnostics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DiagnosticStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin List Diagnostics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/admin/organizations": {
       "get": {
         "operationId": "admin_list_organizations_api_v1_admin_organizations_get",
@@ -1388,6 +2329,25 @@
     "/api/v1/orgs": {
       "post": {
         "operationId": "create_organization_api_v1_orgs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-diagnostic-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Diagnostic-Token"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1520,6 +2480,155 @@
         ]
       }
     },
+    "/api/v1/orgs/{org_id}/action-plan": {
+      "get": {
+        "operationId": "get_action_plan_api_v1_orgs__org_id__action_plan_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionPlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Action Plan",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/action-plan/items/{item_id}": {
+      "patch": {
+        "operationId": "update_action_plan_item_api_v1_orgs__org_id__action_plan_items__item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanItemUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Action Plan Item",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/diagnostics": {
+      "get": {
+        "operationId": "list_organization_diagnostics_api_v1_orgs__org_id__diagnostics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticHistory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Organization Diagnostics",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
     "/api/v1/orgs/{org_id}/members": {
       "get": {
         "operationId": "list_organization_members_api_v1_orgs__org_id__members_get",
@@ -1560,6 +2669,318 @@
         "summary": "List Organization Members",
         "tags": [
           "organizations"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/passport": {
+      "get": {
+        "operationId": "get_passport_api_v1_orgs__org_id__passport_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/digital360__modules__passport__api__routes__PassportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Passport",
+        "tags": [
+          "passport"
+        ]
+      }
+    },
+    "/api/v1/public/diagnostics": {
+      "post": {
+        "operationId": "start_diagnostic_api_v1_public_diagnostics_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StartDiagnosticRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartDiagnosticResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Diagnostic",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/public/diagnostics/{diagnostic_id}/answers": {
+      "put": {
+        "operationId": "save_answers_api_v1_public_diagnostics__diagnostic_id__answers_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "diagnostic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Diagnostic Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-diagnostic-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Diagnostic-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAnswersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveAnswersResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Answers",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/public/diagnostics/{diagnostic_id}/complete": {
+      "post": {
+        "operationId": "complete_diagnostic_api_v1_public_diagnostics__diagnostic_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "diagnostic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Diagnostic Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-diagnostic-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Diagnostic-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteDiagnosticRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Diagnostic",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/public/diagnostics/{diagnostic_id}/result": {
+      "get": {
+        "operationId": "get_diagnostic_result_api_v1_public_diagnostics__diagnostic_id__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "diagnostic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Diagnostic Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-diagnostic-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Diagnostic-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Diagnostic Result",
+        "tags": [
+          "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/public/questionnaire": {
+      "get": {
+        "operationId": "get_questionnaire_api_v1_public_questionnaire_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionnaireOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Questionnaire",
+        "tags": [
+          "diagnostic"
         ]
       }
     }

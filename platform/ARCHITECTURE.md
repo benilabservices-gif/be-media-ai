@@ -1295,6 +1295,7 @@ Publicité (comptes publicitaires, campagnes, reporting, budget publicitaire fac
 | ADR-009 | Adapter `Fake` obligatoire pour chaque port | Mocks dans les tests | Tests d'intégration et E2E sans réseau, démo possible |
 | ADR-010 | Génération de sites manuelle derrière un port au MVP | Générateur IA dès le MVP | Qualité de livraison maîtrisée, pas d'API supposée |
 | ADR-011 | Un seul rôle applicatif, RLS forcée, accès staff par variable de transaction (`app.scope`) | Rôles séparés `app_user` / `app_staff` (BYPASSRLS) | Fonctionne sur tout PostgreSQL managé sans rôle privilégié, une seule URL de connexion. La barrière contre les bugs applicatifs est identique (fermeture par défaut) ; la variable ne peut être posée que par `core/tenancy.py`, et l'ORM exclut l'injection SQL. |
+| ADR-012 | Configuration métier en documents JSON versionnés et immuables (`config_documents`), réponses du diagnostic en JSONB | Tables normalisées `questions`, `question_options`, `diagnostic_answers` (§6.3) | Aucune requête ne porte sur une question isolée ; un document validé à la publication est plus simple et garantit qu'un score reste reproductible (le diagnostic référence ses trois versions). Les coordonnées sont des questions de la section `identity` (plus de `PUT /contact`), comme dans les écrans de Kilo. |
 
 ---
 
