@@ -50,6 +50,7 @@
             <li><a href="#services" data-scroll>Services</a></li>
             <li><a href="#how" data-scroll>Comment ça marche</a></li>
             <li><a href="#pricing" data-scroll>Tarifs</a></li>
+            <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
             <li><a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
             <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm">Diagnostic gratuit</a></li>
         </ul>
@@ -267,7 +268,8 @@
                     <h2 class="section-title" style="margin-bottom:1rem;">Prêt pour la <span style="color:var(--accent);font-style:italic;">prochaine étape</span> ?</h2>
                     <p style="color:var(--text-secondary);margin-bottom:2rem;">Consultez votre Digital Passport et votre plan de transformation personnalisé.</p>
                     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-                        <a href="#" onclick="showPage('passport');return false;" class="btn btn-primary">Voir mon Digital Passport</a>
+                        <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary">Créer mon espace et garder mon diagnostic</a>
+                        <a href="#" onclick="showPage('passport');return false;" class="btn btn-outline">Voir mon Digital Passport</a>
                         <a href="#" onclick="showPage('plan');return false;" class="btn btn-outline">Mon plan de transformation</a>
                     </div>
                 </div>
@@ -310,7 +312,8 @@
                     <div id="planPricingCta" style="font-family:var(--font-display);font-size:2.5rem;font-weight:700;color:var(--accent);margin-bottom:0.5rem;"></div>
                     <p style="font-size:13px;color:var(--text-muted);margin-bottom:2rem;">Paiement unique · Nom de domaine + hébergement inclus</p>
                     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-                        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-primary btn-lg">Prendre rendez-vous</a>
+                        <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary btn-lg">Créer mon espace</a>
+                        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-outline btn-lg">Prendre rendez-vous</a>
                         <a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-lg">Retour</a>
                     </div>
                 </div>
@@ -329,53 +332,57 @@
     function csrfHeaders() {
         return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
     }
+    async function apiFetch(path, { method = 'GET', body, headers = {} } = {}) {
+        const res = await fetch(API_BASE + path, {
+            method,
+            credentials: 'include',
+            headers: {
+                ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+                ...(method !== 'GET' ? csrfHeaders() : {}),
+                ...headers,
+            },
+            body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (_) { data = text; }
+        if (!res.ok) {
+            const err = new Error((data && data.detail) || ('HTTP ' + res.status));
+            Object.assign(err, { status: res.status, code: data?.code, detail: data?.detail, errors: data?.errors });
+            throw err;
+        }
+        return data;
+    }
+    const diagHeaders = token => (token ? { 'X-Diagnostic-Token': token } : {});
     const api = {
-        getCsrf() {
-            return fetch(API_BASE + '/auth/csrf', { credentials: 'include' }).then(r => r.json()).then(data => { _csrfToken = data.csrf_token || ''; return data; });
+        async getCsrf() {
+            const data = await apiFetch('/auth/csrf');
+            _csrfToken = data.csrf_token || '';
+            return data;
         },
-        register(b) {
-            return fetch(API_BASE + '/auth/register', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json', ...csrfHeaders()}, body: JSON.stringify(b) }).then(r => {
-                if (!r.ok) throw Object.assign(new Error('Registration failed'), { status: r.status });
-                return r.json().then(d => { _csrfToken = d.csrf_token || _csrfToken; return d; });
-            });
+        async register(body) {
+            const data = await apiFetch('/auth/register', { method: 'POST', body });
+            _csrfToken = data.csrf_token || _csrfToken;
+            return data;
         },
-        login(b) {
-            return fetch(API_BASE + '/auth/login', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json', ...csrfHeaders()}, body: JSON.stringify(b) }).then(r => {
-                if (!r.ok) throw Object.assign(new Error('Login failed'), { status: r.status });
-                return r.json().then(d => { _csrfToken = d.csrf_token || _csrfToken; return d; });
-            });
+        async login(body) {
+            const data = await apiFetch('/auth/login', { method: 'POST', body });
+            _csrfToken = data.csrf_token || _csrfToken;
+            return data;
         },
-        logout() { return fetch(API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {}); },
-        getMe() { return fetch(API_BASE + '/me', { credentials: 'include' }).then(r => { if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' }); return r.json(); }); },
-        createOrg(b) {
-            return fetch(API_BASE + '/orgs', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json', ...csrfHeaders()}, body: JSON.stringify(b) }).then(r => r.json());
-        },
-        getOrg(id) { return fetch(API_BASE + '/orgs/' + id, { credentials: 'include' }).then(r => r.json()); },
-        getQuestionnaire() { return fetch(API_BASE + '/public/questionnaire', { credentials: 'include' }).then(r => r.json()); },
-        createDiagnostic() { return fetch(API_BASE + '/public/diagnostics', { method: 'POST', credentials: 'include' }).then(r => r.json()); },
+        logout() { return apiFetch('/auth/logout', { method: 'POST' }).catch(() => {}); },
+        getMe() { return apiFetch('/me'); },
+        createOrg(body, diagToken) { return apiFetch('/orgs', { method: 'POST', body, headers: diagHeaders(diagToken) }); },
+        getOrg(id) { return apiFetch('/orgs/' + id); },
+        getQuestionnaire() { return apiFetch('/public/questionnaire'); },
+        createDiagnostic() { return apiFetch('/public/diagnostics', { method: 'POST', body: {} }); },
         saveAnswers(id, answers, token) {
-            return fetch(API_BASE + '/public/diagnostics/' + id + '/answers', {
-                method: 'PUT', credentials: 'include',
-                headers: {'Content-Type':'application/json', ...csrfHeaders(), ...(token ? {'X-Diagnostic-Token': token} : {})},
-                body: JSON.stringify({ answers })
-            }).then(r => r.json());
+            return apiFetch('/public/diagnostics/' + id + '/answers', { method: 'PUT', body: { answers }, headers: diagHeaders(token) });
         },
-        saveContact(id, contact, token) {
-            return fetch(API_BASE + '/public/diagnostics/' + id + '/contact', {
-                method: 'PUT', credentials: 'include',
-                headers: {'Content-Type':'application/json', ...csrfHeaders(), ...(token ? {'X-Diagnostic-Token': token} : {})},
-                body: JSON.stringify(contact)
-            }).then(r => r.json());
+        completeDiagnostic(id, token, consents) {
+            return apiFetch('/public/diagnostics/' + id + '/complete', { method: 'POST', body: { consents }, headers: diagHeaders(token) });
         },
-        completeDiagnostic(id, token) {
-            return fetch(API_BASE + '/public/diagnostics/' + id + '/complete', {
-                method: 'POST', credentials: 'include',
-                headers: {'Content-Type':'application/json', ...csrfHeaders(), ...(token ? {'X-Diagnostic-Token': token} : {})},
-            }).then(r => r.json());
-        },
-        getCatalog(currency) {
-            return fetch(API_BASE + '/public/catalog' + (currency ? '?currency=' + currency : ''), { credentials: 'include' }).then(r => r.json());
-        },
+        getCatalog(currency) { return apiFetch('/public/catalog' + (currency ? '?currency=' + currency : '')); },
     };
     let currentDiagStep = 0;
     let totalSteps = 0;
@@ -388,6 +395,8 @@
     let passportData = null;
     let actionPlanData = null;
     let catalogData = null;
+    let currentCurrency = 'XOF';
+    let diagConsents = { privacy: false, marketing_email: false, marketing_whatsapp: false };
 
     // ── Mock data ──
     const MOCK_QUESTIONNAIRE = {
@@ -678,6 +687,70 @@
         }
     }
 
+    // ── Conditions d'affichage (visible_if), même grammaire que le serveur ──
+    function evaluateCondition(cond, answers) {
+        if (cond.all) return cond.all.every(c => evaluateCondition(c, answers));
+        if (cond.any) return cond.any.some(c => evaluateCondition(c, answers));
+        if (cond.not) return !evaluateCondition(cond.not, answers);
+        const value = answers[cond.fact];
+        const isEmpty = value == null || value === '' || (Array.isArray(value) && value.length === 0);
+        if ('exists' in cond) return !isEmpty === cond.exists;
+        if (isEmpty) return false;
+        if ('eq' in cond) return value === cond.eq;
+        if ('ne' in cond) return value !== cond.ne;
+        if ('in' in cond) return cond.in.includes(value);
+        if ('contains' in cond) return Array.isArray(value) ? value.includes(cond.contains) : String(value).includes(cond.contains);
+        if ('gt' in cond) return value > cond.gt;
+        if ('gte' in cond) return value >= cond.gte;
+        if ('lt' in cond) return value < cond.lt;
+        if ('lte' in cond) return value <= cond.lte;
+        return false;
+    }
+    function isQuestionVisible(q) { return !q.visible_if || evaluateCondition(q.visible_if, currentAnswers); }
+    function isAnswered(value) { return !(value == null || value === '' || (Array.isArray(value) && value.length === 0)); }
+    function missingInCurrentStep() {
+        const section = questionnaireData.sections[currentDiagStep];
+        return section.questions.filter(q => q.required && isQuestionVisible(q) && !isAnswered(currentAnswers[q.key]));
+    }
+    function showDiagError(message) {
+        const box = document.getElementById('diagError');
+        if (box) box.textContent = message || '';
+    }
+    function describeApiError(err) {
+        if (!err || err.status === undefined) return 'Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.';
+        if (err.code === 'QUESTIONNAIRE_INCOMPLETE' || err.code === 'VALIDATION_ERROR') {
+            const labels = {};
+            questionnaireData?.sections.forEach(s => s.questions.forEach(q => { labels[q.key] = q.label; }));
+            const fields = (err.errors || []).map(e => labels[(e.field || '').replace('answers.', '')] || e.field);
+            return (err.detail || 'Réponses invalides.') + (fields.length ? ' ' + fields.join(' ; ') : '');
+        }
+        return err.detail || 'Une erreur est survenue. Réessayez.';
+    }
+    function buildConsentBlock() {
+        const block = document.createElement('div');
+        block.className = 'form-group';
+        const items = [
+            ['privacy', "J'accepte que BENILAB utilise mes réponses pour établir mon diagnostic (politique de confidentialité) *"],
+            ['marketing_email', "J'accepte de recevoir des conseils et offres par email"],
+            ['marketing_whatsapp', "J'accepte de recevoir des conseils et offres par WhatsApp"],
+        ];
+        items.forEach(([key, text]) => {
+            const label = document.createElement('label');
+            label.style.cssText = 'display:flex;gap:10px;align-items:flex-start;margin-bottom:0.75rem;cursor:pointer;font-size:14px;';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.checked = diagConsents[key];
+            box.dataset.consent = key;
+            box.addEventListener('change', () => { diagConsents[key] = box.checked; });
+            const span = document.createElement('span');
+            span.textContent = text;
+            label.appendChild(box);
+            label.appendChild(span);
+            block.appendChild(label);
+        });
+        return block;
+    }
+
     // ── Diagnostic: load questionnaire ──
     async function loadQuestionnaire() {
         try {
@@ -688,11 +761,17 @@
             renderCurrentStep();
         } catch (e) {
             console.error('[D360] Erreur chargement questionnaire:', e);
-            // Fallback: use mock
-            questionnaireData = MOCK_QUESTIONNAIRE;
-            totalSteps = questionnaireData.sections.length;
-            buildStepper();
-            renderCurrentStep();
+            const content = document.getElementById('diagContent');
+            content.innerHTML = '';
+            const message = document.createElement('p');
+            message.style.cssText = 'color:var(--error);margin-bottom:1rem;';
+            message.textContent = 'Le diagnostic est momentanément indisponible. ' + describeApiError(e);
+            const retry = document.createElement('button');
+            retry.className = 'btn btn-primary';
+            retry.textContent = 'Réessayer';
+            retry.addEventListener('click', loadQuestionnaire);
+            content.appendChild(message);
+            content.appendChild(retry);
         }
     }
 
@@ -748,7 +827,8 @@
         content.appendChild(title);
         content.appendChild(sub);
 
-        section.questions.forEach(q => {
+        const hasConditions = section.questions.some(o => o.visible_if);
+        section.questions.filter(isQuestionVisible).forEach(q => {
             const group = document.createElement('div');
             group.className = 'form-group';
 
@@ -784,6 +864,7 @@
                         optionsDiv.querySelectorAll('.diag-option').forEach(o => o.classList.remove('selected'));
                         optEl.classList.add('selected');
                         currentAnswers[q.key] = opt.value;
+                        if (hasConditions) renderCurrentStep();
                     });
                     optionsDiv.appendChild(optEl);
                 });
@@ -807,6 +888,7 @@
                         optEl.classList.toggle('selected');
                         const vals = Array.from(optionsDiv.querySelectorAll('.diag-option.selected')).map(o => o.dataset.val);
                         currentAnswers[q.key] = vals;
+                        if (hasConditions) renderCurrentStep();
                     });
                     optionsDiv.appendChild(optEl);
                 });
@@ -814,6 +896,13 @@
             }
             content.appendChild(group);
         });
+
+        if (currentDiagStep === totalSteps - 1) content.appendChild(buildConsentBlock());
+        const errorBox = document.createElement('div');
+        errorBox.id = 'diagError';
+        errorBox.setAttribute('role', 'alert');
+        errorBox.style.cssText = 'color:var(--error);font-size:14px;margin:1rem 0;min-height:1.2em;';
+        content.appendChild(errorBox);
 
         // Nav buttons
         const nav = document.createElement('div');
@@ -850,7 +939,9 @@
     }
 
     function nextDiagStep() {
-        if (currentDiagStep < totalSteps - 1) { currentDiagStep++; renderCurrentStep(); }
+        const missing = missingInCurrentStep();
+        if (missing.length) { showDiagError('Merci de répondre : ' + missing.map(q => q.label).join(' ; ')); return; }
+        if (currentDiagStep < totalSteps - 1) { currentDiagStep++; renderCurrentStep(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     }
     function prevDiagStep() {
         if (currentDiagStep > 0) { currentDiagStep--; renderCurrentStep(); }
@@ -858,31 +949,23 @@
 
     // ── Submit diagnostic ──
     async function submitDiagnostic() {
-        // Save answers to session
+        const missing = missingInCurrentStep();
+        if (missing.length) { showDiagError('Merci de répondre : ' + missing.map(q => q.label).join(' ; ')); return; }
+        if (!diagConsents.privacy) {
+            showDiagError("Merci d'accepter la politique de confidentialité pour recevoir votre diagnostic.");
+            return;
+        }
+        const button = document.querySelector('#diagContent .diag-nav .btn-primary');
+        const buttonLabel = button ? button.textContent : '';
+        if (button) { button.disabled = true; button.textContent = 'Calcul en cours…'; }
+        showDiagError('');
         try {
-            if (!diagSessionId) {
-                const session = await api.createDiagnostic();
-                diagSessionId = session.id;
-                diagToken = session.token;
-                localStorage.setItem('d360_diag_token', diagToken);
-                localStorage.setItem('d360_diag_id', diagSessionId);
-            }
-            // Save answers
-            await api.saveAnswers(diagSessionId, currentAnswers, diagToken);
-            // Save contact
-            await api.saveContact(diagSessionId, { company: currentAnswers.company, email: currentAnswers.email, phone: currentAnswers.phone, whatsapp: currentAnswers.whatsapp }, diagToken);
-        } catch (e) { console.warn('[D360] Sauvegarde réponses échouée:', e); }
-
-        // Complete
-        try {
-            if (MOCK_MODE) {
-                scoreResult = MOCK_COMPLETE;
-            } else {
-                scoreResult = await api.completeDiagnostic(diagSessionId, diagToken);
-            }
+            scoreResult = MOCK_MODE ? MOCK_COMPLETE : await completeWithApi();
         } catch (e) {
-            console.warn('[D360] Erreur complétion, utilisation mock:', e);
-            scoreResult = MOCK_COMPLETE;
+            console.error('[D360] Diagnostic non terminé :', e);
+            showDiagError(describeApiError(e));
+            if (button) { button.disabled = false; button.textContent = buttonLabel; }
+            return;
         }
 
         diagData = { ...currentAnswers, company: currentAnswers.company };
@@ -890,6 +973,32 @@
         passportData = scoreResult.passport;
         actionPlanData = scoreResult.action_plan;
         showPage('score');
+    }
+
+    // Enregistre les réponses puis termine. Une ancienne session (déjà terminée ou expirée,
+    // gardée en localStorage) est remplacée une fois par une session neuve.
+    async function completeWithApi() {
+        for (let attempt = 0; attempt < 2; attempt++) {
+            if (!diagSessionId || attempt > 0) {
+                const session = await api.createDiagnostic();
+                diagSessionId = session.id;
+                diagToken = session.token;
+                localStorage.setItem('d360_diag_id', diagSessionId);
+                localStorage.setItem('d360_diag_token', diagToken);
+            }
+            try {
+                const visibleAnswers = {};
+                questionnaireData.sections.forEach(s => s.questions.forEach(q => {
+                    if (isQuestionVisible(q) && isAnswered(currentAnswers[q.key])) visibleAnswers[q.key] = currentAnswers[q.key];
+                }));
+                await api.saveAnswers(diagSessionId, visibleAnswers, diagToken);
+                return await api.completeDiagnostic(diagSessionId, diagToken, diagConsents);
+            } catch (e) {
+                const staleSession = e.status === 404 || e.code === 'DIAGNOSTIC_ALREADY_COMPLETED';
+                if (attempt === 0 && staleSession) continue;
+                throw e;
+            }
+        }
     }
 
     // ── Render score page ──
@@ -1181,14 +1290,8 @@
     }
 
     // ── Init ──
-    try {
-        loadCatalog();
-        renderPlanPricingCta();
-        getCsrf().catch(() => {});
-    } catch(e) {
-        console.error('[D360] Init error:', e);
-        renderPlanPricingCta();
-    }
+    loadCatalog();
+    renderPlanPricingCta();
 
     // ── CSRF (déplacé au-dessus dans api.getCsrf) ──
     // ── Auth state ──
@@ -1208,6 +1311,8 @@
     function updateAuthUI() {
         const btn = document.getElementById('navAuthBtn');
         if (btn) btn.style.display = _user ? 'inline-flex' : 'none';
+        const loginBtn = document.getElementById('navLoginBtn');
+        if (loginBtn) loginBtn.style.display = _user ? 'none' : 'inline-flex';
     }
 
     // ── Auth modal ──
@@ -1233,7 +1338,7 @@
             await refreshAuth();
             closeAuthModal();
         } catch (err) {
-            document.getElementById('authError').textContent = err?.detail || 'Identifiants incorrects.';
+            document.getElementById('authError').textContent = describeApiError(err);
         }
     }
     async function handleRegister(e) {
@@ -1241,14 +1346,51 @@
         const fullName = document.getElementById('authRegName').value.trim();
         const email = document.getElementById('authRegEmail').value.trim();
         const password = document.getElementById('authRegPassword').value;
+        const errorEl = document.getElementById('authError');
+        errorEl.textContent = '';
         try {
-            const data = await api.register({ full_name: fullName, email, password });
-            _csrfToken = data?.csrf_token || _csrfToken;
-            await refreshAuth();
-            closeAuthModal();
+            await api.register({ full_name: fullName, email, password });
         } catch (err) {
-            document.getElementById('authError').textContent = err?.detail || 'Erreur lors de l\'inscription.';
+            const reasons = {
+                too_short: 'au moins 10 caractères', too_long: '128 caractères maximum',
+                too_common: 'pas un mot de passe trop courant', same_as_email: "différent de l'email",
+                single_character: 'pas un seul caractère répété',
+            };
+            if (err.code === 'WEAK_PASSWORD') {
+                errorEl.textContent = 'Mot de passe trop faible : ' + (err.errors || []).map(x => reasons[x.reason] || x.reason).join(', ') + '.';
+            } else if (err.code === 'ALREADY_EXISTS') {
+                errorEl.textContent = 'Un compte existe déjà avec cet email : connectez-vous.';
+            } else {
+                errorEl.textContent = describeApiError(err);
+            }
+            return;
         }
+        // Diagnostic terminé dans ce navigateur : il devient l'espace de l'entreprise
+        const diagnosticDone = scoreResult && diagSessionId && diagToken && !MOCK_MODE;
+        if (diagnosticDone) {
+            try {
+                const org = await api.createOrg({ diagnostic_id: diagSessionId }, diagToken);
+                localStorage.removeItem('d360_diag_id');
+                localStorage.removeItem('d360_diag_token');
+                showNotice('Espace créé pour « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.');
+            } catch (err) {
+                showNotice("Compte créé, mais le diagnostic n'a pas pu être rattaché : " + describeApiError(err));
+            }
+        } else {
+            showNotice('Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.');
+        }
+        await refreshAuth();
+        closeAuthModal();
+    }
+    function showNotice(message) {
+        const notice = document.createElement('div');
+        notice.setAttribute('role', 'status');
+        notice.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;'
+            + 'background:var(--bg-elevated);border:1px solid var(--border-strong);color:var(--text-primary);'
+            + 'padding:14px 20px;border-radius:12px;max-width:90vw;box-shadow:var(--shadow);font-size:14px;';
+        notice.textContent = message;
+        document.body.appendChild(notice);
+        setTimeout(() => notice.remove(), 7000);
     }
     async function handleLogout() {
         try { await api.logout(); } catch (_) {}
@@ -1256,6 +1398,11 @@
         updateAuthUI();
         showPage('landing');
     }
+
+    // ── Démarrage : jeton CSRF (requis pour toute inscription ou connexion) puis état de session.
+    // Placé en fin de script : refreshAuth utilise _user, déclaré plus haut avec let.
+    api.getCsrf().catch(e => console.error('[D360] Jeton CSRF indisponible :', e));
+    refreshAuth();
     </script>
 
     <!-- ═══════════════ AUTH MODAL ═══════════════ -->
@@ -1296,7 +1443,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Mot de passe</label>
-                        <input type="password" class="form-input" id="authRegPassword" required placeholder="Min. 8 caractères">
+                        <input type="password" class="form-input" id="authRegPassword" required placeholder="10 caractères minimum">
                     </div>
                     <button type="submit" class="btn btn-primary btn-block" style="margin-top:0.5rem;">S'inscrire</button>
                 </form>
