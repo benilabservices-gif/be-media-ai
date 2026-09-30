@@ -61,12 +61,28 @@ async def current_migration_revision(engine: AsyncEngine) -> str | None:
         return revision
 
 
+async def role_bypasses_rls(engine: AsyncEngine) -> bool:
+    async with engine.connect() as connection:
+        bypasses: bool = await connection.scalar(
+            text("SELECT rolsuper OR rolbypassrls FROM pg_roles WHERE rolname = current_user")
+        )
+        return bypasses
+
+
 async def check_database(engine: AsyncEngine, alembic_ini_path: Path) -> dict[str, str]:
-    """Vérifie que la base répond et que son schéma est à la dernière migration."""
+    """Vérifie que la base répond, que la RLS s'applique et que le schéma est à jour."""
     try:
         current = await current_migration_revision(engine)
+        bypasses_rls = await role_bypasses_rls(engine)
     except (SQLAlchemyError, OSError) as exc:
         return {"status": "error", "detail": f"base injoignable ({type(exc).__name__})"}
+
+    if bypasses_rls:
+        # Un superuser ignore la Row Level Security : l'isolation entre clients serait inopérante
+        return {
+            "status": "error",
+            "detail": "le rôle PostgreSQL est superuser ou BYPASSRLS : isolation des tenants inopérante",
+        }
 
     expected = expected_migration_head(alembic_ini_path)
     if current != expected:

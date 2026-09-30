@@ -4,15 +4,14 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy.engine import Connection
 
+from digital360.all_models import Base
 from digital360.core.config import get_settings
-from digital360.core.db import Base, create_engine
+from digital360.core.db import create_engine
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Les modèles des modules seront importés ici au fil de leur création (M1+),
-# pour qu'`alembic revision --autogenerate` les voie
 target_metadata = Base.metadata
 
 
