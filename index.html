@@ -31,7 +31,7 @@
             <li><a href="#portfolio" data-hover>Portfolio</a></li>
             <li><a href="#tarifs" data-hover>Tarifs</a></li>
             <li><a href="#blog" data-hover>Actualités</a></li>
-            <li><a href="#contact" class="nav-cta" data-hover>Contact</a></li>
+            <li><a href="#contact" class="nav-cta" data-hover onclick="event.preventDefault();openContactModal()">Contact</a></li>
         </ul>
         <button class="menu-toggle" id="menuToggle" aria-label="Menu">
             <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -671,12 +671,12 @@
         </h2>
         <p class="cta-sub reveal delay-2">Première consultation gratuite. Discutons de votre projet et construisons ensemble l'avenir digital de votre entreprise.</p>
         <div class="reveal delay-3" style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;">
-            <a href="https://wa.me/2290162210154" target="_blank" class="btn-primary" data-hover style="background:var(--accent-teal);">
-                WhatsApp
+            <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn-primary" data-hover style="background:var(--accent-teal);">
+                Prendre RDV
             </a>
-            <a href="mailto:contact@bemediiai.com" class="btn-primary" data-hover style="background:transparent;border:1px solid var(--accent-warm);color:var(--accent-warm);">
-                Envoyer un email
-            </a>
+            <button class="btn-primary" data-hover style="background:transparent;border:1px solid var(--accent-warm);color:var(--accent-warm);" onclick="openContactModal()">
+                Envoyer un message
+            </button>
         </div>
     </section>
 
@@ -743,6 +743,79 @@
             <path d="M12 19V5M5 12l7-7 7 7"/>
         </svg>
     </button>
+
+    <!-- Contact Modal -->
+    <div class="contact-modal" id="contactModal">
+        <div class="contact-modal-backdrop" onclick="closeContactModal()"></div>
+        <div class="contact-modal-box">
+            <button class="contact-modal-close" onclick="closeContactModal()" data-hover>✕</button>
+            <div class="contact-modal-inner">
+                <div class="contact-modal-left">
+                    <h3>Parlons de votre<br><span style="color:var(--accent-warm);font-style:italic;">projet</span></h3>
+                    <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;margin-top:1rem;margin-bottom:2rem;">Remplissez le formulaire ou prenez rendez-vous directement via Calendly.</p>
+                    <div style="display:flex;flex-direction:column;gap:1rem;">
+                        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="modal-btn" data-hover style="display:flex;align-items:center;gap:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text-primary);transition:all 0.3s;">
+                            <span style="font-size:1.3rem;">📅</span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;">Prendre rendez-vous</div>
+                                <div style="font-size:12px;color:var(--text-muted);">Créneau de 45 min — consultation gratuite</div>
+                            </div>
+                        </a>
+                        <a href="mailto:contact@bemediiai.com" class="modal-btn" data-hover style="display:flex;align-items:center;gap:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text-primary);transition:all 0.3s;">
+                            <span style="font-size:1.3rem;">✉️</span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;">Envoyer un email</div>
+                                <div style="font-size:12px;color:var(--text-muted);">contact@bemediiai.com</div>
+                            </div>
+                        </a>
+                        <a href="https://wa.me/2290162210154" target="_blank" class="modal-btn" data-hover style="display:flex;align-items:center;gap:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text-primary);transition:all 0.3s;">
+                            <span style="font-size:1.3rem;">💬</span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;">WhatsApp</div>
+                                <div style="font-size:12px;color:var(--text-muted);">+229 01 62 21 01 54</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="contact-modal-right">
+                    <h4 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-warm);margin-bottom:1.5rem;">Envoyer un message</h4>
+                    <form id="contactForm" onsubmit="handleContact(event)">
+                        <div style="margin-bottom:1rem;">
+                            <input type="text" class="contact-input" placeholder="Votre nom complet" required>
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <input type="email" class="contact-input" placeholder="Votre email" required>
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <input type="tel" class="contact-input" placeholder="Téléphone (optionnel)">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <select class="contact-input" style="appearance:none;">
+                                <option value="" disabled selected>Sujet</option>
+                                <option>Développement web</option>
+                                <option>Solution IA</option>
+                                <option>Design UI/UX</option>
+                                <option>E-Commerce</option>
+                                <option>Digital360</option>
+                                <option>Academy360</option>
+                                <option>Booster360</option>
+                                <option>Autre</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:1.5rem;">
+                            <textarea class="contact-input contact-textarea" placeholder="Décrivez votre projet..." rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;" data-hover>Envoyer le message</button>
+                    </form>
+                    <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 0;">
+                        <div style="font-size:2.5rem;margin-bottom:1rem;">✓</div>
+                        <div style="font-size:16px;font-weight:600;margin-bottom:0.5rem;">Message envoyé !</div>
+                        <div style="font-size:14px;color:var(--text-muted);">Nous vous répondrons dans les 24h.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="js/main.js"></script>
 </body>
