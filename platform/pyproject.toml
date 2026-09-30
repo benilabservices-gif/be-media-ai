@@ -20,7 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3,<9",
+    "pytest>=9.0.3,<10",  # 9.0.3 corrige PYSEC-2026-1845
     "httpx2>=2.13,<3",  # client HTTP attendu par starlette.testclient (httpx est déprécié)
     "ruff>=0.8",
     "black>=24.10",
