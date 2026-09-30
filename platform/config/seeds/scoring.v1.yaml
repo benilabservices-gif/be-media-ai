@@ -1,0 +1,33 @@
+# Modèle de calcul du Digital Score — version 1
+#
+# Score d'une catégorie = points obtenus / points maximum possibles × 100, sur les seules
+# questions visibles pour ce répondant. Score global = moyenne pondérée des catégories.
+# Poids par défaut (ARCHITECTURE.md §7.2) : à valider par BENILAB.
+
+key: default
+version: 1
+
+category_weights:
+  PRESENCE: 0.30
+  VISIBILITY: 0.25
+  ACQUISITION: 0.15
+  CONVERSION: 0.20
+  RETENTION: 0.10
+
+category_labels:
+  PRESENCE: "Présence"
+  VISIBILITY: "Visibilité"
+  ACQUISITION: "Acquisition"
+  CONVERSION: "Conversion"
+  RETENTION: "Fidélisation"
+
+# Du seuil le plus haut au plus bas
+maturity_bands:
+  - { min: 80, level: ADVANCED, label: "Maturité digitale avancée" }
+  - { min: 60, level: ESTABLISHED, label: "Bases digitales solides" }
+  - { min: 40, level: DEVELOPING, label: "Maturité intermédiaire" }
+  - { min: 0, level: BEGINNER, label: "Début de transformation" }
+
+disclaimer: >-
+  Le Digital Score est un indicateur interne de diagnostic établi par BENILAB à partir de
+  vos déclarations. Il ne constitue pas une certification.
