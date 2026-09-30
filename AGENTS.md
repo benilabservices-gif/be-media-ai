@@ -16,7 +16,8 @@ Deux agents travaillent **en parallèle** sur BENILAB Digital360. Ces règles é
 
 ## Contrat entre frontend et backend
 
-- La source de vérité est le document d'architecture [`platform/ARCHITECTURE.md`](platform/ARCHITECTURE.md), en particulier le §13 (API) et le §15 (contrat avec Kilo).
+- **Contrat vivant** : [`platform/contracts/README.md`](platform/contracts/README.md) indique quels endpoints sont disponibles, comment s'authentifier et quelles erreurs gérer ; [`platform/contracts/openapi.json`](platform/contracts/openapi.json) en est la version machine. Kilo le relit au début de chaque tâche.
+- La conception d'ensemble est dans [`platform/ARCHITECTURE.md`](platform/ARCHITECTURE.md), en particulier le §13 (API) et le §15 (contrat avec Kilo).
 - La logique métier vit **uniquement** côté serveur : le frontend ne calcule ni score, ni prix, ni droits, et ne contient pas les questions du diagnostic en dur.
 - Tant qu'un endpoint n'existe pas, le frontend utilise des mocks placés **uniquement** dans `digital360/js/api/mocks/`. Chaque fichier commence par `// MOCK — à supprimer quand <endpoint> est disponible`.
 - Les prix sont **HT** et chaque prix affiché porte la mention « HT ». Devises : XOF, XAF, EUR.

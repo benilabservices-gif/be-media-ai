@@ -199,8 +199,8 @@ flowchart TB
 
 | Module | Responsabilité | Phase |
 |---|---|---|
-| `identity` | Utilisateurs, authentification, sessions, rôles staff, invitations | MVP |
-| `organizations` | Entreprises clientes, membres, établissements (plus tard) | MVP |
+| `identity` | Utilisateurs, authentification, sessions, rôles staff, **appartenances aux organisations** (contrôle d'accès), invitations | MVP |
+| `organizations` | Entreprises clientes (racine du tenant), établissements (plus tard). Dépend d'`identity`, jamais l'inverse (vérifié par `import-linter`) | MVP |
 | `diagnostics` | Questionnaires versionnés, sessions anonymes ou rattachées, réponses, extraction de faits | MVP |
 | `scoring` | Modèles de score versionnés, calcul pur, snapshots | MVP |
 | `recommendations` | Règles configurables, plan d'action | MVP |
@@ -254,7 +254,7 @@ La **boucle cœur** (cahier des charges §59) est entièrement couverte par les 
 - **Sessions serveur** stockées en base (table `sessions`), cookie `HttpOnly; Secure; SameSite=Lax`, domaine parent commun (`.benilab360.com`). Rotation de l'identifiant à la connexion, expiration glissante (7 jours) et absolue (30 jours).
   - *Pourquoi pas de JWT* : le frontend est first-party. Les sessions serveur sont révocables immédiatement (changement de rôle, départ d'un employé) et ne laissent aucun jeton exploitable dans le `localStorage`.
 - Mots de passe hashés en **Argon2id**. Vérification du mot de passe et **code OTP par email** en option (V2 : OTP WhatsApp ou SMS, très utilisés sur la cible).
-- Protection **CSRF** par double-submit token (header `X-CSRF-Token`) sur les méthodes non sûres.
+- Protection **CSRF** par double cookie : `GET /auth/csrf` pose un cookie `csrf_token` lisible par le JavaScript et renvoie sa valeur ; toute requête non sûre renvoie cette valeur dans l'en-tête `X-CSRF-Token`, comparée au cookie. Rotation du jeton à la connexion. Mécanisme retenu parce que le client de Kilo l'implémentait déjà.
 - Réinitialisation du mot de passe par lien à usage unique (hash stocké, expiration 30 min).
 - Rate limiting sur `/auth/*` (voir §14.1).
 
@@ -1011,7 +1011,7 @@ Portée : **P** = public, **U** = utilisateur connecté, **O** = membre de l'org
 | POST | `/auth/register` | P | Création du compte (+ `diagnostic_token` optionnel pour rattacher le diagnostic) |
 | POST | `/auth/login` · `/auth/logout` | P · U | Session |
 | POST | `/auth/password/forgot` · `/auth/password/reset` | P | |
-| GET | `/auth/csrf` | P | Jeton CSRF |
+| GET | `/auth/csrf` | P | Pose le cookie `csrf_token` et renvoie sa valeur |
 | GET | `/me` | U | Profil, organisations (avec rôle), rôles staff, permissions effectives |
 | PATCH | `/me` | U | |
 | GET | `/me/notifications` · POST `/me/notifications/{id}/read` | U | |
