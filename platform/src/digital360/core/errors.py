@@ -40,6 +40,7 @@ class AppError(Exception):
         status: int = 400,
         title: str | None = None,
         errors: list[dict[str, Any]] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(detail)
         self.code = code
@@ -47,6 +48,7 @@ class AppError(Exception):
         self.status = status
         self.title = title or HTTPStatus(status).phrase
         self.errors = errors
+        self.headers = headers
 
 
 def problem_response(
@@ -57,6 +59,7 @@ def problem_response(
     title: str,
     detail: str,
     errors: list[dict[str, Any]] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     body: dict[str, Any] = {
         "type": ERROR_DOCS_BASE_URL + code.lower().replace("_", "-"),
@@ -68,7 +71,7 @@ def problem_response(
     }
     if errors:
         body["errors"] = errors
-    return JSONResponse(body, status_code=status, media_type=PROBLEM_CONTENT_TYPE)
+    return JSONResponse(body, status_code=status, media_type=PROBLEM_CONTENT_TYPE, headers=headers)
 
 
 async def _handle_app_error(request: Request, exc: Exception) -> JSONResponse:
@@ -80,6 +83,7 @@ async def _handle_app_error(request: Request, exc: Exception) -> JSONResponse:
         title=exc.title,
         detail=exc.detail,
         errors=exc.errors,
+        headers=exc.headers,
     )
 
 

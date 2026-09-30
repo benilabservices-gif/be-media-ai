@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # NoDecode : la variable est une liste séparée par des virgules, pas du JSON
     cors_allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
+    # Cookies de session et CSRF. Le domaine parent (ex. ".benilab360.com") permet au
+    # frontend (app.) et à l'API (api.) de partager les cookies ; vide = hôte courant.
+    session_cookie_domain: str | None = None
+    session_idle_days: int = Field(default=7, ge=1)
+    session_absolute_days: int = Field(default=30, ge=1)
+
     @field_validator("database_url")
     @classmethod
     def _require_async_driver(cls, value: PostgresDsn) -> PostgresDsn:
@@ -45,6 +51,11 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env is AppEnv.PRODUCTION
+
+    @property
+    def secure_cookies(self) -> bool:
+        # HTTPS obligatoire hors poste de développement et tests (qui tournent en HTTP)
+        return self.app_env in {AppEnv.STAGING, AppEnv.PRODUCTION}
 
 
 @lru_cache
