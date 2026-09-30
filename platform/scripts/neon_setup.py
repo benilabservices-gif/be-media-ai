@@ -52,12 +52,22 @@ async def prepare(owner_url: str, role: str, database: str) -> str:
     owner = await asyncpg.connect(**_connect_kwargs(owner_url))  # type: ignore[arg-type]
     try:
         exists = await owner.fetchval("SELECT 1 FROM pg_roles WHERE rolname = $1", role)
-        verb = "ALTER" if exists else "CREATE"
-        await owner.execute(
-            f"{verb} ROLE {role} WITH LOGIN PASSWORD '{password}' "
-            "NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB"
-        )
+        if exists:
+            # Un propriétaire non superuser (Neon) ne peut pas redéfinir SUPERUSER ou BYPASSRLS,
+            # même pour les refuser : seul le mot de passe change. `verify` contrôle les attributs.
+            await owner.execute(f"ALTER ROLE {role} WITH LOGIN PASSWORD '{password}'")
+        else:
+            await owner.execute(
+                f"CREATE ROLE {role} WITH LOGIN PASSWORD '{password}' "
+                "NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB"
+            )
         print(f"  rôle {role} {'mis à jour' if exists else 'créé'}")
+        # PostgreSQL 16+ : pour donner une base à ce rôle, le propriétaire doit pouvoir agir
+        # en son nom (SET), sans hériter de ses droits (INHERIT FALSE)
+        try:
+            await owner.execute(f"GRANT {role} TO CURRENT_USER WITH SET TRUE, INHERIT FALSE")
+        except asyncpg.PostgresSyntaxError:  # PostgreSQL < 16 : l'appartenance suffit
+            await owner.execute(f"GRANT {role} TO CURRENT_USER")
         if not await owner.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", database):
             await owner.execute(f"CREATE DATABASE {database} OWNER {role}")
             print(f"  base {database} créée (propriétaire : {role})")
