@@ -13,6 +13,8 @@
     <style>
         .page{display:none}.page.active{display:block}
         .hidden{display:none!important}
+        /* Fallback: si JS ne charge pas, les reveal restent visibles */
+        @supports not (opacity:0){.reveal{opacity:1!important;transform:none!important}}
         .diag-question{font-size:1.15rem;font-weight:500;margin-bottom:1.5rem;line-height:1.4}
         .diag-question small{display:block;font-size:12px;color:var(--text-muted);font-weight:400;margin-top:4px}
         .diag-options{display:grid;gap:0.75rem;max-width:600px}
@@ -548,10 +550,16 @@
     function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
 
     // ── Scroll reveal ──
-    const revealObserver = new IntersectionObserver(entries => {
-        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
-    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
-    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    try {
+        const revealObserver = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+        }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    } catch(e) {
+        console.warn('[D360] Reveal observer failed:', e);
+        // Fallback: activate all reveals
+        document.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
+    }
 
     // ── Nav scroll ──
     window.addEventListener('scroll', () => {
@@ -1173,10 +1181,14 @@
     }
 
     // ── Init ──
-    loadCatalog();
-    renderPlanPricingCta();
-    // Charger le jeton CSRF dès l'ouverture de la page
-    getCsrf().catch(() => {});
+    try {
+        loadCatalog();
+        renderPlanPricingCta();
+        getCsrf().catch(() => {});
+    } catch(e) {
+        console.error('[D360] Init error:', e);
+        renderPlanPricingCta();
+    }
 
     // ── CSRF (déplacé au-dessus dans api.getCsrf) ──
     // ── Auth state ──
