@@ -32,9 +32,10 @@
         /* Loading skeleton for dynamic sections */
         .loading-skeleton{animation:shimmer 1.5s infinite;background:linear-gradient(90deg,var(--bg-tertiary) 25%,var(--bg-elevated) 50%,var(--bg-tertiary) 75%);background-size:200% 100%;border-radius:var(--radius-sm);height:20px;margin-bottom:8px}
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @media (prefers-reduced-motion: reduce){.loading-skeleton{animation:none;background:var(--bg-tertiary);}}
         /* Currency selector */
         .currency-selector{display:flex;gap:.5rem;align-items:center}
-        .currency-btn{padding:4px 12px;border-radius:var(--radius-full);font-size:11px;border:1px solid var(--border);color:var(--text-muted);transition:all .3s}
+        .currency-btn{padding:6px 14px;border-radius:var(--radius-full);font-size:13px;border:1px solid var(--border);color:var(--text-secondary);transition:all .3s;font-weight:500}
         .currency-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(127,181,168,.08)}
     </style>
 </head>
@@ -54,10 +55,6 @@
             <li><a href="#" onclick="showPage('landing');return false;" class="btn btn-outline btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
             <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm">Diagnostic gratuit</a></li>
         </ul>
-        <div class="currency-selector" style="margin-right:1rem;">
-            <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">FCFA</button>
-            <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">€</button>
-        </div>
         <button class="lp-menu-toggle" onclick="toggleMobileMenu()">☰</button>
     </nav>
 
@@ -165,6 +162,10 @@
                 <div class="section-label" style="justify-content:center;">Nos offres</div>
                 <h2 class="section-title">Des formules <span style="color:var(--accent);font-style:italic;">claires</span></h2>
                 <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Commencez par Digital Start, puis choisissez votre accompagnement mensuel.</p>
+                <div class="currency-selector" style="justify-content:center;margin-top:1.5rem;">
+                    <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">FCFA</button>
+                    <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">€</button>
+                </div>
             </div>
             <div class="lp-pricing-grid" id="pricingGrid">
                 <!-- Rendered dynamically from catalog -->
@@ -310,6 +311,10 @@
                     <h2 class="section-title" style="margin-bottom:1rem;">Commencez par <span style="color:var(--accent);font-style:italic;">Digital Start</span></h2>
                     <p style="color:var(--text-secondary);margin-bottom:1rem;">Le pack complet pour construire votre première présence web professionnelle.</p>
                     <div id="planPricingCta" style="font-family:var(--font-display);font-size:2.5rem;font-weight:700;color:var(--accent);margin-bottom:0.5rem;"></div>
+                    <div class="currency-selector" style="justify-content:center;margin-bottom:1.5rem;">
+                        <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">FCFA</button>
+                        <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">€</button>
+                    </div>
                     <p style="font-size:13px;color:var(--text-muted);margin-bottom:2rem;">Paiement unique · Nom de domaine + hébergement inclus</p>
                     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
                         <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary btn-lg">Créer mon espace</a>

@@ -5,21 +5,20 @@
 /* ── Nav ── */
 .lp-nav {
     position: fixed; top: 0; width: 100%; z-index: 100;
-    padding: 20px 6vw;
+    padding: 16px 6vw;
     display: flex; justify-content: space-between; align-items: center;
-    background: rgba(10,10,15,0.85);
-    backdrop-filter: blur(24px);
+    background: var(--bg-primary);
     border-bottom: 1px solid var(--border);
     transition: var(--transition);
 }
-.lp-nav.scrolled { padding: 14px 6vw; }
+.lp-nav.scrolled { padding: 12px 6vw; }
 .lp-logo {
-    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    font-size: 17px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;
 }
 .lp-logo em { font-style: italic; color: var(--accent); font-family: var(--font-display); }
-.lp-logo-sub { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); display: block; margin-top: 2px; }
+.lp-logo-sub { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-secondary); display: block; margin-top: 2px; }
 .lp-nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-.lp-nav-links a { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); transition: color 0.3s; }
+.lp-nav-links a { font-size: 14px; color: var(--text-secondary); transition: color 0.3s; }
 .lp-nav-links a:hover { color: var(--accent); }
 .lp-menu-toggle {
     display: none; background: none; border: 1px solid var(--border);
@@ -27,8 +26,8 @@
     border-radius: var(--radius-sm); font-size: 18px;
 }
 .lp-mobile-menu {
-    position: fixed; inset: 0; background: rgba(10,10,15,0.97);
-    backdrop-filter: blur(30px); z-index: 99;
+    position: fixed; inset: 0; background: var(--bg-primary);
+    z-index: 99;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 2rem; opacity: 0; pointer-events: none;
     transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1);
@@ -36,7 +35,7 @@
 .lp-mobile-menu.open { opacity: 1; pointer-events: all; }
 .lp-mobile-menu a {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 6vw, 3rem); font-weight: 400;
+    font-size: clamp(1.8rem, 6vw, 2.5rem); font-weight: 400;
     color: var(--text-primary); transition: color 0.3s;
 }
 .lp-mobile-menu a:hover { color: var(--accent); }
@@ -65,6 +64,12 @@
     animation: pulse 2s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
+@media (prefers-reduced-motion: reduce) {
+    .lp-hero-badge .dot { animation: none; opacity: 0.7; }
+    .reveal { transition: none; opacity: 1; transform: none; }
+    .bar { transition: none; }
+    .score-ring-fill { transition: none; }
+}
 .lp-hero h1 {
     font-family: var(--font-display);
     font-size: clamp(2.8rem, 5.5vw, 5.5rem);
@@ -121,9 +126,11 @@
 .lp-footer {
     padding: 6vh 6vw; border-top: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 13px; color: var(--text-muted);
+    font-size: 13px; color: var(--text-secondary);
 }
 .lp-footer-links { display: flex; gap: 2rem; }
+.lp-footer-links a { color: var(--text-secondary); transition: color 0.3s; }
+.lp-footer-links a:hover { color: var(--accent); }
 
 /* ── Diagnostic Steps ── */
 .diag-section { display: none; }
