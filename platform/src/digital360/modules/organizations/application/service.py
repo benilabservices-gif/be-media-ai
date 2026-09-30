@@ -16,6 +16,10 @@ from digital360.core.tenancy import (
     tenant_transaction,
     user_transaction,
 )
+from digital360.modules.diagnostics.application.service import (
+    attach_to_organization,
+    load_claimable,
+)
 from digital360.modules.identity.application.memberships import (
     MemberView,
     grant_membership,
@@ -25,6 +29,7 @@ from digital360.modules.organizations.infrastructure.models import (
     Organization,
     OrganizationStatus,
 )
+from digital360.modules.passport.application.service import initialize_from_declarations
 
 AUDITED_FIELDS = (
     "commercial_name",
@@ -45,6 +50,30 @@ AUDITED_FIELDS = (
 )
 
 
+# Réponses du diagnostic reprises comme valeurs par défaut de l'organisation
+_ANSWER_TO_FIELD = {
+    "company": "commercial_name",
+    "country": "country",
+    "city": "city",
+    "sector": "sector",
+    "phone": "phone",
+    "whatsapp": "whatsapp",
+    "email": "email",
+    "description": "description",
+}
+
+
+def _values_from_answers(answers: dict[str, Any]) -> dict[str, Any]:
+    values = {
+        field: answers[answer] for answer, field in _ANSWER_TO_FIELD.items() if answers.get(answer)
+    }
+    if "commercial_name" in values:
+        values["commercial_name"] = str(values["commercial_name"])[:200]
+    if "description" in values:
+        values["description"] = str(values["description"])[:2000]
+    return values
+
+
 def _not_found() -> AppError:
     return AppError("NOT_FOUND", "Organisation introuvable.", status=404)
 
@@ -57,13 +86,42 @@ class OrganizationService:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
-    async def create(self, principal: Principal, values: dict[str, Any]) -> Organization:
-        """Crée l'organisation ; son créateur en devient propriétaire (CLIENT_OWNER)."""
-        organization = Organization(id=uuid7(), **values)
-        context = TenantContext(organization_id=organization.id, user_id=principal.user_id)
+    async def create(
+        self,
+        principal: Principal,
+        values: dict[str, Any],
+        *,
+        diagnostic: tuple[uuid.UUID, str] | None = None,
+    ) -> Organization:
+        """Crée l'organisation ; son créateur en devient propriétaire (CLIENT_OWNER).
+
+        Avec un diagnostic (identifiant, jeton), les champs non fournis sont repris de ses
+        réponses, le diagnostic est rattaché et le Passport initialisé, en une transaction.
+        """
+        organization_id = uuid7()
+        context = TenantContext(organization_id=organization_id, user_id=principal.user_id)
         async with tenant_transaction(self._session_factory, context) as session:
+            claimed = None
+            if diagnostic is not None:
+                claimed = await load_claimable(session, *diagnostic)
+                values = _values_from_answers(claimed.answers) | {
+                    key: value for key, value in values.items() if value is not None
+                }
+            missing = [field for field in ("commercial_name", "country") if not values.get(field)]
+            if missing:
+                raise AppError(
+                    "VALIDATION_ERROR",
+                    "Nom commercial et pays sont obligatoires.",
+                    errors=[{"field": f"body.{field}", "reason": "missing"} for field in missing],
+                )
+            organization = Organization(id=organization_id, **values)
             session.add(organization)
             await session.flush()
+            if claimed is not None:
+                await attach_to_organization(session, claimed.session_id, organization_id)
+                await initialize_from_declarations(
+                    session, organization_id, claimed.passport_statuses
+                )
             await grant_membership(
                 session,
                 organization_id=organization.id,

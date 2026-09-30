@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator, Iterator
 
 import pytest
@@ -10,6 +11,14 @@ from digital360.core.db import create_engine, create_session_factory
 from digital360.core.jobs import Job
 from digital360.core.tenancy import staff_transaction
 from digital360.main import create_app
+from digital360.modules.diagnostics.application import config_store
+from digital360.modules.diagnostics.domain.seeds import (
+    SEEDS_DIR,
+    load_questionnaire,
+    load_rule_set,
+    load_scoring_model,
+)
+from digital360.modules.diagnostics.infrastructure.models import ConfigKind
 from tests.conftest import make_settings
 from tests.integration.api_client import ApiClient
 
@@ -53,3 +62,33 @@ async def empty_job_queue(session_factory: async_sessionmaker[AsyncSession]) -> 
     # Le worker prend n'importe quelle tâche en attente : on part d'une file vide
     async with staff_transaction(session_factory) as session:
         await session.execute(delete(Job))
+
+
+@pytest.fixture
+def published_config(test_database_url: str) -> None:
+    """Publie la configuration v1 (idempotent), comme `cli seed-config` en production.
+
+    Synchrone : utilisable par les tests d'API, qui passent par TestClient.
+    """
+
+    async def publish_all() -> None:
+        engine = create_engine(test_database_url)
+        try:
+            async with staff_transaction(create_session_factory(engine)) as session:
+                await config_store.publish(
+                    session,
+                    ConfigKind.QUESTIONNAIRE,
+                    load_questionnaire(SEEDS_DIR / "questionnaire.v1.yaml"),
+                )
+                await config_store.publish(
+                    session,
+                    ConfigKind.SCORING_MODEL,
+                    load_scoring_model(SEEDS_DIR / "scoring.v1.yaml"),
+                )
+                await config_store.publish(
+                    session, ConfigKind.RULE_SET, load_rule_set(SEEDS_DIR / "rules.v1.yaml")
+                )
+        finally:
+            await engine.dispose()
+
+    asyncio.run(publish_all())

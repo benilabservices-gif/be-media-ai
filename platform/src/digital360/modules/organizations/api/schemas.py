@@ -1,9 +1,17 @@
 import re
 import uuid
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from digital360.core.pagination import PageInfo
 from digital360.core.permissions import ClientRole
@@ -50,8 +58,18 @@ class _OrganizationFields(BaseModel):
 
 
 class OrganizationCreate(_OrganizationFields):
-    commercial_name: Text200
-    country: CountryCode
+    """Sans diagnostic : `commercial_name` et `country` obligatoires. Avec `diagnostic_id`
+    (et l'en-tête X-Diagnostic-Token), les champs absents sont repris des réponses."""
+
+    commercial_name: Text200 | None = None
+    country: CountryCode | None = None
+    diagnostic_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _required_without_diagnostic(self) -> Self:
+        if self.diagnostic_id is None and (self.commercial_name is None or self.country is None):
+            raise ValueError("commercial_name et country sont obligatoires sans diagnostic_id")
+        return self
 
 
 class OrganizationUpdate(_OrganizationFields):

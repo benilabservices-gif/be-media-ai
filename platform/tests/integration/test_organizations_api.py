@@ -1,4 +1,5 @@
 import asyncio
+import re
 import uuid
 
 import pytest
@@ -120,7 +121,8 @@ def test_should_answer_404_on_every_org_route_for_non_member(
     assert routes, "aucune route tenant trouvée : le test ne vérifierait rien"
 
     for method, path in routes:
-        response = second_api.request(method, path.replace("{org_id}", org_id), json={})
+        concrete = re.sub(r"\{(?!org_id)\w+\}", str(uuid.uuid4()), path).replace("{org_id}", org_id)
+        response = second_api.request(method, concrete, json={})
         assert response.status_code == 404, f"{method} {path} → {response.status_code}"
 
 

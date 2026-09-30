@@ -13,11 +13,16 @@ from digital360.core.db import create_engine, create_session_factory
 from digital360.core.errors import register_error_handlers
 from digital360.core.logging import REQUEST_ID_HEADER, RequestContextMiddleware, configure_logging
 from digital360.core.rate_limit import RateLimiter
+from digital360.jobs import registry
+from digital360.modules.diagnostics.api import routes as diagnostic_routes
+from digital360.modules.diagnostics.application.service import DiagnosticService
 from digital360.modules.identity.api import routes as identity_routes
 from digital360.modules.identity.application.auth_service import AuthService
 from digital360.modules.identity.infrastructure.password_hasher import Argon2PasswordHasher
 from digital360.modules.organizations.api import routes as organization_routes
 from digital360.modules.organizations.application.service import OrganizationService
+from digital360.modules.passport.api import routes as passport_routes
+from digital360.modules.passport.application.service import PassportService
 
 API_PREFIX = "/api/v1"
 
@@ -41,6 +46,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             absolute_timeout=timedelta(days=settings.session_absolute_days),
         )
         app.state.organization_service = OrganizationService(session_factory)
+        app.state.diagnostic_service = DiagnosticService(session_factory, registry)
+        app.state.passport_service = PassportService(session_factory)
         app.state.rate_limiter = RateLimiter()
         yield
         await app.state.engine.dispose()
@@ -73,6 +80,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api_router.include_router(me.router)
     api_router.include_router(organization_routes.router)
     api_router.include_router(organization_routes.admin_router)
+    api_router.include_router(diagnostic_routes.public_router)
+    api_router.include_router(diagnostic_routes.router)
+    api_router.include_router(diagnostic_routes.admin_router)
+    api_router.include_router(passport_routes.router)
     app.include_router(api_router)
 
     return app

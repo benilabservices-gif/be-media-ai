@@ -1,10 +1,11 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 
 from digital360.core.actor import Actor
 from digital360.core.csrf import require_csrf
+from digital360.core.errors import AppError
 from digital360.core.pagination import PageParams, page_params
 from digital360.core.permissions import Permission, Principal
 from digital360.modules.identity.api.dependencies import (
@@ -43,9 +44,18 @@ Service = Annotated[OrganizationService, Depends(get_organization_service)]
     dependencies=[Depends(require_csrf)],
 )
 async def create_organization(
-    body: OrganizationCreate, principal: CurrentPrincipal, service: Service
+    body: OrganizationCreate,
+    principal: CurrentPrincipal,
+    service: Service,
+    x_diagnostic_token: Annotated[str | None, Header(max_length=100)] = None,
 ) -> OrganizationOut:
-    organization = await service.create(principal, body.model_dump())
+    diagnostic = None
+    if body.diagnostic_id is not None:
+        if not x_diagnostic_token:
+            raise AppError("NOT_FOUND", "Diagnostic introuvable.", status=404)
+        diagnostic = (body.diagnostic_id, x_diagnostic_token)
+    values = body.model_dump(exclude={"diagnostic_id"})
+    organization = await service.create(principal, values, diagnostic=diagnostic)
     return OrganizationOut.model_validate(organization)
 
 

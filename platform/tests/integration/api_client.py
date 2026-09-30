@@ -31,10 +31,18 @@ class ApiClient:
                 self.jar.jar.clear(cookie.domain, cookie.path, cookie.name)
         self.jar.set(name, value, domain="testserver.local")
 
-    def _send(self, method: str, path: str, json: Any = None, *, csrf: bool) -> httpx.Response:
+    def _send(
+        self,
+        method: str,
+        path: str,
+        json: Any = None,
+        *,
+        csrf: bool,
+        headers: dict[str, str] | None = None,
+    ) -> httpx.Response:
         # Le TestClient est partagé : on lui confie le jar de CE navigateur le temps de l'appel
         self.http.cookies = self.jar
-        headers = {}
+        headers = dict(headers or {})
         if csrf:
             token = self.http.cookies.get(CSRF_COOKIE_NAME)
             if token is None:
@@ -47,8 +55,18 @@ class ApiClient:
     def get(self, path: str) -> httpx.Response:
         return self._send("GET", path, csrf=False)
 
-    def post(self, path: str, json: Any = None) -> httpx.Response:
-        return self._send("POST", path, json, csrf=True)
+    def post(
+        self, path: str, json: Any = None, headers: dict[str, str] | None = None
+    ) -> httpx.Response:
+        return self._send("POST", path, json, csrf=True, headers=headers)
+
+    def put_without_csrf(
+        self, path: str, json: Any = None, headers: dict[str, str] | None = None
+    ) -> httpx.Response:
+        return self._send("PUT", path, json, csrf=False, headers=headers)
+
+    def get_with(self, path: str, headers: dict[str, str]) -> httpx.Response:
+        return self._send("GET", path, csrf=False, headers=headers)
 
     def patch(self, path: str, json: Any = None) -> httpx.Response:
         return self._send("PATCH", path, json, csrf=True)
@@ -56,8 +74,10 @@ class ApiClient:
     def request(self, method: str, path: str, json: Any = None) -> httpx.Response:
         return self._send(method, path, json, csrf=method not in {"GET", "HEAD"})
 
-    def post_without_csrf(self, path: str, json: Any = None) -> httpx.Response:
-        return self._send("POST", path, json, csrf=False)
+    def post_without_csrf(
+        self, path: str, json: Any = None, headers: dict[str, str] | None = None
+    ) -> httpx.Response:
+        return self._send("POST", path, json, csrf=False, headers=headers)
 
     def register(self, email: str | None = None, **extra: Any) -> dict[str, Any]:
         email = email or f"user-{uuid.uuid4().hex[:10]}@exemple.ci"
