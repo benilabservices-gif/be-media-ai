@@ -1,0 +1,109 @@
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, Request, status
+
+from digital360.core.actor import Actor
+from digital360.core.csrf import require_csrf
+from digital360.core.pagination import PageParams, page_params
+from digital360.core.permissions import Permission, Principal
+from digital360.modules.identity.api.dependencies import (
+    CurrentPrincipal,
+    OrganizationAccess,
+    require_org_permission,
+    require_staff_permission,
+)
+from digital360.modules.organizations.api.schemas import (
+    MemberList,
+    MemberOut,
+    OrganizationCreate,
+    OrganizationOut,
+    OrganizationPage,
+    OrganizationUpdate,
+)
+from digital360.modules.organizations.application.service import OrganizationService
+from digital360.modules.organizations.infrastructure.models import OrganizationStatus
+
+router = APIRouter(tags=["organizations"])
+admin_router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def get_organization_service(request: Request) -> OrganizationService:
+    service: OrganizationService = request.app.state.organization_service
+    return service
+
+
+Service = Annotated[OrganizationService, Depends(get_organization_service)]
+
+
+@router.post(
+    "/orgs",
+    status_code=status.HTTP_201_CREATED,
+    response_model=OrganizationOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def create_organization(
+    body: OrganizationCreate, principal: CurrentPrincipal, service: Service
+) -> OrganizationOut:
+    organization = await service.create(principal, body.model_dump())
+    return OrganizationOut.model_validate(organization)
+
+
+@router.get("/orgs/{org_id}", response_model=OrganizationOut)
+async def get_organization(
+    access: Annotated[
+        OrganizationAccess, Depends(require_org_permission(Permission.ORGANIZATION_READ))
+    ],
+    service: Service,
+) -> OrganizationOut:
+    return OrganizationOut.model_validate(await service.get(access.tenant))
+
+
+@router.patch(
+    "/orgs/{org_id}", response_model=OrganizationOut, dependencies=[Depends(require_csrf)]
+)
+async def update_organization(
+    body: OrganizationUpdate,
+    access: Annotated[
+        OrganizationAccess, Depends(require_org_permission(Permission.ORGANIZATION_UPDATE))
+    ],
+    service: Service,
+) -> OrganizationOut:
+    organization = await service.update(
+        access.tenant, Actor.user(access.principal.user_id), body.model_dump(exclude_unset=True)
+    )
+    return OrganizationOut.model_validate(organization)
+
+
+@router.get("/orgs/{org_id}/members", response_model=MemberList)
+async def list_organization_members(
+    access: Annotated[
+        OrganizationAccess, Depends(require_org_permission(Permission.ORGANIZATION_READ))
+    ],
+    service: Service,
+) -> MemberList:
+    members = await service.members(access.tenant)
+    return MemberList(data=[MemberOut(**vars(member)) for member in members])
+
+
+@admin_router.get("/organizations", response_model=OrganizationPage)
+async def admin_list_organizations(
+    _: Annotated[Principal, Depends(require_staff_permission(Permission.ORGANIZATION_READ))],
+    service: Service,
+    params: Annotated[PageParams, Depends(page_params)],
+    status_filter: Annotated[OrganizationStatus | None, Query(alias="status")] = None,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+) -> OrganizationPage:
+    organizations, page = await service.admin_list(params, status=status_filter, query=q)
+    return OrganizationPage(
+        data=[OrganizationOut.model_validate(item) for item in organizations], page=page
+    )
+
+
+@admin_router.get("/organizations/{organization_id}", response_model=OrganizationOut)
+async def admin_get_organization(
+    organization_id: uuid.UUID,
+    _: Annotated[Principal, Depends(require_staff_permission(Permission.ORGANIZATION_READ))],
+    service: Service,
+) -> OrganizationOut:
+    return OrganizationOut.model_validate(await service.admin_get(organization_id))
