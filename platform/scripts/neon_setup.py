@@ -29,6 +29,7 @@ from sqlalchemy import make_url
 
 PLATFORM = Path(__file__).resolve().parents[1]
 _IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
+_OWNER_URL = re.compile(r"postgres(?:ql)?://[^\s'\"]+")
 
 
 def _connect_kwargs(url: str) -> dict[str, object]:
@@ -114,14 +115,28 @@ def main() -> None:
     )
     parser.add_argument("--role", default="digital360")
     parser.add_argument("--database", default="digital360")
+    parser.add_argument(
+        "--owner-url-file", type=Path, help="fichier contenant l'adresse propriétaire"
+    )
+    parser.add_argument(
+        "--output", type=Path, help="écrit DATABASE_URL dans ce fichier sans l'afficher"
+    )
     args = parser.parse_args()
     for name in (args.role, args.database):
         if not _IDENTIFIER.match(name):
             raise SystemExit(f"nom invalide : {name}")
 
-    owner_url = os.environ.get("OWNER_DATABASE_URL") or getpass.getpass(
-        "Adresse de connexion du propriétaire Neon (saisie masquée) : "
-    )
+    if args.owner_url_file:
+        # Neon affiche parfois « psql 'postgresql://…' » : on ne garde que l'adresse
+        content = args.owner_url_file.read_text(encoding="utf-8-sig")
+        found = _OWNER_URL.search(content)
+        if not found:
+            raise SystemExit(f"aucune adresse postgresql:// trouvée dans {args.owner_url_file}")
+        owner_url = found.group(0)
+    else:
+        owner_url = os.environ.get("OWNER_DATABASE_URL") or getpass.getpass(
+            "Adresse de connexion du propriétaire Neon (saisie masquée) : "
+        )
     if not owner_url.strip():
         raise SystemExit("aucune adresse saisie")
 
@@ -134,6 +149,10 @@ def main() -> None:
     print("4/4 Vérifications")
     asyncio.run(verify(app_url))
 
+    if args.output:
+        args.output.write_text(app_url + "\n", encoding="utf-8")
+        print(f"\nTerminé. Adresse DATABASE_URL écrite dans {args.output} (à coller dans Render).")
+        return
     print(
         "\nTerminé. Collez cette adresse dans Render, variable DATABASE_URL (et nulle part ailleurs) :\n"
     )

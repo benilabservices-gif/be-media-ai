@@ -7,3 +7,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .omc/
+
+# Secrets de mise en ligne, jamais versionnés
+neon-owner.txt
+render-database-url.txt
