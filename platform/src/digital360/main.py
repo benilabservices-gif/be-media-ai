@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -35,6 +36,8 @@ from digital360.modules.passport.api import routes as passport_routes
 from digital360.modules.passport.application.service import PassportService
 
 API_PREFIX = "/api/v1"
+
+logger = logging.getLogger("digital360.app")
 
 
 def create_app(
@@ -76,6 +79,16 @@ def create_app(
         if settings.run_worker_in_api:
             worker = Worker(session_factory, registry, worker_id=f"api-{uuid.uuid4().hex[:8]}")
             worker_task = asyncio.create_task(worker.run_forever(stop_worker))
+        # Configuration réellement chargée, sans aucun secret : premier réflexe en cas de doute
+        logger.info(
+            "configuration des emails",
+            extra={
+                "email_provider": settings.email_provider.value,
+                "email_from": settings.email_from,
+                "sales_alert_recipients": len(settings.sales_alert_emails),
+                "worker_in_api": settings.run_worker_in_api,
+            },
+        )
         yield
         stop_worker.set()
         if worker_task is not None:

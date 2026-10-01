@@ -76,15 +76,24 @@ class BrevoEmailSender:
             method="POST",
         )
         # urllib est bloquant : exécuté hors de la boucle d'événements
-        await asyncio.to_thread(self._post, request)
+        message_id = await asyncio.to_thread(self._post, request)
+        # Le corps n'est jamais journalisé : il peut contenir un lien de réinitialisation
+        logger.info(
+            "email envoyé (brevo)",
+            extra={"to": message.to, "subject": message.subject, "brevo_message_id": message_id},
+        )
 
-    def _post(self, request: urllib.request.Request) -> None:
+    def _post(self, request: urllib.request.Request) -> str | None:
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout):  # noqa: S310 (URL fixe)
-                pass
+            with urllib.request.urlopen(  # noqa: S310 (URL fixe)
+                request, timeout=self._timeout
+            ) as response:
+                answer = json.loads(response.read() or b"{}")
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode(errors="replace")[:500]
             raise EmailDeliveryError(f"Brevo a refusé l'envoi ({exc.code}) : {detail}") from exc
+        message_id: str | None = answer.get("messageId")
+        return message_id
 
 
 def build_email_sender(settings: Settings) -> EmailSender:
