@@ -3,6 +3,12 @@
   "buildCommand": null,
   "outputDirectory": ".",
   "routes": [
+    {
+      "src": "/",
+      "has": [{ "type": "host", "value": "digital360.bemedia-ai.online" }],
+      "status": 308,
+      "headers": { "Location": "/digital360/" }
+    },
     { "handle": "filesystem" },
     { "src": "/api/v1/(.*)", "dest": "https://digital360-api.onrender.com/api/v1/$1" },
     { "src": "/digital360/(.*)", "dest": "/digital360/index.html" },
