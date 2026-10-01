@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from digital360 import __version__
-from digital360.api import me
+from digital360.api import admin, me
 from digital360.core import health
 from digital360.core.config import Settings, get_settings
 from digital360.core.db import create_engine, create_session_factory
@@ -20,6 +20,7 @@ from digital360.modules.diagnostics.api import routes as diagnostic_routes
 from digital360.modules.diagnostics.application.service import DiagnosticService
 from digital360.modules.identity.api import routes as identity_routes
 from digital360.modules.identity.application.auth_service import AuthService
+from digital360.modules.identity.application.staff_service import StaffService
 from digital360.modules.identity.infrastructure.password_hasher import Argon2PasswordHasher
 from digital360.modules.organizations.api import routes as organization_routes
 from digital360.modules.organizations.application.service import OrganizationService
@@ -51,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.diagnostic_service = DiagnosticService(session_factory, registry)
         app.state.passport_service = PassportService(session_factory)
         app.state.catalog_service = CatalogService(session_factory)
+        app.state.staff_service = StaffService(session_factory)
         app.state.rate_limiter = RateLimiter()
         yield
         await app.state.engine.dispose()
@@ -90,6 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api_router.include_router(catalog_routes.public_router)
     api_router.include_router(catalog_routes.router)
     api_router.include_router(catalog_routes.admin_router)
+    api_router.include_router(admin.router)
     app.include_router(api_router)
 
     return app

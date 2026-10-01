@@ -9,7 +9,7 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Index, String, Text, Uuid, func
+from sqlalchemy import DateTime, Index, String, Text, Uuid, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
@@ -94,3 +94,25 @@ async def record_audit(
     session.add(entry)
     await session.flush()
     return entry
+
+
+async def list_audit_logs(
+    session: AsyncSession,
+    *,
+    limit: int,
+    after: uuid.UUID | None,
+    organization_id: uuid.UUID | None = None,
+    action: str | None = None,
+    entity_type: str | None = None,
+) -> list[AuditLog]:
+    """Entrées du plus récent au plus ancien ; renvoie `limit + 1` lignes pour la pagination."""
+    statement = select(AuditLog).order_by(AuditLog.id.desc()).limit(limit + 1)
+    if after is not None:
+        statement = statement.where(AuditLog.id < after)
+    if organization_id is not None:
+        statement = statement.where(AuditLog.organization_id == organization_id)
+    if action:
+        statement = statement.where(AuditLog.action == action)
+    if entity_type:
+        statement = statement.where(AuditLog.entity_type == entity_type)
+    return list((await session.execute(statement)).scalars())

@@ -9,10 +9,10 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from digital360.core.actor import Actor
@@ -401,6 +401,52 @@ class DiagnosticService:
                 new_value={"status": status.value},
             )
             return _plan_item_view(item)
+
+    async def admin_stats(self) -> dict[str, Any]:
+        """Prospects captés : volumes, conversion en compte, score moyen."""
+        now = datetime.now(UTC)
+        async with staff_transaction(self._session_factory) as session:
+            by_status = dict(
+                (
+                    await session.execute(
+                        select(DiagnosticSession.status, func.count()).group_by(
+                            DiagnosticSession.status
+                        )
+                    )
+                )
+                .tuples()
+                .all()
+            )
+
+            async def created_since(delta: timedelta) -> int:
+                return (
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(DiagnosticSession)
+                        .where(
+                            DiagnosticSession.status != DiagnosticStatus.IN_PROGRESS,
+                            DiagnosticSession.completed_at >= now - delta,
+                        )
+                    )
+                    or 0
+                )
+
+            last_24h = await created_since(timedelta(days=1))
+            last_7d = await created_since(timedelta(days=7))
+            average = await session.scalar(select(func.avg(DigitalScore.total)))
+        completed = by_status.get(DiagnosticStatus.COMPLETED, 0)
+        claimed = by_status.get(DiagnosticStatus.CLAIMED, 0)
+        finished = completed + claimed
+        return {
+            "in_progress": by_status.get(DiagnosticStatus.IN_PROGRESS, 0),
+            "completed_not_claimed": completed,
+            "claimed": claimed,
+            "completed_last_24h": last_24h,
+            "completed_last_7_days": last_7d,
+            # Part des diagnostics terminés qui ont abouti à la création d'un compte
+            "conversion_rate": round(claimed / finished, 3) if finished else None,
+            "average_score": round(float(average), 1) if average is not None else None,
+        }
 
     async def admin_list(
         self, params: PageParams, *, status: DiagnosticStatus | None

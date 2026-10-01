@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from digital360.core.actor import Actor
@@ -212,6 +212,17 @@ class OrganizationService:
             organizations = list((await session.execute(statement)).scalars())
         kept, page = build_page_info([item.id for item in organizations], params)
         return organizations[:kept], page
+
+    async def admin_stats(self) -> dict[str, int]:
+        """Nombre d'entreprises par statut (LEAD, ACTIVE, SUSPENDED, CHURNED)."""
+        async with staff_transaction(self._session_factory) as session:
+            rows = await session.execute(
+                select(Organization.status, func.count())
+                .where(Organization.deleted_at.is_(None))
+                .group_by(Organization.status)
+            )
+            counts = dict(rows.tuples().all())
+        return {status.value: counts.get(status.value, 0) for status in OrganizationStatus}
 
     async def admin_get(self, organization_id: uuid.UUID) -> Organization:
         async with staff_transaction(self._session_factory) as session:
