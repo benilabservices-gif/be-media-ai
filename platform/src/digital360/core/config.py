@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field, PostgresDsn, field_validator
+from pydantic import Field, PostgresDsn, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -12,6 +12,11 @@ class AppEnv(StrEnum):
     TEST = "test"
     STAGING = "staging"
     PRODUCTION = "production"
+
+
+class EmailProvider(StrEnum):
+    CONSOLE = "console"
+    BREVO = "brevo"
 
 
 class Settings(BaseSettings):
@@ -33,6 +38,25 @@ class Settings(BaseSettings):
     session_idle_days: int = Field(default=7, ge=1)
     session_absolute_days: int = Field(default=30, ge=1)
 
+    # Emails transactionnels : "console" écrit dans les journaux, "brevo" envoie réellement
+    email_provider: EmailProvider = EmailProvider.CONSOLE
+    brevo_api_key: SecretStr | None = None
+    email_from: str = "no-reply@benilab360.com"
+    email_from_name: str = "BENILAB Digital360"
+    # Pages du frontend vers lesquelles pointent les liens des emails
+    password_reset_url: str = "http://localhost:5500/digital360/reset-password.html"  # noqa: S105
+    admin_url: str = "http://localhost:5500/digital360/admin.html"
+    # Destinataires des alertes « nouveau prospect » ; vide = pas d'alerte
+    sales_alert_emails: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    # Hébergement sans worker séparé (Render gratuit) : l'API traite elle-même la file
+    run_worker_in_api: bool = False
+
+    @model_validator(mode="after")
+    def _require_brevo_key(self) -> "Settings":
+        if self.email_provider is EmailProvider.BREVO and self.brevo_api_key is None:
+            raise ValueError("EMAIL_PROVIDER=brevo exige BREVO_API_KEY")
+        return self
+
     @field_validator("database_url")
     @classmethod
     def _require_async_driver(cls, value: PostgresDsn) -> PostgresDsn:
@@ -44,7 +68,7 @@ class Settings(BaseSettings):
             )
         return value
 
-    @field_validator("cors_allowed_origins", mode="before")
+    @field_validator("cors_allowed_origins", "sales_alert_emails", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:
         if isinstance(value, str):

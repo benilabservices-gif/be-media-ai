@@ -15,6 +15,8 @@ from digital360.modules.identity.api.dependencies import (
 from digital360.modules.identity.api.schemas import (
     CsrfResponse,
     LoginRequest,
+    PasswordForgotRequest,
+    PasswordResetRequest,
     ProfileUpdate,
     RegisterRequest,
     SessionResponse,
@@ -26,15 +28,27 @@ from digital360.modules.identity.application.auth_service import (
     ClientInfo,
     normalize_email,
 )
+from digital360.modules.identity.application.password_reset import PasswordResetService
 
 LOGIN_PER_IP = Limit(max_hits=20, window_seconds=60)
 LOGIN_PER_EMAIL = Limit(max_hits=5, window_seconds=15 * 60)
 REGISTER_PER_IP = Limit(max_hits=10, window_seconds=60 * 60)
+# Chaque demande envoie un email : limite stricte pour ne pas servir à harceler une adresse
+FORGOT_PER_IP = Limit(max_hits=10, window_seconds=60 * 60)
+FORGOT_PER_EMAIL = Limit(max_hits=3, window_seconds=60 * 60)
+RESET_PER_IP = Limit(max_hits=20, window_seconds=60 * 60)
 
 router = APIRouter(tags=["auth"])
 
+
+def _password_reset_service(request: Request) -> PasswordResetService:
+    service: PasswordResetService = request.app.state.password_reset_service
+    return service
+
+
 Auth = Annotated[AuthService, Depends(get_auth_service)]
 Client = Annotated[ClientInfo, Depends(get_client_info)]
+Resets = Annotated[PasswordResetService, Depends(_password_reset_service)]
 
 
 def _settings(request: Request) -> Settings:
@@ -133,6 +147,34 @@ async def logout(request: Request, response: Response, auth: Auth) -> None:
         await auth.logout(token)
     settings = _settings(request)
     response.delete_cookie(SESSION_COOKIE_NAME, domain=settings.session_cookie_domain)
+
+
+@router.post(
+    "/auth/password/forgot",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(require_csrf)],
+)
+async def forgot_password(
+    body: PasswordForgotRequest, request: Request, resets: Resets, client: Client
+) -> None:
+    """Envoie un lien de réinitialisation si le compte existe. Réponse identique sinon."""
+    limiter = _limiter(request)
+    limiter.hit(f"forgot:ip:{client.ip}", FORGOT_PER_IP)
+    limiter.hit(f"forgot:email:{normalize_email(body.email)}", FORGOT_PER_EMAIL)
+    await resets.request(body.email)
+
+
+@router.post(
+    "/auth/password/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_csrf)],
+)
+async def reset_password(
+    body: PasswordResetRequest, request: Request, resets: Resets, client: Client
+) -> None:
+    """Change le mot de passe et ferme toutes les sessions : l'utilisateur se reconnecte."""
+    _limiter(request).hit(f"reset:ip:{client.ip}", RESET_PER_IP)
+    await resets.reset(token=body.token, new_password=body.password, client=client)
 
 
 @router.patch("/me", response_model=UserOut, dependencies=[Depends(require_csrf)])

@@ -618,6 +618,17 @@ def _plan_item_view(item: ActionPlanItem) -> PlanItemView:
     )
 
 
+async def load_summary(session: AsyncSession, diagnostic_id: uuid.UUID) -> DiagnosticSummary | None:
+    """Fiche prospect d'un diagnostic (session staff attendue : il peut n'être rattaché à rien)."""
+    diagnostic = await session.get(DiagnosticSession, diagnostic_id)
+    if diagnostic is None:
+        return None
+    score = (
+        await session.execute(select(DigitalScore).where(DigitalScore.session_id == diagnostic.id))
+    ).scalar_one_or_none()
+    return _summary(diagnostic, score)
+
+
 def _summary(diagnostic: DiagnosticSession, score: DigitalScore | None) -> DiagnosticSummary:
     answers = diagnostic.answers
     return DiagnosticSummary(

@@ -9,9 +9,10 @@ import uuid
 
 from digital360.core.config import get_settings
 from digital360.core.db import create_engine, create_session_factory
+from digital360.core.email import build_email_sender
 from digital360.core.jobs import Worker
 from digital360.core.logging import configure_logging
-from digital360.jobs import registry
+from digital360.jobs import build_registry
 
 logger = logging.getLogger("digital360.worker")
 
@@ -21,6 +22,7 @@ async def main() -> None:
     configure_logging(settings.log_level)
     engine = create_engine(str(settings.database_url))
     worker_id = f"{socket.gethostname()}-{uuid.uuid4().hex[:8]}"
+    registry = build_registry(settings, build_email_sender(settings))
     worker = Worker(create_session_factory(engine), registry, worker_id=worker_id)
 
     stop = asyncio.Event()

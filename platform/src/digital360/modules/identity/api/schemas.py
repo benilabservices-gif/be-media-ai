@@ -29,6 +29,15 @@ class LoginRequest(BaseModel):
     password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
 
 
+class PasswordForgotRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetRequest(BaseModel):
+    token: Annotated[str, Field(min_length=1, max_length=200)]
+    password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

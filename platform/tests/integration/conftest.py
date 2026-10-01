@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -8,7 +9,8 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from digital360.core.db import create_engine, create_session_factory
-from digital360.core.jobs import Job
+from digital360.core.email import EmailMessage
+from digital360.core.jobs import Job, Worker
 from digital360.core.tenancy import staff_transaction
 from digital360.main import create_app
 from digital360.modules.configuration.infrastructure.models import ConfigKind
@@ -24,9 +26,36 @@ from tests.conftest import make_settings
 from tests.integration.api_client import ApiClient
 
 
+class RecordingEmailSender:
+    """Garde les emails en mémoire au lieu de les envoyer."""
+
+    def __init__(self) -> None:
+        self.sent: list[EmailMessage] = []
+
+    async def send(self, message: EmailMessage) -> None:
+        self.sent.append(message)
+
+
 @pytest.fixture
-def db_app(test_database_url: str) -> FastAPI:
-    return create_app(make_settings(database_url=test_database_url))
+def outbox() -> RecordingEmailSender:
+    return RecordingEmailSender()
+
+
+@pytest.fixture
+def db_app(test_database_url: str, outbox: RecordingEmailSender) -> FastAPI:
+    return create_app(make_settings(database_url=test_database_url), email_sender=outbox)
+
+
+def run_pending_jobs(client: TestClient) -> None:
+    """Vide la file comme le ferait le worker, dans la boucle d'événements de l'application."""
+    app: Any = client.app
+    worker = Worker(app.state.session_factory, app.state.job_registry, worker_id="test-worker")
+
+    async def drain() -> None:
+        while await worker.run_once():
+            pass
+
+    client.portal.call(drain)
 
 
 @pytest.fixture

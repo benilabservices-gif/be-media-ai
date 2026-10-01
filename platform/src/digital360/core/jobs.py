@@ -12,6 +12,7 @@ Un handler peut être exécuté plus d'une fois (crash après un appel externe) 
 """
 
 import asyncio
+import contextlib
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
@@ -291,11 +292,14 @@ class Worker:
             return len(result.all())
 
     async def run_forever(self, stop: asyncio.Event) -> None:
-        await self.recover_stale()
         while not stop.is_set():
-            processed = await self.run_once()
-            if not processed:
-                try:
-                    await asyncio.wait_for(stop.wait(), timeout=self.poll_interval)
-                except TimeoutError:
-                    await self.recover_stale()
+            try:
+                await self.recover_stale()
+                while not stop.is_set() and await self.run_once():
+                    pass
+            except Exception:
+                # Base momentanément injoignable : on réessaie au tour suivant au lieu de
+                # mourir (le worker intégré à l'API ne serait pas redémarré)
+                logger.exception("boucle du worker interrompue", extra={"worker": self.worker_id})
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(stop.wait(), timeout=self.poll_interval)

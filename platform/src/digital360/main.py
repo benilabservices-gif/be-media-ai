@@ -1,3 +1,5 @@
+import asyncio
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -10,16 +12,19 @@ from digital360.api import admin, me
 from digital360.core import health
 from digital360.core.config import Settings, get_settings
 from digital360.core.db import create_engine, create_session_factory
+from digital360.core.email import EmailSender, build_email_sender
 from digital360.core.errors import register_error_handlers
+from digital360.core.jobs import Worker
 from digital360.core.logging import REQUEST_ID_HEADER, RequestContextMiddleware, configure_logging
 from digital360.core.rate_limit import RateLimiter
-from digital360.jobs import registry
+from digital360.jobs import build_registry
 from digital360.modules.catalog.api import routes as catalog_routes
 from digital360.modules.catalog.application.service import CatalogService
 from digital360.modules.diagnostics.api import routes as diagnostic_routes
 from digital360.modules.diagnostics.application.service import DiagnosticService
 from digital360.modules.identity.api import routes as identity_routes
 from digital360.modules.identity.application.auth_service import AuthService
+from digital360.modules.identity.application.password_reset import PasswordResetService
 from digital360.modules.identity.application.staff_service import StaffService
 from digital360.modules.identity.infrastructure.password_hasher import Argon2PasswordHasher
 from digital360.modules.organizations.api import routes as organization_routes
@@ -30,7 +35,9 @@ from digital360.modules.passport.application.service import PassportService
 API_PREFIX = "/api/v1"
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, *, email_sender: EmailSender | None = None
+) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings.log_level)
 
@@ -42,11 +49,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         session_factory = create_session_factory(app.state.engine)
         app.state.session_factory = session_factory
         # Composition : chaque service reçoit ses dépendances ici, et nulle part ailleurs
+        hasher = Argon2PasswordHasher()
+        registry = build_registry(settings, email_sender or build_email_sender(settings))
+        app.state.job_registry = registry
         app.state.auth_service = AuthService(
             session_factory,
-            Argon2PasswordHasher(),
+            hasher,
             idle_timeout=timedelta(days=settings.session_idle_days),
             absolute_timeout=timedelta(days=settings.session_absolute_days),
+        )
+        app.state.password_reset_service = PasswordResetService(
+            session_factory, hasher, reset_url=settings.password_reset_url
         )
         app.state.organization_service = OrganizationService(session_factory)
         app.state.diagnostic_service = DiagnosticService(session_factory, registry)
@@ -54,7 +67,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.catalog_service = CatalogService(session_factory)
         app.state.staff_service = StaffService(session_factory)
         app.state.rate_limiter = RateLimiter()
+
+        stop_worker = asyncio.Event()
+        worker_task = None
+        if settings.run_worker_in_api:
+            worker = Worker(session_factory, registry, worker_id=f"api-{uuid.uuid4().hex[:8]}")
+            worker_task = asyncio.create_task(worker.run_forever(stop_worker))
         yield
+        stop_worker.set()
+        if worker_task is not None:
+            await worker_task
         await app.state.engine.dispose()
 
     app = FastAPI(

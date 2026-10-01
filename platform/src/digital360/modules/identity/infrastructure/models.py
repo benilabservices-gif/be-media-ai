@@ -64,6 +64,19 @@ class UserSession(Base):
     user_agent: Mapped[str | None] = mapped_column(Text)
 
 
+class PasswordResetToken(Base):
+    """Lien « mot de passe oublié ». `id` est le SHA-256 du jeton, comme pour les sessions."""
+
+    __tablename__ = "password_reset_tokens"
+    __table_args__ = (Index("ix_password_reset_tokens_user_id", "user_id"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class StaffRoleAssignment(Base):
     __tablename__ = "staff_roles"
     __table_args__ = (
