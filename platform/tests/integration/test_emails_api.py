@@ -25,6 +25,7 @@ pytestmark = pytest.mark.integration
 
 NEW_PASSWORD = "Attieke-Poisson-Braise-2026"
 RESET_URL = "https://app.example.test/digital360/reset-password.html"
+APP_URL = "https://app.example.test/"
 
 
 @pytest.fixture
@@ -34,6 +35,7 @@ def db_app(test_database_url: str, outbox: RecordingEmailSender) -> FastAPI:
         password_reset_url=RESET_URL,
         sales_alert_emails=["ventes@benilab.test", "direction@benilab.test"],
         admin_url="https://app.example.test/digital360/admin.html",
+        app_url=APP_URL,
     )
     return create_app(settings, email_sender=outbox)
 
@@ -245,3 +247,57 @@ def test_should_not_alert_when_no_recipient_is_configured(
         run_pending_jobs(client)
 
     assert [message for message in outbox.sent if company in message.subject] == []
+
+
+# ── « Votre Digital Score » au prospect ──
+
+
+def _complete_diagnostic(api: ApiClient, **answers: str) -> None:
+    diagnostic = Diagnostic(api)
+    diagnostic.put_answers({**BEGINNER_ANSWERS, **answers})
+    assert diagnostic.complete().status_code == 200
+
+
+def test_should_email_score_and_priorities_to_prospect(
+    api: ApiClient, http_client: TestClient, outbox: RecordingEmailSender, published_config: None
+) -> None:
+    email = f"prospect-{uuid.uuid4().hex[:8]}@exemple.ci"
+    _complete_diagnostic(api, email=email)
+
+    run_pending_jobs(http_client)
+
+    [message] = _emails_to(outbox, email)
+    assert message.subject.startswith("Votre Digital Score : ")
+    assert "/100" in message.text
+    assert "Vos priorités :\n1. " in message.text
+    assert APP_URL in message.text
+    assert f'href="{APP_URL}"' in message.html
+
+
+def test_should_never_copy_visitor_text_into_prospect_email(
+    api: ApiClient, http_client: TestClient, outbox: RecordingEmailSender, published_config: None
+) -> None:
+    # Sinon n'importe qui ferait envoyer son propre message, signé par notre domaine
+    email = f"cible-{uuid.uuid4().hex[:8]}@exemple.ci"
+    spam = "Gagnez 1000 euros sur http://arnaque.example"
+    _complete_diagnostic(api, email=email, company=spam, description=spam)
+
+    run_pending_jobs(http_client)
+
+    [message] = _emails_to(outbox, email)
+    assert "arnaque" not in message.text
+    assert "arnaque" not in message.html
+    assert "arnaque" not in message.subject
+
+
+def test_should_not_email_prospect_without_address(
+    api: ApiClient, http_client: TestClient, outbox: RecordingEmailSender, published_config: None
+) -> None:
+    run_pending_jobs(http_client)  # file vidée : seules les tâches de ce test restent
+    outbox.sent.clear()
+
+    _complete_diagnostic(api)  # BEGINNER_ANSWERS ne contient pas d'adresse
+    run_pending_jobs(http_client)
+
+    assert [m for m in outbox.sent if m.subject.startswith("Votre Digital Score")] == []
+    assert any(m.subject.startswith("Nouveau prospect") for m in outbox.sent)

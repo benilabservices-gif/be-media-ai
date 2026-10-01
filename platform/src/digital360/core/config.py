@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     # Pages du frontend vers lesquelles pointent les liens des emails
     password_reset_url: str = "http://localhost:5500/digital360/reset-password.html"  # noqa: S105
     admin_url: str = "http://localhost:5500/digital360/admin.html"
+    # Page d'accueil de Digital360 (bouton « Créer mon espace » de l'e-mail au prospect)
+    app_url: str = "http://localhost:5500/digital360/"
     # Destinataires des alertes « nouveau prospect » ; vide = pas d'alerte
     sales_alert_emails: Annotated[list[str], NoDecode] = Field(default_factory=list)
     # Hébergement sans worker séparé (Render gratuit) : l'API traite elle-même la file

@@ -20,6 +20,7 @@ def build_registry(settings: Settings, email_sender: EmailSender) -> JobRegistry
         email_sender,
         recipients=settings.sales_alert_emails,
         admin_url=settings.admin_url,
+        app_url=settings.app_url,
     )
     billing.register_jobs(
         registry,
