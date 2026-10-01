@@ -277,6 +277,15 @@
         "title": "Consents",
         "type": "object"
       },
+      "ContactChannel": {
+        "enum": [
+          "WHATSAPP",
+          "PHONE",
+          "EMAIL"
+        ],
+        "title": "ContactChannel",
+        "type": "string"
+      },
       "CsrfResponse": {
         "properties": {
           "csrf_token": {
@@ -1945,29 +1954,6 @@
         "title": "PlanItemUpdate",
         "type": "object"
       },
-      "PriceOut": {
-        "properties": {
-          "amount": {
-            "title": "Amount",
-            "type": "integer"
-          },
-          "currency": {
-            "title": "Currency",
-            "type": "string"
-          },
-          "period": {
-            "title": "Period",
-            "type": "string"
-          }
-        },
-        "required": [
-          "amount",
-          "currency",
-          "period"
-        ],
-        "title": "PriceOut",
-        "type": "object"
-      },
       "ProductOut": {
         "properties": {
           "available": {
@@ -2015,7 +2001,7 @@
           "price": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PriceOut"
+                "$ref": "#/components/schemas/digital360__modules__catalog__api__routes__PriceOut"
               },
               {
                 "type": "null"
@@ -2070,6 +2056,194 @@
           }
         },
         "title": "ProfileUpdate",
+        "type": "object"
+      },
+      "PurchaseRequestCreate": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ContactChannel"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "plan_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Item Id"
+          },
+          "product_code": {
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Product Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_code",
+          "channel"
+        ],
+        "title": "PurchaseRequestCreate",
+        "type": "object"
+      },
+      "PurchaseRequestList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseRequestOut"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "PurchaseRequestList",
+        "type": "object"
+      },
+      "PurchaseRequestOut": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ContactChannel"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "plan_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Item Id"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/digital360__modules__billing__api__routes__PriceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_code": {
+            "title": "Product Code",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PurchaseRequestStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "organization_name",
+          "product_code",
+          "product_name",
+          "plan_item_id",
+          "price",
+          "channel",
+          "message",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PurchaseRequestOut",
+        "type": "object"
+      },
+      "PurchaseRequestStatus": {
+        "enum": [
+          "NEW",
+          "CONTACTED",
+          "WON",
+          "LOST"
+        ],
+        "title": "PurchaseRequestStatus",
+        "type": "string"
+      },
+      "PurchaseRequestUpdate": {
+        "properties": {
+          "staff_note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Note"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PurchaseRequestStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PurchaseRequestUpdate",
         "type": "object"
       },
       "QuestionOut": {
@@ -2389,6 +2563,151 @@
         "title": "StaffMemberOut",
         "type": "object"
       },
+      "StaffPurchaseRequestOut": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ContactChannel"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "plan_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Item Id"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/digital360__modules__billing__api__routes__PriceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_code": {
+            "title": "Product Code",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "requested_by_email": {
+            "title": "Requested By Email",
+            "type": "string"
+          },
+          "requested_by_name": {
+            "title": "Requested By Name",
+            "type": "string"
+          },
+          "requested_by_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Phone"
+          },
+          "staff_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Note"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PurchaseRequestStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "organization_name",
+          "product_code",
+          "product_name",
+          "plan_item_id",
+          "price",
+          "channel",
+          "message",
+          "status",
+          "created_at",
+          "updated_at",
+          "staff_note",
+          "requested_by_name",
+          "requested_by_email",
+          "requested_by_phone"
+        ],
+        "title": "StaffPurchaseRequestOut",
+        "type": "object"
+      },
+      "StaffPurchaseRequestPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/StaffPurchaseRequestOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "required": [
+          "data",
+          "page"
+        ],
+        "title": "StaffPurchaseRequestPage",
+        "type": "object"
+      },
       "StaffRole": {
         "enum": [
           "ADMIN",
@@ -2538,6 +2857,59 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "digital360__modules__billing__api__routes__PriceOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "period"
+        ],
+        "title": "PriceOut",
+        "type": "object"
+      },
+      "digital360__modules__catalog__api__routes__PriceOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "period"
+        ],
+        "title": "PriceOut",
         "type": "object"
       },
       "digital360__modules__diagnostics__api__schemas__PassportItemOut": {
@@ -3196,6 +3568,137 @@
           }
         },
         "summary": "Get Organization Overview",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/purchase-requests": {
+      "get": {
+        "operationId": "admin_list_purchase_requests_api_v1_admin_purchase_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PurchaseRequestStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPurchaseRequestPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin List Purchase Requests",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/purchase-requests/{request_id}": {
+      "patch": {
+        "operationId": "admin_update_purchase_request_api_v1_admin_purchase_requests__request_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequestUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPurchaseRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Update Purchase Request",
         "tags": [
           "admin"
         ]
@@ -4104,6 +4607,101 @@
         "summary": "Get Passport",
         "tags": [
           "passport"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/purchase-requests": {
+      "get": {
+        "operationId": "list_purchase_requests_api_v1_orgs__org_id__purchase_requests_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Purchase Requests",
+        "tags": [
+          "billing"
+        ]
+      },
+      "post": {
+        "description": "« Je veux démarrer ». Une demande déjà en cours pour la même offre est renvoyée (200).",
+        "operationId": "create_purchase_request_api_v1_orgs__org_id__purchase_requests_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Purchase Request",
+        "tags": [
+          "billing"
         ]
       }
     },

@@ -38,6 +38,9 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /admin/organizations/{id}/overview` | **Disponible** | Staff : fiche entreprise complète en un appel (§10) |
 | `GET·POST /admin/staff` · `DELETE /admin/staff/{user_id}/roles/{role}` | **Disponible** | ADMIN uniquement : gestion de l'équipe BENILAB (§10) |
 | `GET /admin/audit-logs` | **Disponible** | ADMIN uniquement : journal d'audit, paginé comme au §5 (§10) |
+| `POST /auth/password/forgot` · `POST /auth/password/reset` | **Disponible** | Mot de passe oublié (§12) |
+| `POST·GET /orgs/{id}/purchase-requests` | **Disponible** | « Je veux démarrer » : demande d'achat (§11) |
+| `GET /admin/purchase-requests` · `PATCH /admin/purchase-requests/{id}` | **Disponible** | ADMIN et MANAGER : traitement des demandes (§11) |
 | `/orgs/{id}/website-projects` | À mocker | M6 |
 
 ## 2. Configuration
@@ -230,6 +233,38 @@ npx openapi-typescript platform/contracts/openapi.json -o digital360/js/api/type
 - Rôles : `ADMIN`, `MANAGER`, `CONTENT_MANAGER`, `DEVELOPER`, `FINANCE`.
 
 **`GET /admin/audit-logs`** (ADMIN) : filtres `organization_id`, `action` (ex. `staff_role.grant`) et `entity_type`, pagination comme au §5. Chaque entrée contient `occurred_at`, `actor_type`, `actor_label`, `action`, `entity_type`, `entity_id`, `organization_id`, `old_value` et `new_value` (objets ou `null`), `ip`. Affiche `old_value` et `new_value` avec `textContent` (`JSON.stringify`), jamais avec `innerHTML`.
+
+## 11. « Je veux démarrer » : demandes d'achat
+
+En attendant le paiement en ligne, le client demande une offre et l'équipe le rappelle. Le paiement est encaissé hors ligne.
+
+**Où placer le bouton** : sur chaque recommandation du plan d'action qui a un `product_code` (bouton « Je veux démarrer » à la place de « Activer »), et sur chaque offre de la page Abonnement. Il est réservé au propriétaire de l'entreprise (`memberships[].permissions` contient `order:create`) ; pour un simple membre, affiche « Demandez au responsable de votre entreprise ».
+
+**`POST /orgs/{id}/purchase-requests`** :
+
+```json
+{ "product_code": "DIGITAL_START", "plan_item_id": "…", "channel": "WHATSAPP", "message": "Rappelez-moi le matin" }
+```
+
+- `plan_item_id` : facultatif, l'`id` de la recommandation d'origine. Elle passe alors à `ACCEPTED`.
+- `channel` : `WHATSAPP`, `PHONE` ou `EMAIL`. `message` : facultatif, 1000 caractères au maximum.
+- **201** : demande créée. **200** : une demande est déjà en cours pour cette offre, et c'est elle qui est renvoyée. Traite les deux cas de la même façon : affiche « Demande envoyée, un conseiller vous contacte sous 24 h ».
+- La réponse contient `id`, `product_name`, `price` (HT, unité mineure, devise du pays de l'entreprise), `status` et `created_at`.
+- Erreurs : 422 `PRODUCT_NOT_AVAILABLE` (offre inconnue ou non vendue dans la devise du client), 422 `VALIDATION_ERROR` (recommandation d'une autre offre), 404 (recommandation inconnue).
+
+**`GET /orgs/{id}/purchase-requests`** renvoie `{ "data": [...] }`, la plus récente en premier. Sers-t'en au chargement : pour une offre qui a une demande `NEW` ou `CONTACTED`, remplace le bouton par « Demande envoyée le … ». Statuts : `NEW` (envoyée), `CONTACTED` (un conseiller vous a contacté), `WON` (offre en cours d'activation), `LOST` (demande close).
+
+**Admin, onglet « Demandes »** (visible avec la permission `order:create`) :
+- `GET /admin/purchase-requests?status=NEW` : pagination du §5. En plus des champs ci-dessus : `organization_name`, `requested_by_name`, `requested_by_email`, `requested_by_phone` et `staff_note`.
+- `PATCH /admin/purchase-requests/{id}` avec `{ "status": "CONTACTED", "staff_note": "…" }` (les deux champs sont facultatifs ; `""` efface la note).
+- Transitions possibles : `NEW` → `CONTACTED`, `WON` ou `LOST`, et `CONTACTED` → `WON` ou `LOST`. `WON` et `LOST` sont définitifs : toute autre transition renvoie 409 `INVALID_TRANSITION`. Propose uniquement les boutons permis.
+- Après `WON`, l'équipe active l'offre avec les droits manuels (`POST /admin/organizations/{id}/entitlement-overrides`).
+
+## 12. Mot de passe oublié
+
+- `POST /auth/password/forgot` avec `{ "email" }` renvoie toujours **202**, que le compte existe ou non. 429 au-delà de 3 demandes par heure pour une même adresse.
+- L'e-mail contient un lien vers `reset-password.html#token=…`. Le jeton est **après le `#`** : lis-le avec `new URLSearchParams(location.hash.slice(1)).get('token')`, puis efface-le avec `history.replaceState`.
+- `POST /auth/password/reset` avec `{ "token", "password" }` renvoie **204**. Toutes les sessions sont fermées : renvoie vers la connexion. Erreurs : 400 `INVALID_RESET_TOKEN` (lien expiré, déjà utilisé ou faux) et 400 `WEAK_PASSWORD` (raisons dans `errors[]`, comme à l'inscription). Après un `WEAK_PASSWORD`, le lien reste valable.
 
 ## 8. Demander un changement
 
