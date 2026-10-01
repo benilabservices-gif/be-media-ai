@@ -170,6 +170,19 @@ const admin = {
         return request(`/admin/organizations${qs ? `?${qs}` : ''}`);
     },
     getOrg(id) { return request(`/admin/organizations/${id}`); },
+    getOrgOverview(id) { return request(`/admin/organizations/${id}/overview`); },
+    getDashboard() { return request('/admin/dashboard'); },
+    listDiagnostics(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return request(`/admin/diagnostics${qs ? `?${qs}` : ''}`);
+    },
+    listStaff() { return request('/admin/staff'); },
+    grantStaff(body) { return request('/admin/staff', { method: 'POST', body }); },
+    revokeStaff(userId, role) { return request(`/admin/staff/${userId}/roles/${role}`, { method: 'DELETE' }); },
+    listAuditLogs(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return request(`/admin/audit-logs${qs ? `?${qs}` : ''}`);
+    },
 };
 
 // ── Export public ──
