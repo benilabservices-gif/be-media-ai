@@ -631,23 +631,6 @@
         return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
     }
 
-    // ── Auth guard ──
-    async function checkAuth() {
-        try {
-            const data = await fetch(D360_API_BASE + '/me', { credentials: 'include' }).then(r => {
-                if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' });
-                return r.json();
-            });
-            return data;
-        } catch (e) {
-            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
-                window.location.href = 'index.html';
-                return null;
-            }
-            throw e;
-        }
-    }
-
     // ── State ──
     let _user = null;
     let _orgId = null;
@@ -755,62 +738,113 @@
 
     // ── Render dashboard from API ──
     function renderDashboard() {
-        // Welcome message for ?welcome=1
+        // Welcome message for ?welcome=1 or ?notice=…
         const params = new URLSearchParams(window.location.search);
-        if (params.get('welcome') === '1') {
-            document.getElementById('welcomeMessage').style.display = 'block';
+        const noticeMap = {
+            diagnostic_claimed:    'Diagnostic rattaché à votre entreprise.',
+            diagnostic_already_claimed: 'Ce diagnostic était déjà rattaché à une entreprise.',
+            diagnostic_claim_failed: 'Le rattachement du diagnostic a échoué.',
+            org_created:           'Espace créé pour votre entreprise. Votre diagnostic y est enregistré.',
+            org_creation_failed:   'Compte connecté, mais le diagnostic n\'a pas pu être rattaché.',
+            account_created:       'Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.',
+        };
+        const welcomeEl = document.getElementById('welcomeMessage');
+        if (params.get('welcome') === '1' || params.get('notice')) {
+            welcomeEl.style.display = 'block';
+            if (params.get('notice')) {
+                const msg = noticeMap[params.get('notice')] || params.get('notice');
+                const p = welcomeEl.querySelector('p:last-child');
+                if (p) p.textContent = msg;
+            }
         }
 
         // Score from last diagnostic
-        if (diagnosticsData?.scores?.length > 0) {
-            const latest = diagnosticsData.scores[diagnosticsData.scores.length - 1];
-            const total = latest.total || 0;
+        const diagList = diagnosticsData?.data || [];
+        const latest = diagList[0];
+        if (latest) {
+            const total = latest.score?.total || 0;
             document.getElementById('dashScoreValue').textContent = total;
             const circumference = 326.7;
             const offset = circumference - (total / 100) * circumference;
             document.getElementById('dashScoreCircle').style.strokeDashoffset = offset;
-            document.getElementById('welcomeSub').textContent =
-                'Votre présence digitale est à <strong style="color:var(--accent);">' + total + '%</strong> — ' + (latest.maturity_label || 'voici où vous en êtes.');
+            const welcomeSub = document.getElementById('welcomeSub');
+            welcomeSub.textContent = '';
+            const span1 = document.createElement('span');
+            span1.textContent = 'Votre présence digitale est à ';
+            const strong = document.createElement('strong');
+            strong.style.color = 'var(--accent)';
+            strong.textContent = total + '%';
+            const span2 = document.createElement('span');
+            span2.textContent = ' — ' + (latest.score?.maturity_label || 'voici où vous en êtes.');
+            welcomeSub.appendChild(span1);
+            welcomeSub.appendChild(strong);
+            welcomeSub.appendChild(span2);
          } else {
-             document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
-             document.getElementById('dashNoDiagCta').style.display = '';
-             document.getElementById('dashNextAction').style.display = 'none';
-         }
+              document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
+              document.getElementById('dashNoDiagCta').style.display = '';
+              document.getElementById('dashNextAction').style.display = 'none';
+          }
 
-         // Score evolution and diagnostic info
-         if (diagnosticsData?.scores && diagnosticsData.scores.length > 0) {
-             const scores = diagnosticsData.scores;
-             const latest = scores[scores.length - 1];
-             const first = scores[0];
-             // Evolution
-             const evEl = document.getElementById('dashScoreEvolution');
-             if (scores.length >= 2 && first.total != null && latest.total != null) {
-                 const diff = latest.total - first.total;
-                 const dateStr = latest.completed_at ? new Date(latest.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-                 const sign = diff >= 0 ? '+' : '';
-                 evEl.textContent = sign + diff + ' points depuis le ' + dateStr;
-                 evEl.style.display = '';
-             }
-             // Update "Aucun diagnostic" msg if we have data
-             document.getElementById('dashScoreMsg').textContent =
-                 'Votre présence digitale est à <strong style="color:var(--accent);">' + latest.total + '%</strong> — ' + (latest.maturity_label || '');
-         }
+          // Score evolution and diagnostic info
+          if (diagList.length > 0) {
+              const scores = diagList;
+              const first = scores[scores.length - 1];
+              const last = scores[0];
+              // Update "Aucun diagnostic" msg if we have data
+              const dashScoreMsg = document.getElementById('dashScoreMsg');
+              dashScoreMsg.textContent = '';
+              if (last.score) {
+                  const s1 = document.createElement('span');
+                  s1.textContent = 'Votre présence digitale est à ';
+                  const sStrong = document.createElement('strong');
+                  sStrong.style.color = 'var(--accent)';
+                  sStrong.textContent = last.score.total + '%';
+                  const s2 = document.createElement('span');
+                  s2.textContent = ' — ' + (last.score.maturity_label || '');
+                  dashScoreMsg.appendChild(s1);
+                  dashScoreMsg.appendChild(sStrong);
+                  dashScoreMsg.appendChild(s2);
+              }
+              // Evolution
+              const evEl = document.getElementById('dashScoreEvolution');
+              if (scores.length >= 2 && first.score?.total != null && last.score?.total != null) {
+                  const diff = last.score.total - first.score.total;
+                  const dateStr = last.completed_at ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+                  const sign = diff >= 0 ? '+' : '';
+                  evEl.textContent = sign + diff + ' points depuis le ' + dateStr;
+                  evEl.style.display = '';
+              }
+          }
 
-         // Diagnostic action button (show below score banner)
-         const diagActionEl = document.getElementById('dashDiagAction');
-         if (diagActionEl) {
-             if (diagnosticsData?.scores?.length > 0) {
-                 const last = diagnosticsData.scores[diagnosticsData.scores.length - 1];
-                 const dateStr = last.completed_at
-                     ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
-                     : '';
-                 diagActionEl.innerHTML = '<span style="font-size:13px;color:var(--text-muted);">Dernier diagnostic : ' + dateStr + ' · </span><a href="index.html#diagnostic" class="btn btn-outline btn-sm" style="margin-left:0.5rem;">Mettre à jour mon diagnostic</a>';
-                 diagActionEl.style.display = '';
-             } else {
-                 diagActionEl.innerHTML = '<a href="index.html#diagnostic" class="btn btn-primary btn-sm">Faire mon premier diagnostic</a>';
-                 diagActionEl.style.display = '';
-             }
-         }
+          // Diagnostic action button (show below score banner)
+          const diagActionEl = document.getElementById('dashDiagAction');
+          if (diagActionEl) {
+              diagActionEl.innerHTML = '';
+              if (diagList.length > 0) {
+                  const last = diagList[0];
+                  const dateStr = last.completed_at
+                      ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+                      : '';
+                  const span = document.createElement('span');
+                  span.style.cssText = 'font-size:13px;color:var(--text-muted);';
+                  span.textContent = 'Dernier diagnostic : ' + dateStr + ' · ';
+                  const btn = document.createElement('a');
+                  btn.href = 'index.html#diagnostic';
+                  btn.className = 'btn btn-outline btn-sm';
+                  btn.style.marginLeft = '0.5rem';
+                  btn.textContent = 'Mettre à jour mon diagnostic';
+                  diagActionEl.appendChild(span);
+                  diagActionEl.appendChild(btn);
+                  diagActionEl.style.display = '';
+              } else {
+                  const btn = document.createElement('a');
+                  btn.href = 'index.html#diagnostic';
+                  btn.className = 'btn btn-primary btn-sm';
+                  btn.textContent = 'Faire mon premier diagnostic';
+                  diagActionEl.appendChild(btn);
+                  diagActionEl.style.display = '';
+              }
+          }
 
         // Next action from action plan
         if (actionPlanData?.items) {
@@ -841,11 +875,13 @@
         ];
         const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
         const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
-        const entitlements = entitlementsData?.modules || {};
+        const entitlements = {};
+        (entitlementsData?.entitlements || []).forEach(e => { entitlements[e.key] = e.value; });
 
         moduleConfig.forEach(mod => {
             const passportItem = passportData?.items?.find(i => i.key === mod.key);
-            const isEnabled = entitlements[mod.entitlement] === true;
+            const rawVal = entitlements[mod.entitlement];
+            const isEnabled = rawVal === true || (typeof rawVal === 'number' && rawVal > 0) || rawVal === 'UNLIMITED';
             const status = passportItem?.status || (isEnabled ? 'NOT_CONFIGURED' : 'NOT_CONFIGURED');
             const label = statusLabels[status] || status;
             const badgeClass = statusBadges[status] || 'badge-muted';
@@ -927,9 +963,9 @@
             }
             if (_orgData) {
                 document.getElementById('welcomeName').textContent = _orgData.commercial_name || _orgData.legal_name || 'Entreprise';
-                if (me?.staff_roles?.length > 0) {
-                    document.getElementById('navAdminLink').style.display = 'inline-flex';
-                }
+            }
+            if (me?.staff_roles?.length > 0) {
+                document.getElementById('navAdminLink').style.display = 'inline-flex';
             }
             renderDashboard();
             renderSubscriptionPage();

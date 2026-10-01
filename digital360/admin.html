@@ -244,25 +244,27 @@
     }
 
     async function apiFetch(path, options = {}) {
-        const res = await fetch(D360_API_BASE + path, {
+        const bodyText = await fetch(D360_API_BASE + path, {
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json', ...csrfHeaders(), ...(options.headers || {}) },
             ...options,
-        });
-        if (!res.ok) {
-            let problem = null;
-            const ct = res.headers.get('content-type') || '';
-            const bodyText = await res.text();
-            if (bodyText && ct.includes('application/problem+json')) {
-                try { problem = JSON.parse(bodyText); } catch (_) {}
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders(), ...(options.headers || {}) },
+        }).then(async r => {
+            const text = await r.text();
+            if (!r.ok) {
+                let problem = null;
+                const ct = r.headers.get('content-type') || '';
+                if (text && ct.includes('application/problem+json')) {
+                    try { problem = JSON.parse(text); } catch (_) {}
+                }
+                const err = new Error(problem?.detail || 'HTTP ' + r.status);
+                err.status = r.status;
+                err.code = problem?.code;
+                err.detail = problem?.detail;
+                err.errors = problem?.errors;
+                throw err;
             }
-            const err = new Error(problem?.detail || 'HTTP ' + res.status);
-            err.status = res.status;
-            err.code = problem?.code;
-            err.detail = problem?.detail;
-            err.errors = problem?.errors;
-            throw err;
-        }
+            return text;
+        });
         if (!bodyText) return null;
         try { return JSON.parse(bodyText); } catch (_) { return bodyText; }
     }
@@ -642,10 +644,10 @@
                 const left = document.createElement('span');
                 left.style.color = 'var(--text-secondary)';
                 left.textContent = (d.completed_at ? formatDate(d.completed_at) : '—') + ' · ' + diagStatusText(d.status);
-                const score = d.score;
+                const scoreVal = d.score?.total;
                 const right = document.createElement('span');
                 right.style.cssText = 'color:var(--accent);font-weight:600;';
-                right.textContent = score != null ? score + '/100' : '—';
+                right.textContent = scoreVal != null ? scoreVal + '/100' : '—';
                 row.appendChild(left);
                 row.appendChild(right);
                 diagSection.appendChild(row);
@@ -686,7 +688,7 @@
                 left.textContent = p.key;
                 const right = document.createElement('span');
                 right.style.cssText = 'color:var(--text-primary);font-weight:500;';
-                right.textContent = p.value || '—';
+                right.textContent = p.status || '—';
                 row.appendChild(left);
                 row.appendChild(right);
                 passSection.appendChild(row);
@@ -905,7 +907,7 @@
         try {
             await apiFetch('/admin/staff', {
                 method: 'POST',
-                body: { email, role },
+                body: JSON.stringify({ email, role }),
             });
             emailInput.value = '';
             loadStaff();
@@ -1020,11 +1022,15 @@
             if (perms.includes('audit:read')) {
                 document.getElementById('navItemAudit').style.display = '';
             }
+            if (!perms.includes('diagnostic:read')) {
+                document.getElementById('admin-prospects')?.remove();
+                document.querySelector('.admin-nav-item[data-page="prospects"]')?.remove();
+            }
 
             // Load initial data
             loadDashboard();
             loadOrgs(false);
-            loadDiagnostics(false);
+            if (perms.includes('diagnostic:read')) loadDiagnostics(false);
             if (perms.includes('staff:manage')) loadStaff();
             if (perms.includes('audit:read')) loadAuditLogs(false);
         } catch (e) {

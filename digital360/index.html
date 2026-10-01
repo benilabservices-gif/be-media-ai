@@ -1089,20 +1089,34 @@
           renderScorePage(scoreResult.score);
           renderPassportFromScore(scoreResult.passport);
           renderPlanFromScore(scoreResult.action_plan);
-          // If user is connected, auto-claim diagnostic to their org
-          if (_user && diagSessionId && diagToken && !MOCK_MODE) {
-              try {
-                  const meData = await api.getMe();
-                  const membership = meData?.memberships?.[0];
-                  if (membership) {
-                      try {
-                          await api.claimDiagnostic(membership.organization_id, { diagnostic_id: diagSessionId }, diagToken);
-                          localStorage.removeItem('d360_diag_id');
-                          localStorage.removeItem('d360_diag_token');
-                      } catch (_) {}
-                  }
-              } catch (_) {}
-          }
+           // If user is connected, auto-claim diagnostic to their org
+           if (_user && diagSessionId && diagToken && !MOCK_MODE) {
+               try {
+                   const meData = await api.getMe();
+                   const membership = meData?.memberships?.[0];
+                   if (membership) {
+                       try {
+                           await api.claimDiagnostic(membership.organization_id, { diagnostic_id: diagSessionId }, diagToken);
+                           localStorage.removeItem('d360_diag_id');
+                           localStorage.removeItem('d360_diag_token');
+                       } catch (claimErr) {
+                           if (claimErr.code !== 'DIAGNOSTIC_ALREADY_CLAIMED') {
+                               console.error('[D360] Claim failed:', claimErr);
+                           }
+                       }
+                   } else {
+                       // No org yet — create one
+                       try {
+                           const org = await api.createOrg({ diagnostic_id: diagSessionId }, diagToken);
+                           localStorage.removeItem('d360_diag_id');
+                           localStorage.removeItem('d360_diag_token');
+                           showNotice('Espace créé pour « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.');
+                       } catch (err) {
+                           showNotice('Compte connecté, mais le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err));
+                       }
+                   }
+               } catch (_) {}
+           }
           showPage('score');
      }
 
@@ -1681,33 +1695,33 @@
                  try {
                      const meData = await api.getMe();
                      const membership = meData?.memberships?.[0];
-                     if (membership) {
-                         // Claim onto existing org
-                         try {
-                             await api.claimDiagnostic(membership.organization_id, { diagnostic_id: pendingId }, pendingToken);
-                             localStorage.removeItem('d360_diag_id');
-                             localStorage.removeItem('d360_diag_token');
-                             showNotice('Diagnostic rattaché à « ' + (_orgData?.commercial_name || membership.organization_id) + ' ».');
-                         } catch (claimErr) {
-                             if (claimErr.code === 'DIAGNOSTIC_ALREADY_CLAIMED') {
-                                 localStorage.removeItem('d360_diag_id');
-                                 localStorage.removeItem('d360_diag_token');
-                                 showNotice('Ce diagnostic est déjà rattaché à une entreprise.');
-                             } else {
-                                 showNotice('Rattachement du diagnostic échoué : ' + describeApiError(claimErr));
-                             }
-                         }
-                     } else {
-                         // No org yet — create one
-                         try {
-                             const org = await api.createOrg({ diagnostic_id: pendingId }, pendingToken);
-                             localStorage.removeItem('d360_diag_id');
-                             localStorage.removeItem('d360_diag_token');
-                             showNotice('Espace créé pour « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.');
-                         } catch (err) {
-                             showNotice('Compte connecté, mais le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err));
-                         }
-                     }
+                       if (membership) {
+                           // Claim onto existing org
+                           try {
+                               await api.claimDiagnostic(membership.organization_id, { diagnostic_id: pendingId }, pendingToken);
+                               localStorage.removeItem('d360_diag_id');
+                               localStorage.removeItem('d360_diag_token');
+                               window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_claimed';
+                           } catch (claimErr) {
+                               if (claimErr.code === 'DIAGNOSTIC_ALREADY_CLAIMED') {
+                                   localStorage.removeItem('d360_diag_id');
+                                   localStorage.removeItem('d360_diag_token');
+                                   window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_already_claimed';
+                               } else {
+                                   window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_claim_failed';
+                               }
+                           }
+                       } else {
+                           // No org yet — create one
+                           try {
+                               const org = await api.createOrg({ diagnostic_id: pendingId }, pendingToken);
+                               localStorage.removeItem('d360_diag_id');
+                               localStorage.removeItem('d360_diag_token');
+                               window.location.href = 'dashboard.html?welcome=1&notice=org_created';
+                           } catch (err) {
+                               window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
+                           }
+                       }
                  } catch (meErr) {
                      console.error('[D360] Failed to get user after login:', meErr);
                  }
@@ -1748,18 +1762,16 @@
                 const org = await api.createOrg({ diagnostic_id: diagSessionId }, diagToken);
                 localStorage.removeItem('d360_diag_id');
                 localStorage.removeItem('d360_diag_token');
-                showNotice('Espace créé pour « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.');
+                window.location.href = 'dashboard.html?welcome=1&notice=org_created';
             } catch (err) {
-                showNotice("Compte créé, mais le diagnostic n'a pas pu être rattaché : " + describeApiError(err));
+                window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
             }
         } else {
-            showNotice('Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.');
+            window.location.href = 'dashboard.html?welcome=1&notice=account_created';
         }
         await refreshAuth();
-         closeAuthModal();
-         // Redirect to dashboard after successful registration
-         window.location.href = 'dashboard.html?welcome=1';
-     }
+        closeAuthModal();
+    }
     function showNotice(message) {
         const notice = document.createElement('div');
         notice.setAttribute('role', 'status');
