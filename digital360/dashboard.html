@@ -750,12 +750,11 @@
         };
         const welcomeEl = document.getElementById('welcomeMessage');
         const noticeParam = params.get('notice');
-        if (params.get('welcome') === '1' && noticeMap[noticeParam] !== undefined) {
+        if (params.get('welcome') === '1') {
             welcomeEl.style.display = 'block';
-            if (noticeParam) {
-                const msg = noticeMap[noticeParam];
+            if (noticeParam !== null && noticeMap[noticeParam] !== undefined) {
                 const p = welcomeEl.querySelector('p:last-child');
-                if (p) p.textContent = msg;
+                if (p) p.textContent = noticeMap[noticeParam];
             }
         }
 
@@ -868,12 +867,11 @@
         modulesGrid.innerHTML = '';
         const moduleConfig = [
             { key: 'WEBSITE', icon: '🌐', name: 'Site web', page: 'site', entitlement: 'WEBSITE' },
-            { key: 'GOOGLE_BUSINESS_MANAGEMENT', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'GOOGLE_BUSINESS_MANAGEMENT' },
-            { key: 'SOCIAL_MANAGEMENT', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'SOCIAL_MANAGEMENT' },
-            { key: 'CONTENT_MONTHLY_LIMIT', icon: '✍️', name: 'Contenus', page: 'contenus', entitlement: 'CONTENT_MONTHLY_LIMIT' },
-            { key: 'LEAD_TRACKING', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'LEAD_TRACKING' },
-            { key: 'ADS_MANAGEMENT', icon: '⚡', name: 'Publicité', page: 'publicite', entitlement: 'ADS_MANAGEMENT' },
-            { key: 'ADVANCED_REPORTING', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'ADVANCED_REPORTING' },
+            { key: 'GOOGLE_BUSINESS', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'GOOGLE_BUSINESS_MANAGEMENT' },
+            { key: 'FACEBOOK', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'SOCIAL_MANAGEMENT' },
+            { key: 'CRM', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'LEAD_TRACKING' },
+            { key: 'ADS', icon: '⚡', name: 'Publicité', page: 'publicite', entitlement: 'ADS_MANAGEMENT' },
+            { key: 'ANALYTICS', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'ADVANCED_REPORTING' },
         ];
         const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
         const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
