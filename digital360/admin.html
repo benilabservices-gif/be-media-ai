@@ -95,6 +95,7 @@
                 <div style="display:flex;align-items:center;gap:1rem;">
                     <span style="font-size:13px;color:var(--text-muted);" id="adminUserName">—</span>
                     <a href="index.html" class="btn btn-ghost btn-sm">← Accueil</a>
+                    <button class="btn btn-ghost btn-sm" onclick="handleLogoutAdmin()">Déconnexion</button>
                 </div>
             </header>
 
@@ -1000,6 +1001,24 @@
         tr.appendChild(tdIp);
 
         tbody.appendChild(tr);
+    }
+
+    // ── Logout admin ──
+    async function handleLogoutAdmin() {
+        try {
+            const res = await fetch(D360_API_BASE + '/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: csrfHeaders(),
+            });
+            if (res.status === 204) {
+                window.location.href = 'index.html';
+            } else {
+                alert('Déconnexion impossible (HTTP ' + res.status + '). Veuillez rafraîchir la page.');
+            }
+        } catch (e) {
+            alert('Erreur lors de la déconnexion : ' + e.message);
+        }
     }
 
     // ── Init ──

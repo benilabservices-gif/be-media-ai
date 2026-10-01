@@ -749,10 +749,11 @@
             account_created:       'Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.',
         };
         const welcomeEl = document.getElementById('welcomeMessage');
-        if (params.get('welcome') === '1' || params.get('notice')) {
+        const noticeParam = params.get('notice');
+        if (params.get('welcome') === '1' && noticeMap[noticeParam] !== undefined) {
             welcomeEl.style.display = 'block';
-            if (params.get('notice')) {
-                const msg = noticeMap[params.get('notice')] || params.get('notice');
+            if (noticeParam) {
+                const msg = noticeMap[noticeParam];
                 const p = welcomeEl.querySelector('p:last-child');
                 if (p) p.textContent = msg;
             }
@@ -866,12 +867,13 @@
         const modulesGrid = document.getElementById('dashModules');
         modulesGrid.innerHTML = '';
         const moduleConfig = [
-            { key: 'WEBSITE', icon: '🌐', name: 'Site web', page: 'site', entitlement: 'website' },
-            { key: 'GOOGLE_BUSINESS', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'google_business' },
-            { key: 'FACEBOOK', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'social_media' },
-            { key: 'ADS', icon: '✍️', name: 'Contenus', page: 'contenus', entitlement: 'content' },
-            { key: 'CRM', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'crm' },
-            { key: 'ANALYTICS', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'analytics' },
+            { key: 'WEBSITE', icon: '🌐', name: 'Site web', page: 'site', entitlement: 'WEBSITE' },
+            { key: 'GOOGLE_BUSINESS_MANAGEMENT', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'GOOGLE_BUSINESS_MANAGEMENT' },
+            { key: 'SOCIAL_MANAGEMENT', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'SOCIAL_MANAGEMENT' },
+            { key: 'CONTENT_MONTHLY_LIMIT', icon: '✍️', name: 'Contenus', page: 'contenus', entitlement: 'CONTENT_MONTHLY_LIMIT' },
+            { key: 'LEAD_TRACKING', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'LEAD_TRACKING' },
+            { key: 'ADS_MANAGEMENT', icon: '⚡', name: 'Publicité', page: 'publicite', entitlement: 'ADS_MANAGEMENT' },
+            { key: 'ADVANCED_REPORTING', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'ADVANCED_REPORTING' },
         ];
         const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
         const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
@@ -1087,8 +1089,20 @@
 
     // ── Logout ──
     async function handleLogout() {
-        try { await fetch(D360_API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
-        window.location.href = 'index.html';
+        try {
+            const res = await fetch(D360_API_BASE + '/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: csrfHeaders(),
+            });
+            if (res.status === 204) {
+                window.location.href = 'index.html';
+            } else {
+                alert('Déconnexion impossible (HTTP ' + res.status + '). Veuillez rafraîchir la page.');
+            }
+        } catch (e) {
+            alert('Erreur lors de la déconnexion : ' + e.message);
+        }
     }
     </script>
 </body>

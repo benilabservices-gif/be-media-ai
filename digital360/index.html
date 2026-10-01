@@ -53,7 +53,7 @@
             <li><a href="#pricing" data-scroll>Tarifs</a></li>
      <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
      <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm" id="navDiagBtn">Diagnostic gratuit</a></li>
-     <li><a href="#" onclick="window.location.href='dashboard.html';return false;" class="btn btn-primary btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
+        <li><a href="dashboard.html" onclick="window.location.href='dashboard.html';return false;" class="btn btn-primary btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
         </ul>
         <button class="lp-menu-toggle" onclick="toggleMobileMenu()">☰</button>
     </nav>
@@ -1725,9 +1725,11 @@
                  } catch (meErr) {
                      console.error('[D360] Failed to get user after login:', meErr);
                  }
-             }
-             window.location.href = 'dashboard.html?welcome=1';
-         } catch (err) {
+              } else {
+                  // Aucun diagnostic en attente : rester sur la page
+                  await refreshAuth();
+              }
+          } catch (err) {
              document.getElementById('authError').textContent = describeApiError(err);
          }
      }
@@ -1767,10 +1769,10 @@
                 window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
             }
         } else {
-            window.location.href = 'dashboard.html?welcome=1&notice=account_created';
+            // Pas de diagnostic en attente : rester sur la page, ne pas rediriger
+            await refreshAuth();
+            closeAuthModal();
         }
-        await refreshAuth();
-        closeAuthModal();
     }
     function showNotice(message) {
         const notice = document.createElement('div');
@@ -1813,6 +1815,9 @@
                         <input type="password" class="form-input" id="authLoginPassword" required placeholder="••••••••">
                     </div>
                     <button type="submit" class="btn btn-primary btn-block" style="margin-top:0.5rem;">Se connecter</button>
+                <p style="text-align:center;font-size:13px;margin-top:1rem;">
+                    <a href="forgot-password.html" style="color:var(--accent);">Mot de passe oublié ?</a>
+                </p>
                 </form>
                 <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.5rem;">
                     Pas encore de compte ?
