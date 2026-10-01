@@ -34,6 +34,10 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /public/catalog?currency=XOF` | **Disponible** | Offres publiques, `price` (ou `null` si non vendue dans la devise), `available_currencies`. Pour l'instant **XOF uniquement** : XAF et EUR renvoient `price: null` |
 | `GET /orgs/{id}/entitlements` | **Disponible** | Droits effectifs de l'entreprise (`value` : booléen, entier ou `"UNLIMITED"`), avec leur `sources` |
 | `GET·POST /admin/organizations/{id}/entitlement-overrides` · `DELETE …/{override_id}` | **Disponible** | Staff : accorder ou retirer un droit (geste commercial, test) |
+| `GET /admin/dashboard` | **Disponible** | Staff : indicateurs clés (§10) |
+| `GET /admin/organizations/{id}/overview` | **Disponible** | Staff : fiche entreprise complète en un appel (§10) |
+| `GET·POST /admin/staff` · `DELETE /admin/staff/{user_id}/roles/{role}` | **Disponible** | ADMIN uniquement : gestion de l'équipe BENILAB (§10) |
+| `GET /admin/audit-logs` | **Disponible** | ADMIN uniquement : journal d'audit, paginé comme au §5 (§10) |
 | `/orgs/{id}/website-projects` | À mocker | M6 |
 
 ## 2. Configuration
@@ -193,6 +197,39 @@ Pour de l'autocomplétion en JavaScript (JSDoc) sans maintenance manuelle :
 ```bash
 npx openapi-typescript platform/contracts/openapi.json -o digital360/js/api/types.d.ts
 ```
+
+## 10. Espace d'administration (`admin.html`)
+
+**Contrôle d'accès** : au chargement, `GET /me`. Un 401 renvoie vers la connexion. Si `staff_roles` est vide, le visiteur est un client : renvoie-le vers `dashboard.html`. N'affiche le lien « Espace Admin » que si `staff_roles` n'est pas vide. Le serveur refuse de toute façon (403 `FORBIDDEN`) : la redirection sert le confort, pas la sécurité.
+
+**Ce que voit chaque rôle** : utilise `staff_permissions` de `/me` pour masquer les blocs inaccessibles. `staff:manage` donne accès à l'onglet Équipe, `audit:read` au journal d'audit. Ces deux permissions ne concernent aujourd'hui que le rôle ADMIN.
+
+**`GET /admin/dashboard`** (tous les rôles staff) :
+
+```json
+{
+  "diagnostics": {
+    "in_progress": 12, "completed_not_claimed": 30, "claimed": 18,
+    "completed_last_24h": 4, "completed_last_7_days": 21,
+    "conversion_rate": 0.375, "average_score": 41.2
+  },
+  "organizations_by_status": { "LEAD": 15, "ACTIVE": 3, "SUSPENDED": 0, "CHURNED": 0 },
+  "users": { "total": 40, "created_last_7_days": 9 }
+}
+```
+
+- `completed_not_claimed` : les **prospects à relancer** (diagnostic terminé, pas de compte).
+- `conversion_rate` est compris entre 0 et 1 (afficher `37,5 %`). Il vaut `null`, comme `average_score`, tant qu'aucun diagnostic n'est terminé : afficher « — ».
+
+**`GET /admin/organizations/{id}/overview`** (tous les rôles staff) : `{ organization, members, diagnostics, passport, entitlements }`. Chaque élément a le même format que la route client correspondante (`/orgs/{id}`, `/members`, `/diagnostics`, `/passport`, `/entitlements`). **`diagnostics` et `passport` valent `null`** quand le rôle n'a pas le droit de les lire (rôle FINANCE) : affiche alors « Accès réservé », pas une liste vide. Entreprise inconnue : 404.
+
+**Équipe** (ADMIN) :
+- `GET /admin/staff` renvoie `{ "data": [{ "user_id", "email", "full_name", "roles": ["MANAGER"], "last_login_at" }] }`.
+- `POST /admin/staff` avec `{ "email", "role" }` renvoie 201 et le membre à jour. La personne doit déjà avoir un compte, sinon 404 `NOT_FOUND` : afficher « Cette personne doit d'abord créer son compte ». Attribuer deux fois le même rôle est sans effet.
+- `DELETE /admin/staff/{user_id}/roles/{role}` renvoie 204. Un administrateur ne peut pas retirer **son propre** rôle ADMIN (403) : masque ce bouton sur sa ligne. Un rôle non attribué renvoie 404.
+- Rôles : `ADMIN`, `MANAGER`, `CONTENT_MANAGER`, `DEVELOPER`, `FINANCE`.
+
+**`GET /admin/audit-logs`** (ADMIN) : filtres `organization_id`, `action` (ex. `staff_role.grant`) et `entity_type`, pagination comme au §5. Chaque entrée contient `occurred_at`, `actor_type`, `actor_label`, `action`, `entity_type`, `entity_id`, `organization_id`, `old_value` et `new_value` (objets ou `null`), `ip`. Affiche `old_value` et `new_value` avec `textContent` (`JSON.stringify`), jamais avec `innerHTML`.
 
 ## 8. Demander un changement
 
