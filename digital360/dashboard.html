@@ -29,6 +29,13 @@
     </style>
 </head>
 <body>
+    <div id="d360-loading-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,10,15,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+        <div style="text-align:center">
+            <div style="width:36px;height:36px;border:3px solid rgba(127,181,168,0.2);border-top-color:#7fb5a8;border-radius:50%;animation:d360spin .8s linear infinite;margin:0 auto 1rem;"></div>
+            <div style="color:#c8c4d0;font-size:14px;font-weight:500;">Connexion au serveur…</div>
+        </div>
+    </div>
+    <style>@keyframes d360spin{to{transform:rotate(360deg)}}
     <div class="noise"></div>
 
     <div class="dash-layout">
@@ -621,10 +628,20 @@
 
     async function getCsrf() {
         try {
+            showD360Loading();
             const res = await fetch(D360_API_BASE + '/auth/csrf', { credentials: 'include' });
             const data = await res.json();
             _csrfToken = data.csrf_token || '';
         } catch (_) {}
+        finally { hideD360Loading(); }
+    }
+    function showD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'flex';
+    }
+    function hideD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'none';
     }
 
     function csrfHeaders() {
@@ -1088,6 +1105,7 @@
     // ── Logout ──
     async function handleLogout() {
         try {
+            showD360Loading();
             const res = await fetch(D360_API_BASE + '/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
@@ -1099,7 +1117,30 @@
                 alert('Déconnexion impossible (HTTP ' + res.status + '). Veuillez rafraîchir la page.');
             }
         } catch (e) {
+            // Si CSRF_FAILED, rafraîchir le jeton et réessayer une fois
+            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
+                try {
+                    await getCsrf();
+                    const res2 = await fetch(D360_API_BASE + '/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: csrfHeaders(),
+                    });
+                    if (res2.status === 204) {
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('Déconnexion impossible (HTTP ' + res2.status + '). Veuillez rafraîchir la page.');
+                    }
+                } catch (_) {
+                    alert('Erreur lors de la déconnexion : ' + e.message);
+                } finally {
+                    hideD360Loading();
+                }
+                return;
+            }
             alert('Erreur lors de la déconnexion : ' + e.message);
+        } finally {
+            hideD360Loading();
         }
     }
     </script>

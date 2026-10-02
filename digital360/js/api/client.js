@@ -22,6 +22,50 @@ const MOCK_MODE = window.D360_API_MODE === 'mock';
 
 // ── CSRF token stocké en mémoire (plus fiable que document.cookie) ──
 let _csrfToken = '';
+let _loadingShown = false;
+
+/**
+ * Affiche l'indicateur « Connexion au serveur… » pendant le réveil API.
+ */
+export function showLoading() {
+    if (_loadingShown) return;
+    _loadingShown = true;
+    let el = document.getElementById('d360-loading-overlay');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'd360-loading-overlay';
+        el.innerHTML = '<div class="d360-loading-content"><div class="d360-loading-spinner"></div><div class="d360-loading-text">Connexion au serveur…</div></div>';
+        Object.assign(el.style, {
+            position: 'fixed', inset: '0', zIndex: '99999',
+            background: 'rgba(10,10,15,0.88)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+        });
+        const c = el.querySelector('.d360-loading-content');
+        Object.assign(c.style, { textAlign: 'center' });
+        const s = el.querySelector('.d360-loading-spinner');
+        Object.assign(s.style, {
+            width: '36px', height: '36px', border: '3px solid rgba(127,181,168,0.2)',
+            borderTopColor: '#7fb5a8', borderRadius: '50%',
+            animation: 'd360spin .8s linear infinite', margin: '0 auto 1rem',
+        });
+        const t = el.querySelector('.d360-loading-text');
+        Object.assign(t.style, { color: '#c8c4d0', fontSize: '14px', fontWeight: '500' });
+        const st = document.createElement('style');
+        st.textContent = '@keyframes d360spin{to{transform:rotate(360deg)}}';
+        document.head.appendChild(st);
+        document.body.appendChild(el);
+    }
+}
+
+/**
+ * Masque l'indicateur de chargement.
+ */
+export function hideLoading() {
+    if (!_loadingShown) return;
+    _loadingShown = false;
+    const el = document.getElementById('d360-loading-overlay');
+    if (el) el.remove();
+}
 
 /**
  * Appelez ce script au chargement de chaque page pour récupérer le jeton CSRF.
@@ -29,6 +73,7 @@ let _csrfToken = '';
  */
 export async function getCsrf() {
     try {
+        showLoading();
         const res = await fetch(API_BASE + '/auth/csrf', { credentials: 'include' });
         const data = await res.json();
         _csrfToken = data.csrf_token || '';
@@ -36,6 +81,8 @@ export async function getCsrf() {
     } catch (e) {
         console.warn('[D360] CSRF fetch failed:', e);
         return { csrf_token: '' };
+    } finally {
+        hideLoading();
     }
 }
 
@@ -80,6 +127,13 @@ async function parseResponse(res) {
 
 async function request(path, options = {}) {
     const url = API_BASE + path;
+    const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes((options.method || 'GET').toUpperCase());
+    // Avant toute requête modifiante : s'assurer que le jeton CSRF est en mémoire
+    if (isMutating && !_csrfToken) {
+        showLoading();
+        await getCsrf().catch(() => {});
+        hideLoading();
+    }
     const opts = {
         credentials: 'include',
         headers: defaultHeaders(options.headers),
@@ -89,7 +143,26 @@ async function request(path, options = {}) {
     if (options.body && !(options.body instanceof FormData)) {
         opts.body = JSON.stringify(options.body);
     }
-    return fetch(url, opts).then(parseResponse);
+    try {
+        return await fetch(url, opts).then(parseResponse);
+    } catch (err) {
+        // Si le serveur répond 403 CSRF_FAILED, rafraîchir le jeton et réessayer une fois
+        if (err?.status === 403 && err?.code === 'CSRF_FAILED' && _csrfToken) {
+            try {
+                showLoading();
+                await getCsrf().catch(() => {});
+                hideLoading();
+                opts.headers = { ...defaultHeaders(options.headers), ...(options.headers || {}) };
+                if (options.body && !(options.body instanceof FormData)) {
+                    opts.body = JSON.stringify(options.body);
+                }
+                return await fetch(url, opts).then(parseResponse);
+            } catch (_) {
+                throw err; // si le réessai échoue aussi, on propage l'erreur originale
+            }
+        }
+        throw err;
+    }
 }
 
 // ── Endpoints Auth ──

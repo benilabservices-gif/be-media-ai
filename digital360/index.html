@@ -41,6 +41,13 @@
 </head>
 <body>
     <div class="noise"></div>
+    <div id="d360-loading-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,10,15,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+        <div style="text-align:center">
+            <div style="width:36px;height:36px;border:3px solid rgba(127,181,168,0.2);border-top-color:#7fb5a8;border-radius:50%;animation:d360spin .8s linear infinite;margin:0 auto 1rem;"></div>
+            <div style="color:#c8c4d0;font-size:14px;font-weight:500;">Connexion au serveur…</div>
+        </div>
+    </div>
+    <style>@keyframes d360spin{to{transform:rotate(360deg)}}</style>
 
     <!-- ═══════════════ NAVIGATION ═══════════════ -->
     <nav class="lp-nav" id="mainNav">
@@ -366,10 +373,28 @@
 
     // ── API client (inline) ──
     let _csrfToken = '';
+    let _loadingShown = false;
+    function showD360Loading() {
+        if (_loadingShown) return;
+        _loadingShown = true;
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'flex';
+    }
+    function hideD360Loading() {
+        _loadingShown = false;
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'none';
+    }
     function csrfHeaders() {
         return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
     }
     async function apiFetch(path, { method = 'GET', body, headers = {} } = {}) {
+        const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase());
+        if (isMutating && !_csrfToken) {
+            showD360Loading();
+            await getCsrf().catch(() => {});
+            hideD360Loading();
+        }
         const res = await fetch(API_BASE + path, {
             method,
             credentials: 'include',
@@ -393,9 +418,14 @@
     const diagHeaders = token => (token ? { 'X-Diagnostic-Token': token } : {});
     const api = {
         async getCsrf() {
-            const data = await apiFetch('/auth/csrf');
-            _csrfToken = data.csrf_token || '';
-            return data;
+            showD360Loading();
+            try {
+                const data = await apiFetch('/auth/csrf');
+                _csrfToken = data.csrf_token || '';
+                return data;
+            } finally {
+                hideD360Loading();
+            }
         },
         async register(body) {
             const data = await apiFetch('/auth/register', { method: 'POST', body });
