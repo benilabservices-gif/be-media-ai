@@ -58,9 +58,11 @@
             <li><a href="#services" data-scroll>Services</a></li>
             <li><a href="#how" data-scroll>Comment ça marche</a></li>
             <li><a href="#pricing" data-scroll>Tarifs</a></li>
-     <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
-     <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm" id="navDiagBtn">Diagnostic gratuit</a></li>
-        <li><a href="dashboard.html" onclick="window.location.href='dashboard.html';return false;" class="btn btn-primary btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
+      <li><a href="#" onclick="openAuthModal('login');return false;" class="btn btn-outline btn-sm" id="navLoginBtn">Connexion</a></li>
+      <li><a href="#" onclick="startDiagnostic();return false;" class="btn btn-primary btn-sm" id="navDiagBtn">Diagnostic gratuit</a></li>
+      <li><a href="dashboard.html" onclick="window.location.href='dashboard.html';return false;" class="btn btn-primary btn-sm" id="navAuthBtn" style="display:none;">Mon espace</a></li>
+      <li id="navAdminLi" style="display:none;"><a href="admin.html" onclick="window.location.href='admin.html';return false;" class="btn btn-ghost btn-sm">Espace Admin</a></li>
+      <li id="navLogoutLi" style="display:none;"><a href="#" onclick="handleLogout();return false;" class="btn btn-ghost btn-sm">Déconnexion</a></li>
         </ul>
         <button class="lp-menu-toggle" onclick="toggleMobileMenu()">☰</button>
     </nav>
@@ -70,9 +72,11 @@
          <a href="#services" onclick="toggleMobileMenu();scrollToSection('services');return false;">Services</a>
          <a href="#how" onclick="toggleMobileMenu();scrollToSection('how');return false;">Comment ça marche</a>
          <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing');return false;">Tarifs</a>
-         <a href="#" onclick="toggleMobileMenu();startDiagnostic();return false;" id="mobileDiagBtn">Diagnostic gratuit</a>
-         <a href="#" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;" id="mobileAuthBtn" style="display:none;">Mon espace</a>
-    </div>
+          <a href="#" onclick="toggleMobileMenu();startDiagnostic();return false;" id="mobileDiagBtn">Diagnostic gratuit</a>
+          <a href="dashboard.html" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;" id="mobileAuthBtn" style="display:none;">Mon espace</a>
+          <a href="admin.html" onclick="toggleMobileMenu();window.location.href='admin.html';return false;" id="mobileAdminBtn" style="display:none;">Espace Admin</a>
+          <a href="#" onclick="toggleMobileMenu();handleLogout();return false;" id="mobileLogoutBtn" style="display:none;">Déconnexion</a>
+     </div>
 
     <!-- ═══════════════ PAGE: LANDING ═══════════════ -->
     <div class="page active" id="page-landing">
@@ -1650,51 +1654,68 @@
     // ── CSRF (déplacé au-dessus dans api.getCsrf) ──
     // ── Auth state ──
     let _user = null;
+    let _meData = null;
     async function refreshAuth() {
         try {
             const data = await api.getMe();
+            _meData = data;
             _user = data?.user || null;
             updateAuthUI();
         } catch (e) {
             if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
+                _meData = null;
                 _user = null;
                 updateAuthUI();
             }
         }
     }
-     function updateAuthUI() {
-         const btn = document.getElementById('navAuthBtn');
-         const loginBtn = document.getElementById('navLoginBtn');
-         const diagBtn = document.getElementById('navDiagBtn');
-         const mobileAuth = document.getElementById('mobileAuthBtn');
-         const mobileDiag = document.getElementById('mobileDiagBtn');
-         const heroCta = document.getElementById('heroCtaBtn');
-         const scorePrimary = document.getElementById('scoreCtaPrimary');
-         const scoreSecondary = document.getElementById('scoreCtaSecondary');
-         const ctaGroup = document.getElementById('scoreCtaGroup');
-         if (!btn) return;
-         if (_user) {
-             btn.style.display = 'inline-flex';
-             if (loginBtn) loginBtn.style.display = 'none';
-             if (diagBtn) diagBtn.style.display = 'none';
-             if (mobileAuth) mobileAuth.style.display = '';
-             if (mobileDiag) mobileDiag.style.display = 'none';
-             if (heroCta) { heroCta.textContent = 'Accéder à mon espace'; heroCta.setAttribute('onclick', "window.location.href='dashboard.html';return false;"); }
-             if (ctaGroup) {
-                 ctaGroup.innerHTML = '<a href="dashboard.html" class="btn btn-primary">Voir dans mon espace</a>';
-             }
-         } else {
-             btn.style.display = 'none';
-             if (loginBtn) loginBtn.style.display = 'inline-flex';
-             if (diagBtn) diagBtn.style.display = 'inline-flex';
-             if (mobileAuth) mobileAuth.style.display = 'none';
-             if (mobileDiag) mobileDiag.style.display = '';
-             if (heroCta) { heroCta.textContent = 'Faire mon diagnostic gratuit'; heroCta.setAttribute('onclick', "startDiagnostic();return false;"); }
-             if (ctaGroup) {
-                 ctaGroup.innerHTML = '<a href="#" onclick="openAuthModal(\'register\');return false;" class="btn btn-primary">Créer mon espace gratuit</a><a href="#" onclick="openAuthModal(\'login\');return false;" class="btn btn-ghost">J\'ai déjà un compte</a>';
-             }
-         }
-     }
+      function updateAuthUI() {
+          const btn = document.getElementById('navAuthBtn');
+          const loginBtn = document.getElementById('navLoginBtn');
+          const diagBtn = document.getElementById('navDiagBtn');
+          const mobileAuth = document.getElementById('mobileAuthBtn');
+          const mobileDiag = document.getElementById('mobileDiagBtn');
+          const mobileAdmin = document.getElementById('mobileAdminBtn');
+          const mobileLogout = document.getElementById('mobileLogoutBtn');
+          const heroCta = document.getElementById('heroCtaBtn');
+          const scorePrimary = document.getElementById('scoreCtaPrimary');
+          const scoreSecondary = document.getElementById('scoreCtaSecondary');
+          const ctaGroup = document.getElementById('scoreCtaGroup');
+          const adminLi = document.getElementById('navAdminLi');
+          const logoutLi = document.getElementById('navLogoutLi');
+          if (!btn) return;
+          if (_user) {
+              btn.style.display = 'inline-flex';
+              if (loginBtn) loginBtn.style.display = 'none';
+              if (diagBtn) diagBtn.style.display = 'none';
+              if (mobileAuth) mobileAuth.style.display = '';
+              if (mobileDiag) mobileDiag.style.display = 'none';
+              // Show admin link and logout for staff members
+              const isStaff = _user.staff_roles && _user.staff_roles.length > 0;
+              if (adminLi) adminLi.style.display = isStaff ? '' : 'none';
+              if (logoutLi) logoutLi.style.display = '';
+              if (mobileAdmin) mobileAdmin.style.display = isStaff ? '' : 'none';
+              if (mobileLogout) mobileLogout.style.display = '';
+              if (heroCta) { heroCta.textContent = 'Accéder à mon espace'; heroCta.setAttribute('onclick', "window.location.href='dashboard.html';return false;"); }
+              if (ctaGroup) {
+                  ctaGroup.innerHTML = '<a href="dashboard.html" class="btn btn-primary">Voir dans mon espace</a>';
+              }
+          } else {
+              btn.style.display = 'none';
+              if (loginBtn) loginBtn.style.display = 'inline-flex';
+              if (diagBtn) diagBtn.style.display = 'inline-flex';
+              if (mobileAuth) mobileAuth.style.display = 'none';
+              if (mobileDiag) mobileDiag.style.display = '';
+              if (adminLi) adminLi.style.display = 'none';
+              if (logoutLi) logoutLi.style.display = 'none';
+              if (mobileAdmin) mobileAdmin.style.display = 'none';
+              if (mobileLogout) mobileLogout.style.display = 'none';
+              if (heroCta) { heroCta.textContent = 'Faire mon diagnostic gratuit'; heroCta.setAttribute('onclick', "startDiagnostic();return false;"); }
+              if (ctaGroup) {
+                  ctaGroup.innerHTML = '<a href="#" onclick="openAuthModal(\'register\');return false;" class="btn btn-primary">Créer mon espace gratuit</a><a href="#" onclick="openAuthModal(\'login\');return false;" class="btn btn-ghost">J\'ai déjà un compte</a>';
+              }
+          }
+      }
 
     // ── Auth modal ──
     function openAuthModal(mode) {
@@ -1741,24 +1762,38 @@
                                    window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_claim_failed';
                                }
                            }
-                       } else {
-                           // No org yet — create one
-                           try {
-                               const org = await api.createOrg({ diagnostic_id: pendingId }, pendingToken);
-                               localStorage.removeItem('d360_diag_id');
-                               localStorage.removeItem('d360_diag_token');
-                               window.location.href = 'dashboard.html?welcome=1&notice=org_created';
-                           } catch (err) {
-                               window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
-                           }
-                       }
+                        } else {
+                            // No org yet — check if staff member
+                            const isStaff = meData?.staff_roles && meData.staff_roles.length > 0;
+                            if (isStaff) {
+                                localStorage.removeItem('d360_diag_id');
+                                localStorage.removeItem('d360_diag_token');
+                                window.location.href = 'admin.html';
+                            } else {
+                                try {
+                                    const org = await api.createOrg({ diagnostic_id: pendingId }, pendingToken);
+                                    localStorage.removeItem('d360_diag_id');
+                                    localStorage.removeItem('d360_diag_token');
+                                    window.location.href = 'dashboard.html?welcome=1&notice=org_created';
+                                } catch (err) {
+                                    window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
+                                }
+                            }
+                        }
                  } catch (meErr) {
                      console.error('[D360] Failed to get user after login:', meErr);
                  }
-              } else {
-                  // Aucun diagnostic en attente : rester sur la page
-                  await refreshAuth();
-              }
+               } else {
+                   // Aucun diagnostic en attente : rester sur la page
+                   await refreshAuth();
+                   // Si l'utilisateur est membre de l'équipe sans entreprise, aller vers l'admin
+                   const memberships = _meData?.memberships || [];
+                   if (_user?.staff_roles && _user.staff_roles.length > 0 && memberships.length === 0) {
+                       window.location.href = 'admin.html';
+                   } else if (_user) {
+                       window.location.href = 'dashboard.html';
+                   }
+               }
           } catch (err) {
              document.getElementById('authError').textContent = describeApiError(err);
          }
@@ -1815,10 +1850,40 @@
         setTimeout(() => notice.remove(), 7000);
     }
     async function handleLogout() {
-        try { await api.logout(); } catch (_) {}
-        _user = null;
-        updateAuthUI();
-        showPage('landing');
+        try {
+            showD360Loading();
+            const res = await api.logout();
+            if (res === null || res?.status === 204) {
+                _user = null;
+                updateAuthUI();
+                showPage('landing');
+            } else {
+                alert('Déconnexion impossible (HTTP ' + (res?.status || '?') + '). Veuillez rafraîchir la page.');
+            }
+        } catch (e) {
+            // Si CSRF_FAILED, rafraîchir le jeton et réessayer une fois
+            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
+                try {
+                    await getCsrf();
+                    const res2 = await api.logout();
+                    if (res2 === null || res2?.status === 204) {
+                        _user = null;
+                        updateAuthUI();
+                        showPage('landing');
+                    } else {
+                        alert('Déconnexion impossible (HTTP ' + (res2?.status || '?') + '). Veuillez rafraîchir la page.');
+                    }
+                } catch (_) {
+                    alert('Erreur lors de la déconnexion : ' + e.message);
+                } finally {
+                    hideD360Loading();
+                }
+                return;
+            }
+            alert('Erreur lors de la déconnexion : ' + e.message);
+        } finally {
+            hideD360Loading();
+        }
     }
 
     // ── Démarrage : jeton CSRF (requis pour toute inscription ou connexion) puis état de session.

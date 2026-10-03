@@ -651,6 +651,7 @@
     // ── State ──
     let _user = null;
     let _orgId = null;
+    let _isStaffNoOrg = false;
     let _orgData = null;
     let passportData = null;
     let actionPlanData = null;
@@ -796,11 +797,17 @@
             welcomeSub.appendChild(span1);
             welcomeSub.appendChild(strong);
             welcomeSub.appendChild(span2);
-         } else {
-              document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
-              document.getElementById('dashNoDiagCta').style.display = '';
-              document.getElementById('dashNextAction').style.display = 'none';
-          }
+          } else {
+               document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
+               if (_isStaffNoOrg) {
+                   const el = document.getElementById('dashNoDiagCta');
+                   el.innerHTML = '<div class="label">Compte d\'équipe</div><p style="margin:0.5rem 0;">Ce compte est un compte d\'équipe BENILAB.</p><a href="admin.html" class="btn btn-primary btn-sm">Aller à l\'administration</a>';
+                   el.style.display = '';
+               } else {
+                   document.getElementById('dashNoDiagCta').style.display = '';
+               }
+               document.getElementById('dashNextAction').style.display = 'none';
+           }
 
           // Score evolution and diagnostic info
           if (diagList.length > 0) {
@@ -983,6 +990,7 @@
             }
             if (me?.staff_roles?.length > 0) {
                 document.getElementById('navAdminLink').style.display = 'inline-flex';
+                _isStaffNoOrg = !membership;
             }
             renderDashboard();
             renderSubscriptionPage();

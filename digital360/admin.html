@@ -1098,6 +1098,8 @@
             if (perms.includes('diagnostic:read')) loadDiagnostics(false);
             if (perms.includes('staff:manage')) loadStaff();
             if (perms.includes('audit:read')) loadAuditLogs(false);
+            // déclencher les animations reveal sur la page active au chargement
+            switchPage('dashboard');
         } catch (e) {
             console.error('[D360] Admin init error:', e);
             window.location.href = 'index.html';
