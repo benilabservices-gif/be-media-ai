@@ -248,7 +248,7 @@
                     <div id="demandeContent" style="display:none;">
                         <div class="card" style="overflow-x:auto;">
                             <table class="admin-table">
-                                <thead><tr><th>Date</th><th>Entreprise</th><th>Demandé par</th><th>Produit</th><th>Prix</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+                                <thead><tr><th>Date</th><th>Entreprise</th><th>Contact</th><th>Produit</th><th>Prix</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
                                 <tbody id="demandeTableBody"></tbody>
                             </table>
                         </div>
@@ -1105,6 +1105,50 @@
         }
     }
 
+    // Contact à rappeler : le numéro de la demande en premier, cliquable (WhatsApp, appel ou e-mail)
+    function contactCell(req) {
+        const td = document.createElement('td');
+        td.style.cssText = 'font-size:12px;line-height:1.5;';
+        const name = document.createElement('div');
+        name.style.cssText = 'font-weight:600;color:var(--text-primary);';
+        name.textContent = req.requested_by_name || '—';
+        td.appendChild(name);
+
+        const link = document.createElement('a');
+        link.style.cssText = 'color:var(--accent);';
+        const number = req.contact_number || '';
+        if (req.channel === 'WHATSAPP' && number) {
+            link.href = 'https://wa.me/' + number.replace(/\D/g, '');
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = 'WhatsApp ' + number;
+        } else if (req.channel === 'PHONE' && number) {
+            link.href = 'tel:' + number;
+            link.textContent = 'Appeler ' + number;
+        } else if (req.requested_by_email) {
+            link.href = 'mailto:' + encodeURIComponent(req.requested_by_email);
+            link.textContent = 'E-mail ' + req.requested_by_email;
+        }
+        if (link.textContent) {
+            const line = document.createElement('div');
+            line.appendChild(link);
+            td.appendChild(line);
+        }
+        if (req.channel !== 'EMAIL' && req.requested_by_email) {
+            const email = document.createElement('div');
+            email.style.color = 'var(--text-muted)';
+            email.textContent = req.requested_by_email;
+            td.appendChild(email);
+        }
+        if (req.message) {
+            const message = document.createElement('div');
+            message.style.cssText = 'color:var(--text-secondary);font-style:italic;max-width:220px;';
+            message.textContent = '« ' + req.message + ' »';
+            td.appendChild(message);
+        }
+        return td;
+    }
+
     function appendDemandeRow(req) {
         const tbody = document.getElementById('demandeTableBody');
         if (!tbody) return;
@@ -1118,9 +1162,7 @@
         tdOrg.textContent = req.organization_name || '—';
         tr.appendChild(tdOrg);
 
-        const tdUser = document.createElement('td');
-        tdUser.textContent = req.requested_by_name || '—';
-        tr.appendChild(tdUser);
+        tr.appendChild(contactCell(req));
 
         const tdProduct = document.createElement('td');
         tdProduct.textContent = req.product_name || req.product_code || '—';
@@ -1190,6 +1232,9 @@
             wonBtn.style.cssText = 'border-color:var(--success);color:var(--success);margin-left:4px;';
             wonBtn.textContent = 'Gagnée';
             wonBtn.onclick = async () => {
+                // « Gagnée » active l'offre chez le client : on ne le fait qu'une fois le paiement reçu
+                const offer = req.product_name || req.product_code;
+                if (!confirm('Le paiement de « ' + offer + ' » a-t-il bien été reçu ?\n\nL\'offre sera activée immédiatement dans l\'espace de ' + (req.organization_name || 'ce client') + '.')) return;
                 try {
                     showD360Loading();
                     await apiFetch('/admin/purchase-requests/' + req.id, {

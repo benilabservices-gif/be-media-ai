@@ -880,49 +880,16 @@
             if (shown.length > 0 && planItemsEl) {
                 planEl.style.display = '';
                 planItemsEl.innerHTML = '';
+                // Une offre couvre souvent plusieurs recommandations : une carte et un bouton par offre
+                const groups = new Map();
+                const standalone = [];
                 shown.forEach(item => {
-                    const card = document.createElement('div');
-                    card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;';
-                    const reasonP = document.createElement('p');
-                    reasonP.style.cssText = 'font-size:13px;color:var(--text-secondary);margin:0 0 0.75rem;';
-                    reasonP.textContent = item.reason || item.recommended_action || '';
-                    card.appendChild(reasonP);
-                    if (item.product_code) {
-                        if (_isOwner) {
-                            const pr = _purchaseRequests.find(p => p.product_code === item.product_code && p.status !== 'LOST');
-                            const btn = document.createElement('button');
-                            btn.className = 'btn btn-primary btn-sm';
-                            if (!pr) {
-                                btn.textContent = 'Je veux démarrer';
-                                btn.onclick = () => showPurchaseModal(item);
-                            } else if (pr.status === 'WON') {
-                                btn.textContent = 'Offre en cours d\'activation';
-                                btn.disabled = true;
-                                btn.style.opacity = '0.6';
-                            } else if (pr.status === 'LOST') {
-                                btn.textContent = 'Je veux démarrer';
-                                btn.onclick = () => showPurchaseModal(item);
-                            } else {
-                                // NEW or CONTACTED
-                                btn.textContent = 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
-                                btn.disabled = true;
-                                btn.style.opacity = '0.6';
-                            }
-                            card.appendChild(btn);
-                        } else {
-                            const msg = document.createElement('div');
-                            msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
-                            msg.textContent = 'Demandez au responsable de votre entreprise';
-                            card.appendChild(msg);
-                        }
-                    } else {
-                        const btn = document.createElement('button');
-                        btn.className = 'btn btn-ghost btn-sm';
-                        btn.textContent = 'Voir';
-                        card.appendChild(btn);
-                    }
-                    planItemsEl.appendChild(card);
+                    if (!item.product_code) { standalone.push(item); return; }
+                    if (!groups.has(item.product_code)) groups.set(item.product_code, []);
+                    groups.get(item.product_code).push(item);
                 });
+                groups.forEach((items, code) => planItemsEl.appendChild(offerCard(code, items)));
+                standalone.forEach(item => planItemsEl.appendChild(recommendationCard(item)));
             } else {
                 planEl.style.display = 'none';
             }
@@ -1196,29 +1163,105 @@
 
     // ── Purchase request modal ──
     let _pendingPurchase = null;
+    // ── « Je veux démarrer » ──
+    function productInfo(code) {
+        const product = (_catalogData?.products || []).find(p => p.code === code);
+        return {
+            name: product?.name || code,
+            price: product?.price ? formatPrice(product.price, product.price.currency) : '',
+        };
+    }
+    function planCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;';
+        return card;
+    }
+    function offerCard(code, items) {
+        const info = productInfo(code);
+        const card = planCard();
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;';
+        title.textContent = 'Offre ' + info.name + (info.price ? ' — ' + info.price : '');
+        card.appendChild(title);
+        const list = document.createElement('ul');
+        list.style.cssText = 'margin:0 0 0.75rem 1.1rem;padding:0;font-size:13px;color:var(--text-secondary);';
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item.recommended_action || item.reason || '';
+            list.appendChild(li);
+        });
+        card.appendChild(list);
+        card.appendChild(offerAction(code, items[0]));
+        return card;
+    }
+    function offerAction(code, firstItem) {
+        if (!_isOwner) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
+            msg.textContent = 'Demandez au responsable de votre entreprise';
+            return msg;
+        }
+        // Liste triée de la plus récente à la plus ancienne ; une demande perdue n'en bloque pas une nouvelle
+        const pr = _purchaseRequests.find(p => p.product_code === code && p.status !== 'LOST');
+        if (!pr) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-primary btn-sm';
+            btn.textContent = 'Je veux démarrer';
+            btn.onclick = () => showPurchaseModal(firstItem);
+            return btn;
+        }
+        const status = document.createElement('div');
+        status.style.cssText = 'font-size:13px;font-weight:500;color:var(--accent);';
+        const date = new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
+        if (pr.status === 'WON') {
+            status.textContent = "Offre en cours d'activation";
+        } else if (pr.status === 'CONTACTED') {
+            status.textContent = 'Un conseiller vous a contacté au sujet de cette offre';
+        } else {
+            status.textContent = 'Couvert par votre demande ' + productInfo(code).name + ' du ' + date;
+        }
+        return status;
+    }
+    function recommendationCard(item) {
+        const card = planCard();
+        const text = document.createElement('p');
+        text.style.cssText = 'font-size:13px;color:var(--text-secondary);margin:0;';
+        text.textContent = item.recommended_action || item.reason || '';
+        card.appendChild(text);
+        return card;
+    }
+
+    function knownNumber(channel) {
+        const org = _orgData || {};
+        const user = _meData?.user || {};
+        const order = channel === 'WHATSAPP' ? [org.whatsapp, org.phone, user.phone] : [org.phone, org.whatsapp, user.phone];
+        return order.find(number => number) || '';
+    }
+    function onPurchaseChannelChange() {
+        const channel = document.getElementById('purchaseChannel').value;
+        const needsNumber = channel !== 'EMAIL';
+        document.getElementById('purchaseNumberGroup').style.display = needsNumber ? '' : 'none';
+        document.getElementById('purchaseNumberError').textContent = '';
+        if (needsNumber) {
+            document.getElementById('purchaseNumberLabel').textContent = channel === 'WHATSAPP' ? 'Numéro WhatsApp' : 'Numéro de téléphone';
+            document.getElementById('purchaseNumber').value = knownNumber(channel);
+        }
+    }
     function showPurchaseModal(item) {
-        _pendingPurchase = item ? { product_code: item.product_code, plan_item_id: item.id } : null;
-        const modal = document.getElementById('purchaseModal');
-        if (!modal) return;
-        document.getElementById('purchaseProductName').textContent = item?.reason || item?.product_code || '';
-        document.getElementById('purchaseProductCode').value = item?.product_code || '';
-        document.getElementById('purchasePlanItemId').value = item?.id || '';
-        document.getElementById('purchaseMsg').value = '';
-        document.getElementById('purchaseChannel').value = 'WHATSAPP';
-        document.getElementById('purchaseError').textContent = '';
-        modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        const info = productInfo(item.product_code);
+        showPurchaseModalForProduct(item.product_code, item.id, info.name, info.price);
     }
     function showPurchaseModalForProduct(productCode, planItemId, name, price) {
-        _pendingPurchase = { product_code: productCode, plan_item_id: planItemId };
+        _pendingPurchase = { product_code: productCode, plan_item_id: planItemId || null };
         const modal = document.getElementById('purchaseModal');
         if (!modal) return;
-        document.getElementById('purchaseProductName').textContent = name + ' — ' + price;
-        document.getElementById('purchaseProductCode').value = productCode;
-        document.getElementById('purchasePlanItemId').value = planItemId || '';
+        document.getElementById('purchaseProductName').textContent = price ? name + ' — ' + price : name;
         document.getElementById('purchaseMsg').value = '';
         document.getElementById('purchaseChannel').value = 'WHATSAPP';
         document.getElementById('purchaseError').textContent = '';
+        document.getElementById('purchaseForm').style.display = '';
+        document.getElementById('purchaseDone').style.display = 'none';
+        onPurchaseChannelChange();
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
     }
@@ -1228,82 +1271,77 @@
         document.body.style.overflow = '';
         _pendingPurchase = null;
     }
+    // « 07 00 00 00 00 » ou « 00225… » → format international attendu par l'API (+2250700000000)
+    function normalizeNumber(raw) {
+        const compact = raw.replace(/[^\d+]/g, '');
+        return compact.startsWith('00') ? '+' + compact.slice(2) : compact;
+    }
+    async function reloadPurchaseRequests() {
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+            if (res.ok) _purchaseRequests = (await res.json())?.data || [];
+        } catch (_) {}
+    }
+    async function postPurchaseRequest(body) {
+        const send = () => fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: JSON.stringify(body),
+        });
+        if (!_csrfToken) await getCsrf();
+        let res = await send();
+        // fetch ne lève pas d'erreur sur un 403 : jeton expiré → on en redemande un, une seule fois
+        if (res.status === 403) {
+            const problem = await res.clone().json().catch(() => null);
+            if (problem?.code === 'CSRF_FAILED') {
+                await getCsrf();
+                res = await send();
+            }
+        }
+        return res;
+    }
     async function submitPurchaseRequest() {
         const errorEl = document.getElementById('purchaseError');
-        const msgEl = document.getElementById('purchaseSuccess');
+        const numberErrorEl = document.getElementById('purchaseNumberError');
         errorEl.textContent = '';
-        msgEl.style.display = 'none';
+        numberErrorEl.textContent = '';
         if (!_pendingPurchase || !_orgId) return;
-        try {
-            showD360Loading();
-            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-                body: JSON.stringify({
-                    product_code: document.getElementById('purchaseProductCode').value,
-                    plan_item_id: document.getElementById('purchasePlanItemId').value || null,
-                    channel: document.getElementById('purchaseChannel').value,
-                    message: document.getElementById('purchaseMsg').value.trim() || null,
-                }),
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                let detail = 'Une erreur est survenue.';
-                try { const j = JSON.parse(text); if (j?.detail) detail = j.detail; } catch (_) {}
-                errorEl.textContent = detail;
+        const channel = document.getElementById('purchaseChannel').value;
+        const body = {
+            product_code: _pendingPurchase.product_code,
+            plan_item_id: _pendingPurchase.plan_item_id,
+            channel,
+            message: document.getElementById('purchaseMsg').value.trim() || null,
+        };
+        if (channel !== 'EMAIL') {
+            const number = normalizeNumber(document.getElementById('purchaseNumber').value.trim());
+            if (!/^\+[1-9]\d{6,14}$/.test(number)) {
+                numberErrorEl.textContent = 'Indiquez votre numéro au format international, par exemple +2250700000000.';
                 return;
             }
-            const data = await res.json();
-            // Reload purchase requests
-            try {
-                const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
-                if (prRes.ok) { const prData = await prRes.json(); _purchaseRequests = prData?.data || []; }
-            } catch (_) {}
-            closePurchaseModal();
-            msgEl.textContent = 'Demande envoyée, un conseiller vous contacte sous 24 h.';
-            msgEl.style.display = 'block';
+            body.contact_number = number;
+        }
+        showD360Loading();
+        try {
+            const res = await postPurchaseRequest(body);
+            if (!res.ok) {
+                const problem = await res.json().catch(() => null);
+                const target = problem?.code === 'CONTACT_NUMBER_REQUIRED' ? numberErrorEl : errorEl;
+                target.textContent = problem?.detail || 'Une erreur est survenue. Réessayez.';
+                return;
+            }
+            const created = await res.json();
+            await reloadPurchaseRequests();
+            document.getElementById('purchaseForm').style.display = 'none';
+            document.getElementById('purchaseDoneText').textContent = channel === 'EMAIL'
+                ? 'Demande envoyée. Un conseiller vous contacte sous 24 h par e-mail.'
+                : 'Demande envoyée. Un conseiller vous contacte sous 24 h au ' + (created.contact_number || body.contact_number) + '.';
+            document.getElementById('purchaseDone').style.display = '';
             renderDashboard();
             renderSubscriptionPage();
-        } catch (e) {
-            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
-                try {
-                    await getCsrf();
-                    // Retry once
-                    const res2 = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-                        body: JSON.stringify({
-                            product_code: document.getElementById('purchaseProductCode').value,
-                            plan_item_id: document.getElementById('purchasePlanItemId').value || null,
-                            channel: document.getElementById('purchaseChannel').value,
-                            message: document.getElementById('purchaseMsg').value.trim() || null,
-                        }),
-                    });
-                    if (!res2.ok) {
-                        const text = await res2.text();
-                        let detail = 'Une erreur est survenue.';
-                        try { const j = JSON.parse(text); if (j?.detail) detail = j.detail; } catch (_) {}
-                        errorEl.textContent = detail;
-                        return;
-                    }
-                    const data = await res2.json();
-                    try {
-                        const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
-                        if (prRes.ok) { const prData = await prRes.json(); _purchaseRequests = prData?.data || []; }
-                    } catch (_) {}
-                    closePurchaseModal();
-                    msgEl.textContent = 'Demande envoyée, un conseiller vous contacte sous 24 h.';
-                    msgEl.style.display = 'block';
-                    renderDashboard();
-                    renderSubscriptionPage();
-                } finally {
-                    hideD360Loading();
-                }
-                return;
-            }
-            errorEl.textContent = e.detail || 'Une erreur est survenue.';
+        } catch (_) {
+            errorEl.textContent = 'Serveur injoignable. Réessayez dans un instant.';
         } finally {
             hideD360Loading();
         }
@@ -1358,24 +1396,32 @@
             <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.25rem;">Je veux démarrer</h2>
             <p id="purchaseProductName" style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;"></p>
             <div id="purchaseError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
-            <div id="purchaseSuccess" class="alert alert-success" style="display:none;margin-bottom:1rem;"></div>
-            <input type="hidden" id="purchaseProductCode">
-            <input type="hidden" id="purchasePlanItemId">
-            <div class="form-group">
-                <label class="form-label">Comment souhaitez-vous être contacté ?</label>
-                <select id="purchaseChannel" class="form-input" style="max-width:300px;">
-                    <option value="WHATSAPP">WhatsApp</option>
-                    <option value="PHONE">Téléphone</option>
-                    <option value="EMAIL">Email</option>
-                </select>
+            <div id="purchaseForm">
+                <div class="form-group">
+                    <label class="form-label" for="purchaseChannel">Comment souhaitez-vous être contacté ?</label>
+                    <select id="purchaseChannel" class="form-input" style="max-width:300px;" onchange="onPurchaseChannelChange()">
+                        <option value="WHATSAPP">WhatsApp</option>
+                        <option value="PHONE">Téléphone</option>
+                        <option value="EMAIL">Email</option>
+                    </select>
+                </div>
+                <div class="form-group" id="purchaseNumberGroup" style="margin-top:1rem;">
+                    <label class="form-label" for="purchaseNumber" id="purchaseNumberLabel">Numéro WhatsApp</label>
+                    <input type="tel" id="purchaseNumber" class="form-input" style="max-width:300px;" placeholder="+2250700000000" autocomplete="tel">
+                    <div id="purchaseNumberError" style="color:var(--error);font-size:12px;margin-top:4px;"></div>
+                </div>
+                <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label" for="purchaseMsg">Message (facultatif, 1000 caractères max)</label>
+                    <textarea id="purchaseMsg" class="form-input" rows="3" maxlength="1000" placeholder="Ex: rappelez-moi le matin" style="resize:vertical;"></textarea>
+                </div>
+                <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+                    <button class="btn btn-primary" onclick="submitPurchaseRequest()">Envoyer ma demande</button>
+                    <button class="btn btn-ghost" onclick="closePurchaseModal()">Annuler</button>
+                </div>
             </div>
-            <div class="form-group" style="margin-top:1rem;">
-                <label class="form-label">Message (facultatif, 1000 caractères max)</label>
-                <textarea id="purchaseMsg" class="form-input" rows="3" maxlength="1000" placeholder="Ex: rappelez-moi le matin" style="resize:vertical;"></textarea>
-            </div>
-            <div style="margin-top:1.5rem;display:flex;gap:1rem;">
-                <button class="btn btn-primary" onclick="submitPurchaseRequest()">Envoyer ma demande</button>
-                <button class="btn btn-ghost" onclick="closePurchaseModal()">Annuler</button>
+            <div id="purchaseDone" style="display:none;">
+                <div class="alert alert-success" id="purchaseDoneText" style="margin-bottom:1rem;"></div>
+                <button class="btn btn-primary" onclick="closePurchaseModal()">Fermer</button>
             </div>
         </div>
     </div>
