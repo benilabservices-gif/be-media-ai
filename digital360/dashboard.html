@@ -233,45 +233,11 @@
                 <div class="dash-page" id="page-site">
                     <div class="page-header reveal">
                         <h1>Mon site web</h1>
-                        <p>État, aperçu et modifications de votre site.</p>
+                        <p>Votre brief, l'avancement de la réalisation, la relecture et la mise en ligne.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
-                            <div class="card">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                                    <span style="font-size:13px;font-weight:600;">letedelice.ci</span>
-                                    <span class="badge badge-success">En ligne</span>
-                                </div>
-                                <div class="chart-placeholder" style="height:160px;margin-bottom:1rem;border-style:solid;border-color:var(--border);background:linear-gradient(135deg,var(--bg-tertiary),var(--bg-card));">
-                                    <span style="font-size:3rem;opacity:0.3;">🌐</span>
-                                </div>
-                                <div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;">
-                                    <span>Mise en ligne: 15 Août 2025</span>
-                                    <span>5 pages</span>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Pages du site</h3>
-                                <div style="font-size:14px;">
-                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>🏠 Accueil</span><span class="badge badge-success">✓</span></div>
-                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>📋 Menu / Services</span><span class="badge badge-success">✓</span></div>
-                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>📸 Galerie</span><span class="badge badge-success">✓</span></div>
-                                    <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span>📍 Contact</span><span class="badge badge-success">✓</span></div>
-                                    <div style="padding:8px 0;display:flex;justify-content:space-between;"><span>ℹ️ À propos</span><span class="badge badge-success">✓</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="alert alert-accent">
-                            <span>💡</span>
-                            <div><strong>Suggestion :</strong> Ajoutez une section "Avis clients" sur la page d'accueil pour renforcer la confiance des visiteurs.</div>
-                        </div>
-                        <div style="margin-top:1rem;">
-                            <button class="btn btn-outline" onclick="alert('Formulaire de demande de modification ouvert.')">Demander une modification</button>
-                        </div>
-                    </div>
+                    <div id="projectRoot"></div>
                 </div>
 
-                <!-- ═══ GOOGLE BUSINESS ═══ -->
                 <div class="dash-page" id="page-google">
                     <div class="page-header reveal">
                         <h1>Google Business</h1>
@@ -997,6 +963,7 @@
                 } catch (_) {}
                 // Load catalog for subscription page
                 await loadCatalogForDashboard();
+                await loadProject();
             }
             // Update UI with real data
             if (_user) {
@@ -1163,6 +1130,348 @@
 
     // ── Purchase request modal ──
     let _pendingPurchase = null;
+    // ── Mon site web : projet Digital Start (offre encadrée) ──
+    let _project = null;
+
+    // Petit constructeur d'éléments : tout le texte passe par textContent (jamais d'HTML injecté)
+    function h(tag, props = {}, children = []) {
+        const el = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+            if (key === 'style') el.style.cssText = value;
+            else if (key === 'text') el.textContent = value;
+            else if (key.startsWith('on')) el[key] = value;
+            else el.setAttribute(key, value);
+        });
+        (Array.isArray(children) ? children : [children]).forEach(child => {
+            if (child) el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+        });
+        return el;
+    }
+
+    async function sendJson(method, path, body) {
+        const send = () => fetch(D360_API_BASE + path, {
+            method,
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        if (!_csrfToken) await getCsrf();
+        let res = await send();
+        if (res.status === 403) {
+            const problem = await res.clone().json().catch(() => null);
+            if (problem?.code === 'CSRF_FAILED') { await getCsrf(); res = await send(); }
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+            const err = new Error(data?.detail || 'Une erreur est survenue.');
+            err.code = data?.code;
+            err.errors = data?.errors || [];
+            throw err;
+        }
+        return data;
+    }
+
+    async function loadProject() {
+        _project = null;
+        if (_orgId) {
+            try {
+                const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/website-project', { credentials: 'include' });
+                if (res.ok) _project = await res.json();
+            } catch (_) {}
+        }
+        renderProject();
+    }
+
+    const PROJECT_STEPS = [
+        ['BRIEF_PENDING', 'Brief'],
+        ['IN_PRODUCTION', 'Réalisation'],
+        ['CLIENT_REVIEW', 'Relecture'],
+        ['APPROVED', 'Validation'],
+        ['LIVE', 'En ligne'],
+    ];
+    const FIELD_LABELS = {
+        business_name: "Nom de l'entreprise", activity: 'Votre activité', services: 'Au moins un service',
+        phone: 'Téléphone', template: 'Modèle', palette: 'Couleurs', has_logo: 'Logo (oui ou non)',
+    };
+
+    function frenchDate(iso) {
+        return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    }
+
+    function projectStepper(status) {
+        const order = PROJECT_STEPS.map(step => step[0]);
+        const current = order.indexOf(status === 'REVISION' ? 'CLIENT_REVIEW' : status);
+        return h('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;' },
+            PROJECT_STEPS.map(([key, label], index) => h('span', {
+                class: 'badge ' + (index < current ? 'badge-success' : index === current ? 'badge-accent' : 'badge-muted'),
+                text: (index + 1) + '. ' + label,
+            })));
+    }
+
+    function renderProject() {
+        const root = document.getElementById('projectRoot');
+        if (!root) return;
+        root.textContent = '';
+        if (!_project) {
+            const card = h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: "Vous n'avez pas encore de site" }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;margin-bottom:1rem;',
+                    text: "Avec l'offre Start, la conception de votre site est offerte grâce à l'IA : vous ne payez que le nom de domaine, l'hébergement et la mise en ligne." }),
+            ]);
+            if (_isOwner) {
+                const info = productInfo('DIGITAL_START');
+                card.appendChild(h('button', { class: 'btn btn-primary btn-sm', text: 'Je veux démarrer',
+                    onclick: () => showPurchaseModalForProduct('DIGITAL_START', null, info.name, info.price) }));
+            }
+            root.appendChild(card);
+            return;
+        }
+        const p = _project;
+        root.appendChild(projectStepper(p.status));
+        if (p.status === 'BRIEF_PENDING') {
+            root.appendChild(p.available_actions.includes('EDIT_BRIEF') ? briefForm(p)
+                : h('div', { class: 'alert alert-accent', text: 'Le responsable de votre entreprise remplit actuellement le brief du site.' }));
+        } else if (p.status === 'IN_PRODUCTION') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre site est en préparation' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;',
+                    text: 'Nous réalisons votre site à partir de votre brief. Vous recevrez la première version au plus tard le ' + frenchDate(p.due_on) + '.' }),
+            ]));
+            root.appendChild(briefSummary(p));
+        } else if (p.status === 'CLIENT_REVIEW') {
+            root.appendChild(reviewPanel(p));
+        } else if (p.status === 'REVISION') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Vos corrections sont en cours' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;', text: 'Nous appliquons vos corrections et vous prévenons dès que la nouvelle version est prête.' }),
+            ]));
+        } else if (p.status === 'APPROVED') {
+            root.appendChild(h('div', { class: 'alert alert-success', text: 'Merci pour votre validation ! Nous mettons votre site en ligne sur votre nom de domaine.' }));
+        } else if (p.status === 'LIVE') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.75rem;', text: 'Votre site est en ligne 🎉' }),
+                h('a', { class: 'btn btn-primary btn-sm', href: p.live_url, target: '_blank', rel: 'noopener', text: 'Voir mon site' }),
+            ]));
+        }
+    }
+
+    function briefSummary(p) {
+        const b = p.brief || {};
+        const template = p.offer.templates.find(t => t.key === b.template);
+        const palette = p.offer.palettes.find(t => t.key === b.palette);
+        const rows = [
+            ['Entreprise', b.business_name], ['Modèle', template?.name], ['Couleurs', palette?.name],
+            ['Services', (b.services || []).map(s => s.name).join(', ')], ['Domaine souhaité', b.desired_domain],
+        ];
+        return h('div', { class: 'card', style: 'margin-top:1rem;' }, [
+            h('h3', { style: 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem;', text: 'Votre brief' }),
+            ...rows.filter(row => row[1]).map(([label, value]) => h('div', { style: 'display:flex;justify-content:space-between;gap:1rem;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;' }, [
+                h('span', { style: 'color:var(--text-muted);', text: label }), h('span', { text: value }),
+            ])),
+        ]);
+    }
+
+    function field(label, input, hint) {
+        return h('div', { class: 'form-group' }, [
+            h('label', { class: 'form-label', text: label }), input,
+            hint ? h('div', { style: 'font-size:11px;color:var(--text-muted);margin-top:4px;', text: hint }) : null,
+        ]);
+    }
+    function textInput(name, value, attrs = {}) {
+        return h('input', { class: 'form-input', name, value: value || '', ...attrs });
+    }
+    function choiceGrid(name, choices, selected) {
+        return h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0.75rem;' },
+            choices.map(choice => {
+                const radio = h('input', { type: 'radio', name, value: choice.key });
+                radio.checked = choice.key === selected;
+                return h('label', { class: 'card', style: 'cursor:pointer;padding:0.9rem;display:block;' }, [
+                    h('div', { style: 'display:flex;gap:0.5rem;align-items:center;font-weight:600;' }, [radio, choice.name]),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);margin-top:4px;', text: choice.description }),
+                ]);
+            }));
+    }
+
+    function briefForm(p) {
+        const b = p.brief || {};
+        const offer = p.offer;
+        const form = h('form', { class: 'card', id: 'briefForm', onsubmit: event => event.preventDefault() });
+        form.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-bottom:1.25rem;', text: offer.pitch }));
+        form.appendChild(h('h3', { style: 'margin-bottom:1rem;', text: 'Votre brief' }));
+        form.appendChild(field("Nom de l'entreprise", textInput('business_name', b.business_name, { maxlength: '80' })));
+        const activity = h('textarea', { class: 'form-input', name: 'activity', rows: '3', maxlength: '500',
+            placeholder: 'Ce que vous faites, pour qui, ce qui vous distingue. Nous rédigeons les textes à partir de cela.' });
+        activity.value = b.activity || '';
+        form.appendChild(field('Votre activité', activity));
+
+        const services = h('div', { id: 'briefServices' });
+        const addService = (service = {}) => {
+            if (services.children.length >= offer.max_services) return;
+            const row = h('div', { style: 'display:grid;grid-template-columns:1fr 2fr auto;gap:0.5rem;margin-bottom:0.5rem;' }, [
+                h('input', { class: 'form-input', 'data-service': 'name', placeholder: 'Service', maxlength: '80', value: service.name || '' }),
+                h('input', { class: 'form-input', 'data-service': 'description', placeholder: 'Courte description (facultatif)', maxlength: '200', value: service.description || '' }),
+                h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '✕', onclick: () => row.remove() }),
+            ]);
+            services.appendChild(row);
+        };
+        (b.services && b.services.length ? b.services : [{}]).forEach(addService);
+        form.appendChild(field('Vos services (' + offer.max_services + ' au maximum)', services));
+        form.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-sm', style: 'margin:-0.5rem 0 1.25rem;', text: '+ Ajouter un service', onclick: () => addService() }));
+
+        const grid = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 1rem;' }, [
+            field('Ville', textInput('city', b.city, { maxlength: '100' })),
+            field('Adresse', textInput('address', b.address, { maxlength: '200' })),
+            field('Téléphone', textInput('phone', b.phone, { type: 'tel', placeholder: '+2250700000000' })),
+            field('WhatsApp', textInput('whatsapp', b.whatsapp, { type: 'tel', placeholder: '+2250500000000' })),
+            field('E-mail affiché sur le site', textInput('email', b.email, { type: 'email' })),
+            field('Horaires', textInput('opening_hours', b.opening_hours, { placeholder: 'Lun-Sam 8h-19h', maxlength: '300' })),
+            field('Facebook', textInput('facebook', b.facebook, { placeholder: 'https://facebook.com/…' })),
+            field('Instagram', textInput('instagram', b.instagram, { placeholder: 'https://instagram.com/…' })),
+            field('TikTok', textInput('tiktok', b.tiktok, { placeholder: 'https://tiktok.com/@…' })),
+            field('Nom de domaine souhaité', textInput('desired_domain', b.desired_domain, { placeholder: 'monentreprise.ci' }), 'Sans « www » ni « https ». Nous vérifions sa disponibilité.'),
+        ]);
+        form.appendChild(grid);
+
+        form.appendChild(field('Modèle de site', choiceGrid('template', offer.templates, b.template)));
+        form.appendChild(field('Couleurs', choiceGrid('palette', offer.palettes, b.palette)));
+        const logoYes = h('input', { type: 'radio', name: 'has_logo', value: 'true' });
+        const logoNo = h('input', { type: 'radio', name: 'has_logo', value: 'false' });
+        logoYes.checked = b.has_logo === true;
+        logoNo.checked = b.has_logo === false;
+        form.appendChild(field('Avez-vous un logo ?', h('div', { style: 'display:flex;gap:1.5rem;' }, [
+            h('label', {}, [logoYes, ' Oui, je l\'enverrai sur WhatsApp']), h('label', {}, [logoNo, ' Non, utilisez le nom de mon entreprise']),
+        ])));
+
+        const scope = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1.5rem 0 1rem;' }, [
+            h('div', { class: 'card' }, [h('strong', { text: 'Inclus dans votre offre' }),
+                h('ul', { style: 'margin:0.5rem 0 0 1.1rem;font-size:13px;color:var(--text-secondary);' }, offer.included.map(item => h('li', { text: item })))]),
+            h('div', { class: 'card' }, [h('strong', { text: 'Non inclus' }),
+                h('ul', { style: 'margin:0.5rem 0 0 1.1rem;font-size:13px;color:var(--text-secondary);' }, offer.not_included.map(item => h('li', { text: item })))]),
+        ]);
+        form.appendChild(scope);
+        const accept = h('input', { type: 'checkbox', id: 'briefAcceptScope' });
+        form.appendChild(h('label', { style: 'display:flex;gap:0.5rem;font-size:13px;margin-bottom:1rem;' }, [accept,
+            "J'ai lu ce qui est inclus et ce qui ne l'est pas. Je comprends que le brief ne pourra plus être modifié une fois la réalisation lancée."]));
+        const message = h('div', { id: 'briefMessage', style: 'font-size:13px;margin-bottom:1rem;min-height:18px;' });
+        form.appendChild(message);
+        form.appendChild(h('div', { style: 'display:flex;gap:1rem;flex-wrap:wrap;' }, [
+            h('button', { type: 'button', class: 'btn btn-outline', text: 'Enregistrer le brouillon', onclick: () => saveBrief(false) }),
+            h('button', { type: 'button', class: 'btn btn-primary', text: 'Lancer la réalisation', onclick: () => saveBrief(true) }),
+        ]));
+        return form;
+    }
+
+    function readBrief() {
+        const form = document.getElementById('briefForm');
+        const value = name => form.querySelector('[name="' + name + '"]')?.value.trim() || null;
+        const checked = name => form.querySelector('input[name="' + name + '"]:checked')?.value || null;
+        const phone = name => { const raw = value(name); return raw ? normalizeNumber(raw) : null; };
+        const services = [...form.querySelectorAll('#briefServices > div')].map(row => ({
+            name: row.querySelector('[data-service="name"]').value.trim(),
+            description: row.querySelector('[data-service="description"]').value.trim(),
+        })).filter(service => service.name);
+        const logo = checked('has_logo');
+        const brief = {
+            business_name: value('business_name'), activity: value('activity'), services,
+            city: value('city'), address: value('address'), phone: phone('phone'), whatsapp: phone('whatsapp'),
+            email: value('email'), opening_hours: value('opening_hours'), facebook: value('facebook'),
+            instagram: value('instagram'), tiktok: value('tiktok'),
+            desired_domain: value('desired_domain')?.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '').toLowerCase() || null,
+            template: checked('template'), palette: checked('palette'), has_logo: logo === null ? null : logo === 'true',
+        };
+        Object.keys(brief).forEach(key => { if (brief[key] === null) delete brief[key]; });
+        return brief;
+    }
+
+    function explainError(err) {
+        const fields = (err.errors || []).map(item => item.field || item.reason).filter(Boolean);
+        if (err.code === 'TRANSITION_GUARD_FAILED') {
+            const missing = (_project?.missing_fields || []).map(name => FIELD_LABELS[name] || name);
+            return 'Brief incomplet : ' + (missing.join(', ') || (err.errors || []).map(e => e.reason).join(', ')) + '.';
+        }
+        return err.message + (fields.length ? ' (' + fields.join(', ') + ')' : '');
+    }
+
+    async function saveBrief(launch) {
+        const message = document.getElementById('briefMessage');
+        message.style.color = 'var(--error)';
+        if (launch && !document.getElementById('briefAcceptScope').checked) {
+            message.textContent = 'Cochez la case pour confirmer que vous avez lu ce qui est inclus.';
+            return;
+        }
+        showD360Loading();
+        try {
+            _project = await sendJson('PUT', '/orgs/' + _orgId + '/website-project/brief', readBrief());
+            if (launch) {
+                _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/submit', { accept_scope: true });
+                renderProject();
+                return;
+            }
+            message.style.color = 'var(--success)';
+            message.textContent = 'Brouillon enregistré.' + (_project.missing_fields.length
+                ? ' Il reste à compléter : ' + _project.missing_fields.map(name => FIELD_LABELS[name] || name).join(', ') + '.' : ' Votre brief est complet.');
+        } catch (err) {
+            message.textContent = explainError(err);
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    function reviewPanel(p) {
+        const panel = h('div', { class: 'card' }, [
+            h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre site est prêt : à vous de le relire' }),
+            h('a', { class: 'btn btn-primary btn-sm', style: 'margin:0.5rem 0 1.25rem;', href: p.preview_url, target: '_blank', rel: 'noopener', text: 'Voir mon site' }),
+        ]);
+        const message = h('div', { style: 'font-size:13px;margin:0.75rem 0;min-height:18px;color:var(--error);' });
+        if (p.available_actions.includes('APPROVED')) {
+            panel.appendChild(h('button', { class: 'btn btn-primary', text: 'Je valide mon site', onclick: async () => {
+                if (!confirm('Valider votre site ? Nous le mettrons ensuite en ligne sur votre nom de domaine.')) return;
+                showD360Loading();
+                try { _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/approve'); renderProject(); }
+                catch (err) { message.textContent = explainError(err); }
+                finally { hideD360Loading(); }
+            } }));
+        }
+        if (!p.available_actions.includes('REVISION')) {
+            panel.appendChild(h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:1rem;', text: 'La série de corrections incluse dans votre offre a été utilisée.' }));
+            panel.appendChild(message);
+            return panel;
+        }
+        const categories = p.offer.revision_categories;
+        const list = h('div');
+        const addItem = () => {
+            if (list.children.length >= 10) return;
+            const row = h('div', { style: 'display:grid;grid-template-columns:170px 140px 1fr auto;gap:0.5rem;margin-bottom:0.5rem;' }, [
+                h('select', { class: 'form-input', 'data-revision': 'category' }, Object.entries(categories).map(([key, label]) => h('option', { value: key, text: label }))),
+                h('select', { class: 'form-input', 'data-revision': 'page' }, p.offer.pages.map(page => h('option', { value: page, text: page }))),
+                h('input', { class: 'form-input', 'data-revision': 'text', maxlength: '500', placeholder: 'Ce qu\'il faut corriger' }),
+                h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '✕', onclick: () => row.remove() }),
+            ]);
+            list.appendChild(row);
+        };
+        addItem();
+        panel.appendChild(h('h4', { style: 'margin:1.5rem 0 0.25rem;', text: 'Demander mes corrections' }));
+        panel.appendChild(h('p', { style: 'font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;',
+            text: 'Une seule série, limitée au contenu : textes, photos, coordonnées, horaires. Le modèle, les couleurs et les pages restent ceux de votre brief.' }));
+        panel.appendChild(list);
+        panel.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-sm', text: '+ Ajouter une correction', onclick: addItem }));
+        panel.appendChild(message);
+        panel.appendChild(h('button', { class: 'btn btn-outline', text: 'Envoyer mes corrections', onclick: async () => {
+            const items = [...list.children].map(row => ({
+                category: row.querySelector('[data-revision="category"]').value,
+                page: row.querySelector('[data-revision="page"]').value,
+                text: row.querySelector('[data-revision="text"]').value.trim(),
+            })).filter(item => item.text.length >= 3);
+            if (!items.length) { message.textContent = 'Décrivez au moins une correction (3 caractères minimum).'; return; }
+            if (!confirm('Envoyer ces ' + items.length + ' correction(s) ? Votre offre comprend une seule série de corrections.')) return;
+            showD360Loading();
+            try { _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/revision', { items }); renderProject(); }
+            catch (err) { message.textContent = explainError(err); }
+            finally { hideD360Loading(); }
+        } }));
+        return panel;
+    }
+
     // ── « Je veux démarrer » ──
     function productInfo(code) {
         const product = (_catalogData?.products || []).find(p => p.code === code);
@@ -1213,6 +1522,13 @@
         const status = document.createElement('div');
         status.style.cssText = 'font-size:13px;font-weight:500;color:var(--accent);';
         const date = new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
+        if (pr.status === 'WON' && code === 'DIGITAL_START') {
+            const follow = document.createElement('button');
+            follow.className = 'btn btn-primary btn-sm';
+            follow.textContent = 'Suivre mon site';
+            follow.onclick = () => switchPage('site');
+            return follow;
+        }
         if (pr.status === 'WON') {
             status.textContent = "Offre en cours d'activation";
         } else if (pr.status === 'CONTACTED') {
