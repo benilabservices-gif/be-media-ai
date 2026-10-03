@@ -258,7 +258,7 @@ En attendant le paiement en ligne, le client demande une offre et l'équipe le r
 - `GET /admin/purchase-requests?status=NEW` : pagination du §5. En plus des champs ci-dessus : `organization_name`, `requested_by_name`, `requested_by_email`, `requested_by_phone` et `staff_note`.
 - `PATCH /admin/purchase-requests/{id}` avec `{ "status": "CONTACTED", "staff_note": "…" }` (les deux champs sont facultatifs ; `""` efface la note).
 - Transitions possibles : `NEW` → `CONTACTED`, `WON` ou `LOST`, et `CONTACTED` → `WON` ou `LOST`. `WON` et `LOST` sont définitifs : toute autre transition renvoie 409 `INVALID_TRANSITION`. Propose uniquement les boutons permis.
-- Après `WON`, l'équipe active l'offre avec les droits manuels (`POST /admin/organizations/{id}/entitlement-overrides`).
+- **Passer une demande à `WON` active automatiquement l'offre** : les droits du produit sont accordés à l'entreprise, sans date de fin pour une offre ponctuelle (Digital Start), ou pour 31 jours (366 pour un abonnement annuel), le temps de la période payée hors ligne. Ils apparaissent dans `GET /orgs/{id}/entitlements`, avec dans `sources` le motif « Offre … : demande d'achat … gagnée » et la date `expires_at`. Pour l'admin : affiche une confirmation avant « Gagnée » (« Le paiement a-t-il bien été reçu ? L'offre sera activée »).
 
 ## 12. Mot de passe oublié
 

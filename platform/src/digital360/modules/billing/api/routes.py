@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import BaseModel, StringConstraints
 
-from digital360.core.actor import Actor
 from digital360.core.csrf import require_csrf
 from digital360.core.pagination import PageInfo, PageParams, page_params
 from digital360.core.permissions import Permission, Principal
@@ -156,7 +155,7 @@ async def admin_update_purchase_request(
 ) -> StaffPurchaseRequestOut:
     view = await service.admin_update(
         request_id,
-        Actor.user(principal.user_id),
+        principal.user_id,
         status=body.status,
         staff_note=body.staff_note,
     )

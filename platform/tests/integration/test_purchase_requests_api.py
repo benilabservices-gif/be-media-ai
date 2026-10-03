@@ -1,6 +1,7 @@
 """« Je veux démarrer » : demande d'achat du client, traitement par l'équipe, alerte e-mail."""
 
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -211,3 +212,72 @@ def test_should_reserve_request_processing_to_sales_roles(
     assert second_api.get("/admin/purchase-requests").status_code == 403
     response = second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
     assert response.status_code == 403
+
+
+# ── Activation de l'offre quand la vente est gagnée ──
+
+
+def _entitlements(api: ApiClient, org_id: str) -> dict[str, Any]:
+    body = api.get(f"/orgs/{org_id}/entitlements").json()
+    return {item["key"]: item for item in body["entitlements"]}
+
+
+def test_should_activate_one_time_offer_without_expiry_when_request_is_won(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    assert _entitlements(api, org["id"])["WEBSITE"]["value"] is False
+    request_id = _request(api, org["id"]).json()["id"]
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+
+    website = _entitlements(api, org["id"])["WEBSITE"]
+    assert website["value"] is True
+    [source] = website["sources"]
+    assert request_id in source["reason"]
+    assert source["expires_at"] is None
+
+
+def test_should_activate_subscription_for_one_month_when_request_is_won(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    request_id = _request(api, org["id"], product_code="DIGITAL_ESSENTIAL").json()["id"]
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+
+    granted = _entitlements(api, org["id"])
+    assert granted["MAINTENANCE"]["value"] is True
+    assert granted["CONTENT_MONTHLY_LIMIT"]["value"] == 4
+    expires_at = datetime.fromisoformat(granted["MAINTENANCE"]["sources"][0]["expires_at"])
+    assert timedelta(days=30) < expires_at - datetime.now(UTC) <= timedelta(days=31)
+
+
+def test_should_not_activate_anything_when_request_is_lost(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    request_id = _request(api, org["id"]).json()["id"]
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "LOST"})
+
+    assert _entitlements(api, org["id"])["WEBSITE"]["value"] is False
+
+
+def test_should_record_offer_activation_in_audit_log(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    request_id = _request(api, org["id"]).json()["id"]
+    _staff_member(second_api, test_database_url, "ADMIN")
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+
+    entries = second_api.get(
+        f"/admin/audit-logs?organization_id={org['id']}&action=purchase_request.activate_offer"
+    ).json()["data"]
+
+    [entry] = entries
+    assert entry["new_value"]["entitlements"] == {"WEBSITE": True}

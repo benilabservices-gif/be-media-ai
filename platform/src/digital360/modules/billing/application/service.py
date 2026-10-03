@@ -8,7 +8,7 @@ son pays et prévient l'équipe commerciale. L'équipe encaisse hors ligne, pass
 import html
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -29,6 +29,7 @@ from digital360.modules.billing.infrastructure.models import (
     PurchaseRequestStatus,
 )
 from digital360.modules.catalog.application.service import current_catalog
+from digital360.modules.catalog.infrastructure.models import EntitlementOverride
 from digital360.modules.diagnostics.infrastructure.models import ActionPlanItem, PlanItemStatus
 from digital360.modules.identity.infrastructure.models import User
 from digital360.modules.organizations.infrastructure.models import Organization
@@ -138,6 +139,48 @@ async def _load_views(
 
 def _product_not_available(detail: str) -> AppError:
     return AppError("PRODUCT_NOT_AVAILABLE", detail, status=422)
+
+
+# Durée d'un droit accordé pour un abonnement payé hors ligne : sans renouvellement payé,
+# l'accès s'arrête de lui-même (le paiement en ligne, M5, prendra le relais)
+SUBSCRIPTION_PERIOD = {"MONTH": timedelta(days=31), "YEAR": timedelta(days=366)}
+
+
+async def _activate_offer(
+    session: AsyncSession, request: PurchaseRequest, staff_user_id: uuid.UUID
+) -> None:
+    """Vente gagnée : accorde les droits de l'offre achetée, dans la même transaction."""
+    catalog = await current_catalog(session)
+    product = catalog.product(request.product_code)
+    if product is None or not product.entitlements:
+        return
+    period = SUBSCRIPTION_PERIOD.get(request.period or "")
+    expires_at = datetime.now(UTC) + period if period else None
+    reason = f"Offre {product.name} : demande d'achat {request.id} gagnée"
+    for key, value in product.entitlements.items():
+        session.add(
+            EntitlementOverride(
+                organization_id=request.organization_id,
+                entitlement_key=key,
+                value=value,
+                reason=reason,
+                granted_by=staff_user_id,
+                expires_at=expires_at,
+            )
+        )
+    await record_audit(
+        session,
+        actor=Actor.user(staff_user_id),
+        action="purchase_request.activate_offer",
+        entity_type="purchase_request",
+        entity_id=request.id,
+        organization_id=request.organization_id,
+        new_value={
+            "product_code": product.code,
+            "entitlements": dict(product.entitlements),
+            "expires_at": expires_at.isoformat() if expires_at else None,
+        },
+    )
 
 
 class PurchaseRequestService:
@@ -253,11 +296,12 @@ class PurchaseRequestService:
     async def admin_update(
         self,
         request_id: uuid.UUID,
-        actor: Actor,
+        staff_user_id: uuid.UUID,
         *,
         status: PurchaseRequestStatus | None,
         staff_note: str | None,
     ) -> PurchaseRequestView:
+        actor = Actor.user(staff_user_id)
         async with staff_transaction(self._session_factory) as session:
             request = (
                 await session.execute(
@@ -279,11 +323,13 @@ class PurchaseRequestService:
                         status=409,
                     )
                 request.status = status.value
-                request.handled_by = actor.user_id
+                request.handled_by = staff_user_id
                 if request.plan_item_id is not None and status in PLAN_ITEM_STATUS_ON_CLOSE:
                     await self._set_plan_item_status(
                         session, request.plan_item_id, PLAN_ITEM_STATUS_ON_CLOSE[status]
                     )
+                if status is S.WON:
+                    await _activate_offer(session, request, staff_user_id)
             if staff_note is not None:
                 request.staff_note = staff_note or None
 
