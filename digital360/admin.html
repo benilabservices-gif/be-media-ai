@@ -122,8 +122,9 @@
                             <div class="kpi-card"><div class="kpi-value" id="kpiAvgScore">—</div><div class="kpi-label">Score moyen</div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiOrgsByStatus">—</div><div class="kpi-label">Organisations</div><div class="kpi-sub" id="kpiOrgSub"></div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiUsersTotal">—</div><div class="kpi-label">Utilisateurs total</div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiUsersLast7">—</div><div class="kpi-label">Créés cette semaine</div></div>
-                        </div>
+                             <div class="kpi-card"><div class="kpi-value" id="kpiUsersLast7">—</div><div class="kpi-label">Créés cette semaine</div></div>
+                             <div class="kpi-card"><div class="kpi-value" id="kpiPendingRequests" style="color:var(--warning);">—</div><div class="kpi-label">Demandes à traiter</div><div class="kpi-sub">Nouvelles demandes d'achat</div></div>
+                         </div>
                         <div class="kpi-grid reveal delay-1" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
                             <div class="kpi-card"><div class="kpi-value" id="kpiDiag24h" style="font-size:1.5rem;">—</div><div class="kpi-label">Complétés — 24h</div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiDiag7d" style="font-size:1.5rem;">—</div><div class="kpi-label">Complétés — 7 jours</div></div>
@@ -295,6 +296,10 @@
             await getCsrf().catch(() => {});
             hideD360Loading();
         }
+        // Auto-stringify object bodies (avoids [object Object] in request payload)
+        if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+            options.body = JSON.stringify(options.body);
+        }
         const bodyText = await fetch(D360_API_BASE + path, {
             credentials: 'include',
             ...options,
@@ -455,6 +460,11 @@
             el('kpiUsersLast7', users.created_last_7_days ?? '—');
             el('kpiDiag24h', diag.completed_last_24h ?? '—');
             el('kpiDiag7d', diag.completed_last_7_days ?? '—');
+            // Pending purchase requests (NEW count) — loaded separately since /admin/dashboard doesn't expose it
+            try {
+                const prData = await apiFetch('/admin/purchase-requests?status=NEW');
+                el('kpiPendingRequests', (prData?.data || []).length);
+            } catch (_) { el('kpiPendingRequests', '—'); }
 
             setStatus('dashboardLoading', 'dashboardError', 'dashboardContent', null, false, false, false);
         } catch (e) {
@@ -1128,22 +1138,41 @@
         tr.appendChild(tdStatus);
 
         const tdNote = document.createElement('td');
-        tdNote.textContent = req.staff_note || '—';
+        const noteInput = document.createElement('input');
+        noteInput.type = 'text';
+        noteInput.className = 'filter-input';
+        noteInput.style.cssText = 'width:120px;font-size:12px;padding:6px 8px;';
+        noteInput.value = req.staff_note || '';
+        noteInput.placeholder = 'Note…';
+        noteInput.title = 'Double-cliquez pour enregistrer';
+        noteInput.onblur = async () => {
+            const note = noteInput.value.trim();
+            try {
+                await apiFetch('/admin/purchase-requests/' + req.id, {
+                    method: 'PATCH',
+                    body: { staff_note: note },
+                });
+            } catch (e) {
+                alert('Erreur sauvegarde note : ' + (e.detail || e.message));
+                noteInput.value = req.staff_note || '';
+            }
+        };
+        tdNote.appendChild(noteInput);
         tr.appendChild(tdNote);
 
         const tdActions = document.createElement('td');
         tdActions.style.cssText = 'white-space:nowrap;';
 
-        if (req.status === 'NEW' || req.status === 'CONTACTED') {
+        if (req.status === 'NEW') {
             const contactBtn = document.createElement('button');
             contactBtn.className = 'btn-revoke';
-            contactBtn.textContent = req.status === 'NEW' ? 'Marquer contacté' : 'Suivant';
+            contactBtn.textContent = 'Marquer contacté';
             contactBtn.onclick = async () => {
                 try {
                     showD360Loading();
                     await apiFetch('/admin/purchase-requests/' + req.id, {
                         method: 'PATCH',
-                        body: { status: req.status === 'NEW' ? 'CONTACTED' : 'CONTACTED' },
+                        body: { status: 'CONTACTED' },
                     });
                     loadPurchaseRequests(false);
                 } catch (e) {

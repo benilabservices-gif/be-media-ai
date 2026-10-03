@@ -874,13 +874,13 @@
 
         // Action plan recommendations
         if (actionPlanData?.items) {
-            const proposed = actionPlanData.items.filter(i => i.status === 'PROPOSED');
+            const shown = actionPlanData.items.filter(i => i.status === 'PROPOSED' || i.status === 'ACCEPTED' || i.status === 'IN_PROGRESS');
             const planEl = document.getElementById('dashNextAction');
             const planItemsEl = document.getElementById('dashPlanItems');
-            if (proposed.length > 0 && planItemsEl) {
+            if (shown.length > 0 && planItemsEl) {
                 planEl.style.display = '';
                 planItemsEl.innerHTML = '';
-                proposed.forEach(item => {
+                shown.forEach(item => {
                     const card = document.createElement('div');
                     card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;';
                     const reasonP = document.createElement('p');
@@ -892,18 +892,21 @@
                             const pr = _purchaseRequests.find(p => p.product_code === item.product_code && p.status !== 'LOST');
                             const btn = document.createElement('button');
                             btn.className = 'btn btn-primary btn-sm';
-                            if (pr) {
-                                if (pr.status === 'WON' || pr.status === 'CONTACTED') {
-                                    btn.textContent = 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
-                                    btn.disabled = true;
-                                    btn.style.opacity = '0.6';
-                                } else {
-                                    btn.textContent = 'Je veux démarrer';
-                                    btn.onclick = () => showPurchaseModal(item);
-                                }
-                            } else {
+                            if (!pr) {
                                 btn.textContent = 'Je veux démarrer';
                                 btn.onclick = () => showPurchaseModal(item);
+                            } else if (pr.status === 'WON') {
+                                btn.textContent = 'Offre en cours d\'activation';
+                                btn.disabled = true;
+                                btn.style.opacity = '0.6';
+                            } else if (pr.status === 'LOST') {
+                                btn.textContent = 'Je veux démarrer';
+                                btn.onclick = () => showPurchaseModal(item);
+                            } else {
+                                // NEW or CONTACTED
+                                btn.textContent = 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
+                                btn.disabled = true;
+                                btn.style.opacity = '0.6';
                             }
                             card.appendChild(btn);
                         } else {
@@ -1113,7 +1116,9 @@
                         if (!_isOwner) {
                             btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
                         } else if (pr) {
-                            if (pr.status === 'WON' || pr.status === 'CONTACTED') {
+                            if (pr.status === 'WON') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Offre en cours d\'activation</button>';
+                            } else if (pr.status === 'CONTACTED' || pr.status === 'NEW') {
                                 btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
                             } else {
                                 btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
@@ -1152,7 +1157,9 @@
                         if (!_isOwner) {
                             btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
                         } else if (pr) {
-                            if (pr.status === 'WON' || pr.status === 'CONTACTED') {
+                            if (pr.status === 'WON') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Offre en cours d\'activation</button>';
+                            } else if (pr.status === 'CONTACTED' || pr.status === 'NEW') {
                                 btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
                             } else {
                                 btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
