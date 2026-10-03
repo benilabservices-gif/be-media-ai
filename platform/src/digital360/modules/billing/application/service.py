@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -45,8 +45,50 @@ ALLOWED_TRANSITIONS: dict[PurchaseRequestStatus, set[PurchaseRequestStatus]] = {
     S.WON: set(),
     S.LOST: set(),
 }
-# Effet sur la recommandation liée : gagnée = en cours de réalisation, perdue = de nouveau proposée
+# Effet sur les recommandations de l'offre : gagnée = en cours de réalisation, perdue = de nouveau
+# proposées
 PLAN_ITEM_STATUS_ON_CLOSE = {S.WON: PlanItemStatus.IN_PROGRESS, S.LOST: PlanItemStatus.PROPOSED}
+
+
+def _contact_number(
+    channel: ContactChannel, given: str | None, organization: Organization, requester: User
+) -> str | None:
+    """Numéro à rappeler : celui saisi, sinon ceux déjà connus (fiche entreprise puis compte)."""
+    if channel is ContactChannel.EMAIL:
+        return None
+    if channel is ContactChannel.WHATSAPP:
+        known = [organization.whatsapp, organization.phone, requester.phone]
+    else:
+        known = [organization.phone, organization.whatsapp, requester.phone]
+    number = next((candidate for candidate in [given, *known] if candidate), None)
+    if number is None:
+        raise AppError(
+            "CONTACT_NUMBER_REQUIRED",
+            "Indiquez un numéro pour être recontacté.",
+            status=422,
+            errors=[{"field": "contact_number", "reason": "required"}],
+        )
+    return number
+
+
+async def _move_plan_items(
+    session: AsyncSession,
+    organization_id: uuid.UUID,
+    product_code: str,
+    *,
+    from_statuses: set[PlanItemStatus],
+    to: PlanItemStatus,
+) -> None:
+    """Fait avancer ensemble toutes les recommandations de l'entreprise couvertes par l'offre."""
+    await session.execute(
+        update(ActionPlanItem)
+        .where(
+            ActionPlanItem.organization_id == organization_id,
+            ActionPlanItem.product_code == product_code,
+            ActionPlanItem.status.in_([status.value for status in from_statuses]),
+        )
+        .values(status=to.value)
+    )
 
 
 @dataclass(frozen=True)
@@ -59,6 +101,7 @@ class PurchaseRequestView:
     plan_item_id: uuid.UUID | None
     price: dict[str, Any] | None
     channel: str
+    contact_number: str | None
     message: str | None
     status: str
     staff_note: str | None
@@ -86,6 +129,7 @@ def _view(
         plan_item_id=request.plan_item_id,
         price=price,
         channel=request.channel,
+        contact_number=request.contact_number,
         message=request.message,
         status=request.status,
         staff_note=request.staff_note,
@@ -198,6 +242,7 @@ class PurchaseRequestService:
         product_code: str,
         plan_item_id: uuid.UUID | None,
         channel: ContactChannel,
+        contact_number: str | None,
         message: str | None,
     ) -> tuple[PurchaseRequestView, bool]:
         """Renvoie la demande et True si elle vient d'être créée (False : déjà en cours)."""
@@ -223,8 +268,19 @@ class PurchaseRequestService:
                     "Cette offre n'est pas encore proposée dans votre devise."
                 )
 
+            requester = (await session.execute(select(User).where(User.id == user_id))).scalar_one()
+            number = _contact_number(channel, contact_number, organization, requester)
+
             if plan_item_id is not None:
-                await self._accept_plan_item(session, context, plan_item_id, product_code)
+                await self._check_plan_item(session, context, plan_item_id, product_code)
+            # Une offre couvre toutes ses recommandations : elles avancent ensemble
+            await _move_plan_items(
+                session,
+                context.organization_id,
+                product_code,
+                from_statuses={PlanItemStatus.PROPOSED},
+                to=PlanItemStatus.ACCEPTED,
+            )
 
             request = PurchaseRequest(
                 organization_id=context.organization_id,
@@ -235,6 +291,7 @@ class PurchaseRequestService:
                 currency=price.currency.value,
                 period=price.period.value,
                 channel=channel.value,
+                contact_number=number,
                 message=message,
             )
             try:
@@ -324,9 +381,13 @@ class PurchaseRequestService:
                     )
                 request.status = status.value
                 request.handled_by = staff_user_id
-                if request.plan_item_id is not None and status in PLAN_ITEM_STATUS_ON_CLOSE:
-                    await self._set_plan_item_status(
-                        session, request.plan_item_id, PLAN_ITEM_STATUS_ON_CLOSE[status]
+                if status in PLAN_ITEM_STATUS_ON_CLOSE:
+                    await _move_plan_items(
+                        session,
+                        request.organization_id,
+                        request.product_code,
+                        from_statuses={PlanItemStatus.PROPOSED, PlanItemStatus.ACCEPTED},
+                        to=PLAN_ITEM_STATUS_ON_CLOSE[status],
                     )
                 if status is S.WON:
                     await _activate_offer(session, request, staff_user_id)
@@ -362,7 +423,7 @@ class PurchaseRequestService:
         ).scalar_one_or_none()
 
     @staticmethod
-    async def _accept_plan_item(
+    async def _check_plan_item(
         session: AsyncSession, context: TenantContext, item_id: uuid.UUID, product_code: str
     ) -> None:
         item = (
@@ -382,16 +443,6 @@ class PurchaseRequestService:
                 status=422,
                 errors=[{"field": "plan_item_id", "reason": "product_mismatch"}],
             )
-        if item.status == PlanItemStatus.PROPOSED:
-            item.status = PlanItemStatus.ACCEPTED.value
-
-    @staticmethod
-    async def _set_plan_item_status(
-        session: AsyncSession, item_id: uuid.UUID, status: PlanItemStatus
-    ) -> None:
-        item = await session.get(ActionPlanItem, item_id)
-        if item is not None and item.status != PlanItemStatus.DONE:
-            item.status = status.value
 
 
 # ── Alerte à l'équipe commerciale ──
@@ -421,6 +472,7 @@ def _alert_email(view: PurchaseRequestView, recipients: list[str], admin_url: st
         ("Email", view.requested_by_email),
         ("Téléphone", view.requested_by_phone or "—"),
         ("Être recontacté par", CHANNEL_LABELS.get(view.channel, view.channel)),
+        ("Numéro à contacter", view.contact_number or "—"),
         ("Message", view.message or "—"),
     ]
     text = (

@@ -51,6 +51,8 @@ def test_should_create_request_from_recommendation_and_alert_sales(
 ) -> None:
     org = _client_with_diagnostic(api)
     item = _website_item(api, org["id"])
+    run_pending_jobs(http_client)  # file vidée : seules les alertes de ce test restent
+    outbox.sent.clear()
 
     response = _request(api, org["id"], plan_item_id=item["id"], message="Rappelez-moi le matin")
 
@@ -63,11 +65,7 @@ def test_should_create_request_from_recommendation_and_alert_sales(
     assert _website_item(api, org["id"])["status"] == "ACCEPTED"
 
     run_pending_jobs(http_client)
-    [alert] = [
-        m
-        for m in outbox.sent
-        if m.subject.startswith("Demande d'achat") and org["commercial_name"] in m.subject
-    ]
+    [alert] = [m for m in outbox.sent if m.subject.startswith("Demande d'achat")]
     assert alert.to == [SALES]
     assert "89 900 FCFA HT" in alert.text
     assert "Rappelez-moi le matin" in alert.text
@@ -88,7 +86,7 @@ def test_should_price_request_in_currency_of_organization_country(api: ApiClient
     api.register()
     org = api.post("/orgs", {"commercial_name": "Boulangerie Lyon", "country": "FR"}).json()
 
-    body = _request(api, org["id"]).json()
+    body = _request(api, org["id"], channel="EMAIL").json()
 
     assert body["price"]["currency"] == "EUR"
     assert body["price"]["amount"] > 0
@@ -281,3 +279,93 @@ def test_should_record_offer_activation_in_audit_log(
 
     [entry] = entries
     assert entry["new_value"]["entitlements"] == {"WEBSITE": True}
+
+
+# ── Numéro à rappeler ──
+
+
+def test_should_use_known_whatsapp_number_of_organization(api: ApiClient) -> None:
+    org = _client_with_diagnostic(api)  # le diagnostic a renseigné le WhatsApp de l'entreprise
+
+    body = _request(api, org["id"], channel="WHATSAPP").json()
+
+    assert body["contact_number"] == "+2250500000000"
+
+
+def test_should_prefer_number_given_in_request(api: ApiClient) -> None:
+    org = _client_with_diagnostic(api)
+
+    body = _request(api, org["id"], channel="PHONE", contact_number="+2250102030405").json()
+
+    assert body["contact_number"] == "+2250102030405"
+
+
+def test_should_require_a_number_when_none_is_known(api: ApiClient) -> None:
+    api.register()
+    org = api.create_organization()  # ni téléphone ni WhatsApp
+
+    response = _request(api, org["id"], channel="WHATSAPP")
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "CONTACT_NUMBER_REQUIRED"
+    assert _request(api, org["id"], channel="EMAIL").status_code == 201
+
+
+def test_should_refuse_malformed_contact_number(api: ApiClient) -> None:
+    org = _client_with_diagnostic(api)
+
+    response = _request(api, org["id"], channel="PHONE", contact_number="07 00 00 00")
+
+    assert response.status_code == 400
+
+
+def test_should_show_contact_number_to_sales_team_and_in_alert(
+    api: ApiClient,
+    second_api: ApiClient,
+    http_client: TestClient,
+    outbox: RecordingEmailSender,
+    test_database_url: str,
+) -> None:
+    org = _client_with_diagnostic(api)
+    run_pending_jobs(http_client)  # file vidée : seules les alertes de ce test restent
+    outbox.sent.clear()
+    request_id = _request(api, org["id"], channel="WHATSAPP").json()["id"]
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    listed = second_api.get("/admin/purchase-requests?limit=100").json()["data"]
+    run_pending_jobs(http_client)
+
+    assert next(r for r in listed if r["id"] == request_id)["contact_number"] == "+2250500000000"
+    [alert] = [m for m in outbox.sent if m.subject.startswith("Demande d'achat")]
+    assert "Numéro à contacter : +2250500000000" in alert.text
+
+
+# ── Une offre couvre toutes ses recommandations ──
+
+
+def _statuses_for(api: ApiClient, org_id: str, product_code: str) -> set[str]:
+    items = api.get(f"/orgs/{org_id}/action-plan").json()["items"]
+    return {item["status"] for item in items if item["product_code"] == product_code}
+
+
+def test_should_move_every_recommendation_of_the_offer_together(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    growth = [
+        item
+        for item in api.get(f"/orgs/{org['id']}/action-plan").json()["items"]
+        if item["product_code"] == "DIGITAL_GROWTH"
+    ]
+    assert len(growth) >= 2  # sinon le test ne prouve rien
+    request_id = _request(
+        api, org["id"], product_code="DIGITAL_GROWTH", plan_item_id=growth[0]["id"]
+    ).json()["id"]
+
+    assert _statuses_for(api, org["id"], "DIGITAL_GROWTH") == {"ACCEPTED"}
+    assert "PROPOSED" in _statuses_for(api, org["id"], "DIGITAL_START")  # autre offre intacte
+
+    _staff_member(second_api, test_database_url, "MANAGER")
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+
+    assert _statuses_for(api, org["id"], "DIGITAL_GROWTH") == {"IN_PROGRESS"}

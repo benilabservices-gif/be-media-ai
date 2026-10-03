@@ -18,6 +18,7 @@ from digital360.modules.identity.api.dependencies import (
     require_org_permission,
     require_staff_permission,
 )
+from digital360.modules.identity.api.schemas import PhoneNumber
 
 router = APIRouter(tags=["billing"])
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
@@ -40,6 +41,8 @@ class PurchaseRequestCreate(BaseModel):
     # Recommandation du plan d'action à l'origine de la demande (elle passe à ACCEPTED)
     plan_item_id: uuid.UUID | None = None
     channel: ContactChannel
+    # Numéro à rappeler (E.164) ; facultatif si la fiche entreprise ou le compte en a déjà un
+    contact_number: PhoneNumber | None = None
     message: Message | None = None
 
 
@@ -59,6 +62,7 @@ class PurchaseRequestOut(BaseModel):
     plan_item_id: uuid.UUID | None
     price: PriceOut | None
     channel: ContactChannel
+    contact_number: str | None
     message: str | None
     status: PurchaseRequestStatus
     created_at: datetime
@@ -116,6 +120,7 @@ async def create_purchase_request(
         product_code=body.product_code,
         plan_item_id=body.plan_item_id,
         channel=body.channel,
+        contact_number=body.contact_number,
         message=body.message or None,
     )
     if not created:

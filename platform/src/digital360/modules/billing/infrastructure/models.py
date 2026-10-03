@@ -69,6 +69,8 @@ class PurchaseRequest(Base):
     currency: Mapped[str] = mapped_column(String(3))
     period: Mapped[str | None] = mapped_column(String(8))
     channel: Mapped[str] = mapped_column(String(16))
+    # Numéro à rappeler (WhatsApp ou téléphone), figé à la demande ; vide pour EMAIL
+    contact_number: Mapped[str | None] = mapped_column(String(32))
     message: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(16), server_default=PurchaseRequestStatus.NEW)
     staff_note: Mapped[str | None] = mapped_column(Text)
