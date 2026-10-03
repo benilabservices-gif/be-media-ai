@@ -60,6 +60,7 @@
         .btn-revoke{background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;cursor:pointer;transition:var(--transition)}
         .btn-revoke:hover{border-color:var(--error);color:var(--error)}
         .btn-revoke:disabled{opacity:0.3;cursor:not-allowed}
+        .kpi-section-title{font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin:2rem 0 0.75rem}
         .btn-loadmore{margin-top:1rem;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px 20px;border-radius:var(--radius-md);font-size:12px;cursor:pointer;transition:var(--transition)}
         .btn-loadmore:hover{border-color:var(--accent);color:var(--accent)}
     </style>
@@ -114,20 +115,27 @@
                     <div id="dashboardLoading" class="loading-row">Chargement des indicateurs…</div>
                     <div id="dashboardError" class="error-row" style="display:none;"></div>
                     <div id="dashboardContent" style="display:none;">
+                        <h2 class="kpi-section-title">Ventes</h2>
                         <div class="kpi-grid reveal">
-                            <div class="kpi-card"><div class="kpi-value" id="kpiDiagnosticsInProgress">—</div><div class="kpi-label">Diagnostics en cours</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesNew" style="color:var(--warning);">—</div><div class="kpi-label">Demandes à traiter</div><div class="kpi-sub">Nouvelles, personne n'a encore rappelé</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesContacted">—</div><div class="kpi-label">En discussion</div><div class="kpi-sub">Client contacté, vente pas encore conclue</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesWon" style="color:var(--success);">—</div><div class="kpi-label">Ventes gagnées</div><div class="kpi-sub" id="kpiSalesWonSub"></div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesWinRate">—</div><div class="kpi-label">Taux de transformation</div><div class="kpi-sub">Ventes gagnées / demandes closes</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiRevenue30" style="font-size:1.4rem;">—</div><div class="kpi-label">Chiffre d'affaires, 30 jours</div><div class="kpi-sub" id="kpiRevenueTotal"></div></div>
+                        </div>
+                        <h2 class="kpi-section-title">Acquisition</h2>
+                        <div class="kpi-grid reveal delay-1">
                             <div class="kpi-card"><div class="kpi-value" id="kpiDiagnosticsNotClaimed" style="color:var(--warning);">—</div><div class="kpi-label">Prospects à relancer</div><div class="kpi-sub">Diagnostic terminé, pas de compte</div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiDiagnosticsClaimed">—</div><div class="kpi-label">Diagnostics rattachés</div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiConversionRate">—</div><div class="kpi-label">Taux de conversion</div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiAvgScore">—</div><div class="kpi-label">Score moyen</div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiOrgsByStatus">—</div><div class="kpi-label">Organisations</div><div class="kpi-sub" id="kpiOrgSub"></div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiUsersTotal">—</div><div class="kpi-label">Utilisateurs total</div></div>
-                             <div class="kpi-card"><div class="kpi-value" id="kpiUsersLast7">—</div><div class="kpi-label">Créés cette semaine</div></div>
-                             <div class="kpi-card"><div class="kpi-value" id="kpiPendingRequests" style="color:var(--warning);">—</div><div class="kpi-label">Demandes à traiter</div><div class="kpi-sub">Nouvelles demandes d'achat</div></div>
-                         </div>
-                        <div class="kpi-grid reveal delay-1" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
-                            <div class="kpi-card"><div class="kpi-value" id="kpiDiag24h" style="font-size:1.5rem;">—</div><div class="kpi-label">Complétés — 24h</div></div>
-                            <div class="kpi-card"><div class="kpi-value" id="kpiDiag7d" style="font-size:1.5rem;">—</div><div class="kpi-label">Complétés — 7 jours</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiDiagnosticsInProgress">—</div><div class="kpi-label">Diagnostics en cours</div><div class="kpi-sub">Commencés, pas encore terminés</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiDiag7d">—</div><div class="kpi-label">Diagnostics terminés, 7 jours</div><div class="kpi-sub" id="kpiDiag24h"></div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiConversionRate">—</div><div class="kpi-label">Diagnostic → compte</div><div class="kpi-sub" id="kpiDiagnosticsClaimed"></div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiAvgScore">—</div><div class="kpi-label">Digital Score moyen</div><div class="kpi-sub">Sur 100</div></div>
+                        </div>
+                        <h2 class="kpi-section-title">Base clients</h2>
+                        <div class="kpi-grid reveal delay-1">
+                            <div class="kpi-card"><div class="kpi-value" id="kpiOrgsActive" style="color:var(--success);">—</div><div class="kpi-label">Clients actifs</div><div class="kpi-sub">Au moins une offre achetée</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiOrgsLead">—</div><div class="kpi-label">Entreprises prospects</div><div class="kpi-sub">Inscrites, pas encore clientes</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiUsersTotal">—</div><div class="kpi-label">Comptes</div><div class="kpi-sub" id="kpiUsersLast7"></div></div>
                         </div>
                     </div>
                 </div>
@@ -443,28 +451,35 @@
             const orgs = data.organizations_by_status || {};
             const users = data.users || {};
 
+            const sales = data.sales || {};
             const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+            const percent = rate => rate != null ? (rate * 100).toFixed(1).replace('.', ',') + ' %' : '—';
+            // Une ligne par devise : on n'additionne jamais des FCFA et des euros
+            const revenue = (key) => (sales.revenue || [])
+                .filter(entry => entry[key] > 0)
+                .map(entry => formatPriceAdmin({ amount: entry[key], currency: entry.currency, period: 'NONE' }))
+                .join(' + ') || '0';
 
-            el('kpiDiagnosticsInProgress', diag.in_progress ?? '—');
+            el('kpiSalesNew', sales.new ?? '—');
+            el('kpiSalesContacted', sales.contacted ?? '—');
+            el('kpiSalesWon', sales.won ?? '—');
+            el('kpiSalesWonSub', sales.won_last_30_days != null ? sales.won_last_30_days + ' sur les 30 derniers jours' : '');
+            el('kpiSalesWinRate', percent(sales.win_rate));
+            el('kpiRevenue30', revenue('last_30_days'));
+            el('kpiRevenueTotal', 'Depuis le début : ' + revenue('total'));
+
             el('kpiDiagnosticsNotClaimed', diag.completed_not_claimed ?? '—');
-            el('kpiDiagnosticsClaimed', diag.claimed ?? '—');
-            el('kpiConversionRate', diag.conversion_rate != null ? (diag.conversion_rate * 100).toFixed(1).replace('.', ',') + ' %' : '—');
+            el('kpiDiagnosticsInProgress', diag.in_progress ?? '—');
+            el('kpiDiag7d', diag.completed_last_7_days ?? '—');
+            el('kpiDiag24h', diag.completed_last_24h != null ? diag.completed_last_24h + ' dans les dernières 24 h' : '');
+            el('kpiConversionRate', percent(diag.conversion_rate));
+            el('kpiDiagnosticsClaimed', diag.claimed != null ? diag.claimed + ' diagnostics devenus un compte' : '');
             el('kpiAvgScore', diag.average_score != null ? diag.average_score.toFixed(1).replace('.', ',') : '—');
 
-            const leadCount = orgs.LEAD ?? 0;
-            const activeCount = orgs.ACTIVE ?? 0;
-            el('kpiOrgsByStatus', activeCount + leadCount);
-            el('kpiOrgSub', 'Lead: ' + leadCount + ' · Actif: ' + activeCount);
-
+            el('kpiOrgsActive', orgs.ACTIVE ?? 0);
+            el('kpiOrgsLead', orgs.LEAD ?? 0);
             el('kpiUsersTotal', users.total ?? '—');
-            el('kpiUsersLast7', users.created_last_7_days ?? '—');
-            el('kpiDiag24h', diag.completed_last_24h ?? '—');
-            el('kpiDiag7d', diag.completed_last_7_days ?? '—');
-            // Pending purchase requests (NEW count) — loaded separately since /admin/dashboard doesn't expose it
-            try {
-                const prData = await apiFetch('/admin/purchase-requests?status=NEW');
-                el('kpiPendingRequests', (prData?.data || []).length);
-            } catch (_) { el('kpiPendingRequests', '—'); }
+            el('kpiUsersLast7', users.created_last_7_days != null ? users.created_last_7_days + ' créés cette semaine' : '');
 
             setStatus('dashboardLoading', 'dashboardError', 'dashboardContent', null, false, false, false);
         } catch (e) {
