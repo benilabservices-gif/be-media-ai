@@ -841,6 +841,7 @@
         mainDiv.appendChild(entSection);
 
         container.appendChild(mainDiv);
+        if ((_me?.staff_permissions || []).includes('order:create')) container.appendChild(directSaleCard(org));
     }
 
     // ── Diagnostics (Prospects) ──
@@ -1224,6 +1225,12 @@
         statusBadge.className = 'badge ' + ({ NEW: 'badge-warning', CONTACTED: 'badge-info', WON: 'badge-success', LOST: 'badge-muted' }[req.status] || 'badge-muted');
         statusBadge.textContent = { NEW: 'Nouvelle', CONTACTED: 'Contactée', WON: 'Gagnée', LOST: 'Perdue' }[req.status] || req.status;
         tdStatus.appendChild(statusBadge);
+        if (req.payment) {
+            const paid = document.createElement('div');
+            paid.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:4px;';
+            paid.textContent = paymentSummary(req.payment);
+            tdStatus.appendChild(paid);
+        }
         tr.appendChild(tdStatus);
 
         const tdNote = document.createElement('td');
@@ -1278,23 +1285,16 @@
             wonBtn.className = 'btn-revoke';
             wonBtn.style.cssText = 'border-color:var(--success);color:var(--success);margin-left:4px;';
             wonBtn.textContent = 'Gagnée';
-            wonBtn.onclick = async () => {
-                // « Gagnée » active l'offre chez le client : on ne le fait qu'une fois le paiement reçu
-                const offer = req.product_name || req.product_code;
-                if (!confirm('Le paiement de « ' + offer + ' » a-t-il bien été reçu ?\n\nL\'offre sera activée immédiatement dans l\'espace de ' + (req.organization_name || 'ce client') + '.')) return;
-                try {
-                    showD360Loading();
-                    await apiFetch('/admin/purchase-requests/' + req.id, {
-                        method: 'PATCH',
-                        body: { status: 'WON' },
-                    });
+            wonBtn.onclick = () => openPaymentDialog({
+                title: 'Paiement reçu : ' + (req.product_name || req.product_code),
+                subtitle: (req.organization_name || 'Ce client') + " : l'offre sera activée immédiatement et un reçu lui sera envoyé.",
+                priceLabel: req.price ? formatPriceAdmin(req.price) : '',
+                currency: req.price?.currency,
+                onConfirm: async payment => {
+                    await apiFetch('/admin/purchase-requests/' + req.id, { method: 'PATCH', body: { status: 'WON', payment } });
                     loadPurchaseRequests(false);
-                } catch (e) {
-                    alert('Erreur : ' + (e.detail || e.message));
-                } finally {
-                    hideD360Loading();
-                }
-            };
+                },
+            });
             tdActions.appendChild(wonBtn);
 
             const lostBtn = document.createElement('button');
@@ -1328,6 +1328,128 @@
         const cur = typeof priceObj === 'object' ? (priceObj.currency || 'XOF') : 'XOF';
         if (cur === 'EUR') return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt / 100) + ' € HT';
         return new Intl.NumberFormat('fr-FR').format(amt) + ' FCFA HT';
+    }
+
+    // ── Paiement manuel : saisie de l'encaissement (Gagnée, vente directe) ──
+    const PAYMENT_METHODS = [
+        ['ORANGE_MONEY', 'Orange Money'], ['MTN_MOMO', 'MTN Mobile Money'], ['MOOV_MONEY', 'Moov Money'],
+        ['WAVE', 'Wave'], ['BANK_TRANSFER', 'Virement bancaire'], ['CASH', 'Espèces'],
+    ];
+    const PAYMENT_METHOD_LABELS = Object.fromEntries(PAYMENT_METHODS);
+
+    // Fenêtre de saisie ; `onConfirm(payment)` renvoie une promesse, l'erreur s'affiche dans la fenêtre
+    function openPaymentDialog({ title, subtitle, priceLabel, currency, extraField, onConfirm, allowAmount = true }) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,10,15,0.75);display:flex;align-items:center;justify-content:center;padding:1rem;';
+        const box = document.createElement('div');
+        box.className = 'card';
+        box.style.cssText = 'max-width:460px;width:100%;';
+        overlay.appendChild(box);
+        const add = (tag, text, css) => { const el = document.createElement(tag); if (text) el.textContent = text; if (css) el.style.cssText = css; box.appendChild(el); return el; };
+        const labelled = (label, input) => {
+            const wrap = add('div', '', 'margin-bottom:0.9rem;');
+            const l = document.createElement('div'); l.textContent = label; l.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:4px;';
+            wrap.appendChild(l); wrap.appendChild(input); return input;
+        };
+        const input = (attrs = {}) => { const el = document.createElement('input'); el.className = 'filter-input'; el.style.width = '100%'; Object.assign(el, attrs); return el; };
+
+        add('h3', title, 'margin-bottom:0.25rem;');
+        if (subtitle) add('p', subtitle, 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;');
+        const extra = extraField ? extraField(labelled) : null;
+        const method = document.createElement('select');
+        method.className = 'filter-input';
+        method.style.width = '100%';
+        PAYMENT_METHODS.forEach(([value, label]) => { const o = document.createElement('option'); o.value = value; o.textContent = label; method.appendChild(o); });
+        labelled('Moyen de paiement', method);
+        const reference = labelled('Référence de la transaction (obligatoire sauf espèces)', input({ placeholder: 'Ex. OM-251003-7781', maxLength: 100 }));
+        const amount = !allowAmount ? { value: '' } : labelled('Montant reçu' + (currency ? ' (' + (currency === 'EUR' ? '€' : 'FCFA') + ', HT)' : ''),
+            input({ type: 'number', min: '0', step: currency === 'EUR' ? '0.01' : '1', placeholder: priceLabel ? 'Laisser vide : ' + priceLabel : 'Laisser vide : prix de l\'offre' }));
+        const received = labelled('Date du paiement', input({ type: 'date', value: new Date().toISOString().slice(0, 10) }));
+        const message = add('div', '', 'font-size:13px;color:var(--error);min-height:18px;margin-bottom:0.5rem;');
+        const buttons = add('div', '', 'display:flex;gap:0.75rem;justify-content:flex-end;');
+        const cancel = document.createElement('button'); cancel.className = 'btn btn-ghost btn-sm'; cancel.textContent = 'Annuler';
+        const confirmBtn = document.createElement('button'); confirmBtn.className = 'btn btn-primary btn-sm'; confirmBtn.textContent = 'Paiement reçu : activer l\'offre';
+        buttons.appendChild(cancel); buttons.appendChild(confirmBtn);
+        cancel.onclick = () => overlay.remove();
+        confirmBtn.onclick = async () => {
+            message.textContent = '';
+            const ref = reference.value.trim();
+            if (method.value !== 'CASH' && !ref) { message.textContent = 'Indiquez la référence de la transaction.'; return; }
+            const payment = { method: method.value, received_on: received.value || undefined };
+            if (ref) payment.reference = ref;
+            if (amount.value !== '') {
+                const value = Number(amount.value);
+                if (!(value >= 0)) { message.textContent = 'Montant invalide.'; return; }
+                // L'API attend l'unité mineure : centimes pour l'euro, francs pour le FCFA
+                payment.amount = currency === 'EUR' ? Math.round(value * 100) : Math.round(value);
+            }
+            confirmBtn.disabled = true;
+            try {
+                await onConfirm(payment, extra);
+                overlay.remove();
+            } catch (e) {
+                message.textContent = (e.detail || e.message) + ((e.errors || []).length ? ' (' + e.errors.map(x => x.field || x.reason).join(', ') + ')' : '');
+                confirmBtn.disabled = false;
+            }
+        };
+        document.body.appendChild(overlay);
+        reference.focus();
+    }
+
+    function paymentSummary(payment) {
+        if (!payment) return '';
+        return (PAYMENT_METHOD_LABELS[payment.method] || payment.method) + ' · ' + formatPriceAdmin(payment)
+            + (payment.reference ? ' · ' + payment.reference : '');
+    }
+
+    let _catalogProducts = null;
+    async function catalogProducts() {
+        if (!_catalogProducts) {
+            const data = await apiFetch('/public/catalog');
+            _catalogProducts = (data.products || []).filter(p => p.available !== false);
+        }
+        return _catalogProducts;
+    }
+
+    // Fiche entreprise : vente encaissée sans demande préalable du client
+    function directSaleCard(org) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginTop = '1.5rem';
+        const title = document.createElement('h3');
+        title.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;';
+        title.textContent = 'Enregistrer une vente';
+        const help = document.createElement('p');
+        help.style.cssText = 'font-size:13px;color:var(--text-muted);margin-bottom:0.75rem;';
+        help.textContent = "Le client a payé sans passer par « Je veux démarrer » (téléphone, agence) : l'offre est activée et un reçu lui est envoyé.";
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-sm';
+        btn.textContent = 'Enregistrer une vente';
+        btn.onclick = async () => {
+            let products;
+            try { products = await catalogProducts(); } catch (e) { alert('Catalogue indisponible : ' + (e.detail || e.message)); return; }
+            openPaymentDialog({
+                title: 'Vente pour ' + (org.commercial_name || 'ce client'),
+                subtitle: "Le prix de l'offre, dans la devise du client, est enregistré comme montant reçu.",
+                allowAmount: false,
+                extraField: labelled => {
+                    const select = document.createElement('select');
+                    select.className = 'filter-input';
+                    select.style.width = '100%';
+                    products.forEach(p => { const o = document.createElement('option'); o.value = p.code; o.textContent = p.name + (p.price ? ' — ' + formatPriceAdmin(p.price) : ''); select.appendChild(o); });
+                    return labelled('Offre vendue', select);
+                },
+                onConfirm: async (payment, select) => {
+                    await apiFetch('/admin/organizations/' + org.id + '/sales', { method: 'POST', body: { product_code: select.value, payment } });
+                    alert('Vente enregistrée : offre activée et reçu envoyé au client.');
+                    openOrgDetail(org.id);
+                },
+            });
+        };
+        card.appendChild(title);
+        card.appendChild(help);
+        card.appendChild(btn);
+        return card;
     }
 
     // ── Projets de site (Digital Start) ──
