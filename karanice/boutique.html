@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boutique — Kara Nice Savonnerie</title>
+    <meta name="description" content="Boutique Kara Nice : savons artisanaux, beurres capillaires, huiles naturelles. Fait main au Bénin.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/landing.css">
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+
+    <!-- ═══════════════ NAVIGATION ═══════════════ -->
+    <nav class="kn-nav" id="mainNav">
+        <a href="index.html" class="kn-logo">
+            KARA <em>Nice</em>
+        </a>
+        <ul class="kn-nav-links">
+            <li><a href="index.html#about" data-scroll>Notre histoire</a></li>
+            <li><a href="index.html#produits" data-scroll>Produits</a></li>
+            <li><a href="index.html#actualites" data-scroll>Actualités</a></li>
+            <li><a href="index.html#formations" data-scroll>Formations</a></li>
+            <li><a href="index.html#contact" data-scroll>Contact</a></li>
+            <li>
+                <button class="kn-cart-btn" id="cartBtn" onclick="toggleCart()">
+                    🛒
+                    <span class="kn-cart-count" id="cartCount">0</span>
+                </button>
+            </li>
+            <li><a href="index.html" class="btn btn-ghost btn-sm">← Accueil</a></li>
+        </ul>
+        <button class="kn-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="kn-mobile-menu" id="mobileMenu">
+        <button class="modal-close" onclick="toggleMobileMenu()">✕</button>
+        <a href="index.html#about" onclick="toggleMobileMenu(); return false;">Notre histoire</a>
+        <a href="index.html#produits" onclick="toggleMobileMenu(); return false;">Produits</a>
+        <a href="index.html#actualites" onclick="toggleMobileMenu(); return false;">Actualités</a>
+        <a href="index.html#formations" onclick="toggleMobileMenu(); return false;">Formations</a>
+        <a href="index.html#contact" onclick="toggleMobileMenu(); return false;">Contact</a>
+    </div>
+
+    <!-- ═══════════════ BOUTIQUE PAGE ═══════════════ -->
+    <div style="padding-top:80px; min-height:100vh; background:var(--bg-primary);">
+
+        <div class="kn-shop-header">
+            <div class="reveal">
+                <div class="section-label" style="justify-content:center;">Boutique</div>
+                <h1 class="section-title" style="font-size:clamp(2rem,4vw,3rem);">Tous nos <span style="color:var(--accent);font-style:italic;">produits</span></h1>
+                <p class="section-sub" style="margin:0.75rem auto 0; text-align:center;">Des soins 100% naturels, fabriqués main au Bénin. Livraison partout au pays.</p>
+            </div>
+            <div class="kn-shop-categories reveal delay-1" style="margin-top:2rem;">
+                <button class="kn-cat-btn active" data-cat="all" onclick="filterProducts('all')">Tout</button>
+                <button class="kn-cat-btn" data-cat="savon" onclick="filterProducts('savon')">Savons</button>
+                <button class="kn-cat-btn" data-cat="soin" onclick="filterProducts('soin')">Soins</button>
+                <button class="kn-cat-btn" data-cat="huile" onclick="filterProducts('huile')">Huiles</button>
+                <button class="kn-cat-btn" data-cat="coffret" onclick="filterProducts('coffret')">Coffrets</button>
+            </div>
+        </div>
+
+        <div class="container" style="padding:0 6vw;">
+            <div class="kn-shop-grid" id="shopGrid">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="kn-footer" style="margin-top:4rem;">
+            <div class="kn-footer-bottom" style="max-width:100%;">
+                <span>© 2026 Kara Nice Academy & PLUS — Abomey-Calavi, Bénin</span>
+                <div class="kn-footer-socials">
+                    <a href="https://www.tiktok.com/@karanicenice" target="_blank" title="TikTok">🎵</a>
+                    <a href="https://www.instagram.com/kara_nice_academy/" target="_blank" title="Instagram">📸</a>
+                    <a href="https://www.facebook.com/karanice.shop" target="_blank" title="Facebook">📘</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ═══════════════ CART DRAWER ═══════════════ -->
+    <div class="kn-cart-overlay" id="cartOverlay">
+        <div class="kn-cart-backdrop" onclick="toggleCart()"></div>
+        <div class="kn-cart-drawer">
+            <div class="kn-cart-header">
+                <h2>Votre panier</h2>
+                <button class="kn-cart-close" onclick="toggleCart()">✕</button>
+            </div>
+            <div class="kn-cart-items" id="cartItems">
+                <!-- Rendered dynamically -->
+            </div>
+            <div class="kn-cart-footer" id="cartFooter">
+                <div class="kn-cart-total">
+                    <span class="kn-cart-total-label">Total</span>
+                    <span class="kn-cart-total-value" id="cartTotal">0 FCFA</span>
+                </div>
+                <button class="kn-cart-checkout" id="checkoutBtn" onclick="openCheckout()">Passer commande</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CHECKOUT MODAL ═══════════════ -->
+    <div class="kn-modal" id="checkoutModal">
+        <div class="kn-modal-backdrop" onclick="closeCheckout()"></div>
+        <div class="kn-modal-content">
+            <button class="kn-modal-close" onclick="closeCheckout()">✕</button>
+            <div id="checkoutForm">
+                <h2>Finaliser votre commande</h2>
+                <p>Remplissez vos informations et choisissez votre moyen de paiement.</p>
+
+                <div class="kn-form-group">
+                    <label>Nom complet *</label>
+                    <input type="text" id="checkName" placeholder="Votre nom complet" required>
+                </div>
+                <div class="kn-form-group">
+                    <label>Téléphone / WhatsApp *</label>
+                    <input type="tel" id="checkPhone" placeholder="+229 XX XX XX XX" required>
+                </div>
+                <div class="kn-form-group">
+                    <label>Ville de livraison *</label>
+                    <select id="checkCity">
+                        <option value="">Sélectionnez votre ville</option>
+                        <option value="cotonou">Cotonou</option>
+                        <option value="abomey-calavi">Abomey-Calavi</option>
+                        <option value="porto-novo">Porto-Novo</option>
+                        <option value="boyce">Bohicon</option>
+                        <option value="natitingou">Natitingou</option>
+                        <option value="loungo">Lokossa</option>
+                        <option value="autre">Autre ville</option>
+                    </select>
+                </div>
+                <div class="kn-form-group">
+                    <label>Adresse de livraison</label>
+                    <input type="text" id="checkAddress" placeholder="Quartier, repère...">
+                </div>
+                <div class="kn-form-group">
+                    <label>Notes (optionnel)</label>
+                    <textarea id="checkNotes" placeholder="Message ou demande spéciale..."></textarea>
+                </div>
+
+                <label style="font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:0.75rem;display:block;">Moyen de paiement</label>
+                <div class="kn-payment-options">
+                    <label class="kn-payment-option selected" onclick="selectPayment(this, 'cod')">
+                        <input type="radio" name="payment" value="cod" checked>
+                        <div class="kn-payment-radio"></div>
+                        <div class="kn-payment-info">
+                            <div class="kn-payment-name">💵 Paiement à la livraison</div>
+                            <div class="kn-payment-desc">Payez en espèces à la réception de votre commande</div>
+                        </div>
+                    </label>
+                    <label class="kn-payment-option" onclick="selectPayment(this, 'moov')">
+                        <input type="radio" name="payment" value="moov">
+                        <div class="kn-payment-radio"></div>
+                        <div class="kn-payment-info">
+                            <div class="kn-payment-name">📱 Moov Money</div>
+                            <div class="kn-payment-desc">Paiement mobile via Moov Africa</div>
+                        </div>
+                    </label>
+                    <label class="kn-payment-option" onclick="selectPayment(this, 'mtncel')">
+                        <input type="radio" name="payment" value="mtncel">
+                        <div class="kn-payment-radio"></div>
+                        <div class="kn-payment-info">
+                            <div class="kn-payment-name">📱 MTN/CeltiPlus</div>
+                            <div class="kn-payment-desc">Paiement mobile via MTN ou CeltiPlus</div>
+                        </div>
+                    </label>
+                    <label class="kn-payment-option" onclick="selectPayment(this, 'wave')">
+                        <input type="radio" name="payment" value="wave">
+                        <div class="kn-payment-radio"></div>
+                        <div class="kn-payment-info">
+                            <div class="kn-payment-name">🌊 Wave</div>
+                            <div class="kn-payment-desc">Transfert via Wave</div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="kn-order-total">
+                    <span class="kn-order-total-label">Total à payer</span>
+                    <span class="kn-order-total-value" id="orderTotal">0 FCFA</span>
+                </div>
+
+                <button class="kn-checkout-btn" id="submitOrderBtn" onclick="submitOrder()">
+                    Confirmer ma commande
+                </button>
+            </div>
+
+            <div id="checkoutSuccess" class="hidden">
+                <div class="kn-checkout-success">
+                    <div class="kn-checkout-success-icon">✅</div>
+                    <h3>Commande reçue !</h3>
+                    <p>Merci pour votre commande <strong>Kara Nice</strong>.<br>
+                    Nous vous contacterons sous peu par WhatsApp pour confirmer la livraison.<br><br>
+                    À très bientôt ! 🧼</p>
+                    <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="closeCheckout(); window.location.href='index.html';">
+                        Retour à l'accueil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ TOAST ═══════════════ -->
+    <div class="kn-toast" id="toast">
+        <span class="kn-toast-icon" id="toastIcon">✓</span>
+        <span class="kn-toast-msg" id="toastMsg">Produit ajouté au panier</span>
+    </div>
+
+    <!-- ═══════════════ WHATSAPP FLOAT ═══════════════ -->
+    <a href="https://wa.me/22900000000?text=Bonjour%2C%20je%20souhaite%20commander%20sur%20la%20boutique%20Kara%20Nice"
+       target="_blank"
+       class="kn-whatsapp-float"
+       title="Contactez-nous sur WhatsApp">
+        💬
+    </a>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Boutique-only: always show shop grid
+        document.addEventListener('DOMContentLoaded', () => {
+            renderShopGrid('all');
+            initRevealObserver();
+            initScrollNav();
+        });
+    </script>
+</body>
+</html>
