@@ -1080,6 +1080,37 @@
         "title": "DiagnosticSummaryOut",
         "type": "object"
       },
+      "DirectSaleIn": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "payment": {
+            "$ref": "#/components/schemas/PaymentIn"
+          },
+          "product_code": {
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Product Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_code",
+          "payment"
+        ],
+        "title": "DirectSaleIn",
+        "type": "object"
+      },
       "EntitlementList": {
         "properties": {
           "entitlements": {
@@ -2285,6 +2316,112 @@
         "title": "PasswordResetRequest",
         "type": "object"
       },
+      "PaymentIn": {
+        "description": "Encaissement reçu hors plateforme (mobile money, virement, espèces).",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received On"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "method"
+        ],
+        "title": "PaymentIn",
+        "type": "object"
+      },
+      "PaymentMethod": {
+        "enum": [
+          "ORANGE_MONEY",
+          "MTN_MOMO",
+          "MOOV_MONEY",
+          "WAVE",
+          "BANK_TRANSFER",
+          "CASH"
+        ],
+        "title": "PaymentMethod",
+        "type": "string"
+      },
+      "PaymentOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "received_on": {
+            "format": "date",
+            "title": "Received On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "method",
+          "channel",
+          "reference",
+          "received_on"
+        ],
+        "title": "PaymentOut",
+        "type": "object"
+      },
       "Permission": {
         "enum": [
           "organization:read",
@@ -2878,6 +3015,16 @@
       },
       "PurchaseRequestUpdate": {
         "properties": {
+          "payment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "staff_note": {
             "anyOf": [
               {
@@ -3420,6 +3567,16 @@
             "title": "Organization Name",
             "type": "string"
           },
+          "payment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "plan_item_id": {
             "anyOf": [
               {
@@ -3503,6 +3660,7 @@
           "status",
           "created_at",
           "updated_at",
+          "payment",
           "staff_note",
           "requested_by_name",
           "requested_by_email",
@@ -4456,6 +4614,60 @@
           }
         },
         "summary": "Get Organization Overview",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organization_id}/sales": {
+      "post": {
+        "description": "Vente encaissée hors plateforme pour un client qui n'a pas fait de demande.",
+        "operationId": "admin_direct_sale_api_v1_admin_organizations__organization_id__sales_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectSaleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPurchaseRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Direct Sale",
         "tags": [
           "admin"
         ]

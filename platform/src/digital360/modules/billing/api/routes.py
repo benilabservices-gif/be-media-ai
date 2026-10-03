@@ -1,18 +1,23 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response, status
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from digital360.core.csrf import require_csrf
 from digital360.core.pagination import PageInfo, PageParams, page_params
 from digital360.core.permissions import Permission, Principal
 from digital360.modules.billing.application.service import (
+    PaymentInput,
     PurchaseRequestService,
     PurchaseRequestView,
 )
-from digital360.modules.billing.infrastructure.models import ContactChannel, PurchaseRequestStatus
+from digital360.modules.billing.infrastructure.models import (
+    ContactChannel,
+    PaymentMethod,
+    PurchaseRequestStatus,
+)
 from digital360.modules.identity.api.dependencies import (
     OrganizationAccess,
     require_org_permission,
@@ -69,7 +74,17 @@ class PurchaseRequestOut(BaseModel):
     updated_at: datetime
 
 
+class PaymentOut(BaseModel):
+    amount: int
+    currency: str
+    method: PaymentMethod
+    channel: str
+    reference: str | None
+    received_on: date
+
+
 class StaffPurchaseRequestOut(PurchaseRequestOut):
+    payment: PaymentOut | None
     staff_note: str | None
     requested_by_name: str
     requested_by_email: str
@@ -85,12 +100,48 @@ class StaffPurchaseRequestPage(BaseModel):
     page: PageInfo
 
 
+class PaymentIn(BaseModel):
+    """Encaissement reçu hors plateforme (mobile money, virement, espèces)."""
+
+    method: PaymentMethod
+    # Montant réellement reçu, HT, en unité mineure (FCFA ; centimes pour l'euro).
+    # Facultatif : sans montant, c'est le prix de l'offre qui est enregistré.
+    amount: Annotated[int, Field(ge=0)] | None = None
+    # Identifiant de la transaction : obligatoire sauf pour les espèces
+    reference: Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)] | None = (
+        None
+    )
+    received_on: date | None = None
+
+    @model_validator(mode="after")
+    def _reference_unless_cash(self) -> "PaymentIn":
+        if self.method is not PaymentMethod.CASH and not self.reference:
+            raise ValueError("référence de la transaction obligatoire (sauf espèces)")
+        return self
+
+    def to_input(self) -> PaymentInput:
+        return PaymentInput(
+            method=self.method,
+            amount=self.amount,
+            reference=self.reference or None,
+            received_on=self.received_on or date.today(),
+        )
+
+
 class PurchaseRequestUpdate(BaseModel):
     status: PurchaseRequestStatus | None = None
+    # Obligatoire pour passer à WON : le paiement est enregistré et un reçu part au client
+    payment: PaymentIn | None = None
     # Chaîne vide pour effacer la note
     staff_note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = (
         None
     )
+
+
+class DirectSaleIn(BaseModel):
+    product_code: ProductCode
+    payment: PaymentIn
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = None
 
 
 def _client_out(view: PurchaseRequestView) -> PurchaseRequestOut:
@@ -163,5 +214,26 @@ async def admin_update_purchase_request(
         principal.user_id,
         status=body.status,
         staff_note=body.staff_note,
+        payment=body.payment.to_input() if body.payment else None,
+    )
+    return _staff_out(view)
+
+
+@admin_router.post(
+    "/organizations/{organization_id}/sales",
+    status_code=status.HTTP_201_CREATED,
+    response_model=StaffPurchaseRequestOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_direct_sale(
+    organization_id: uuid.UUID, body: DirectSaleIn, principal: StaffSales, service: Service
+) -> StaffPurchaseRequestOut:
+    """Vente encaissée hors plateforme pour un client qui n'a pas fait de demande."""
+    view = await service.admin_direct_sale(
+        organization_id,
+        principal.user_id,
+        product_code=body.product_code,
+        payment=body.payment.to_input(),
+        note=body.note or None,
     )
     return _staff_out(view)

@@ -8,7 +8,7 @@ son pays et prévient l'équipe commerciale. L'équipe encaisse hors ligne, pass
 import html
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select, update
@@ -21,17 +21,21 @@ from digital360.core.email import EmailMessage, EmailSender
 from digital360.core.errors import AppError
 from digital360.core.jobs import JobRegistry, publish
 from digital360.core.pagination import PageInfo, PageParams, build_page_info
+from digital360.core.permissions import ClientRole
 from digital360.core.tenancy import TenantContext, staff_transaction, tenant_transaction
 from digital360.modules.billing.infrastructure.models import (
     OPEN_STATUSES,
     ContactChannel,
+    Payment,
+    PaymentChannel,
+    PaymentMethod,
     PurchaseRequest,
     PurchaseRequestStatus,
 )
 from digital360.modules.catalog.application.service import current_catalog
 from digital360.modules.catalog.infrastructure.models import EntitlementOverride
 from digital360.modules.diagnostics.infrastructure.models import ActionPlanItem, PlanItemStatus
-from digital360.modules.identity.infrastructure.models import User
+from digital360.modules.identity.infrastructure.models import Membership, MembershipStatus, User
 from digital360.modules.organizations.infrastructure.models import (
     Organization,
     OrganizationStatus,
@@ -39,8 +43,11 @@ from digital360.modules.organizations.infrastructure.models import (
 
 PURCHASE_REQUEST_CREATED_EVENT = "purchase_request.created"
 ALERT_SALES_JOB = "billing.alert_sales_purchase_request"
+SEND_RECEIPT_JOB = "billing.send_payment_receipt"
 # Vente gagnée : les modules de livraison (projets) s'y abonnent
 PURCHASE_REQUEST_WON_EVENT = "purchase_request.won"
+# Paiement enregistré (manuel ou en ligne) : envoi du reçu au client
+PAYMENT_RECORDED_EVENT = "payment.recorded"
 
 S = PurchaseRequestStatus
 # Traitement par l'équipe : WON et LOST sont définitifs (une nouvelle demande reste possible)
@@ -115,10 +122,29 @@ class PurchaseRequestView:
     requested_by_phone: str | None
     created_at: datetime
     updated_at: datetime
+    # Encaissement de la vente gagnée : {amount, currency, method, reference, received_on}
+    payment: dict[str, Any] | None = None
+
+
+def _payment_payload(payment: Payment | None) -> dict[str, Any] | None:
+    if payment is None:
+        return None
+    return {
+        "amount": payment.amount,
+        "currency": payment.currency,
+        "method": payment.method,
+        "channel": payment.channel,
+        "reference": payment.reference,
+        "received_on": payment.received_on.isoformat(),
+    }
 
 
 def _view(
-    request: PurchaseRequest, organization: Organization, user: User, product_name: str
+    request: PurchaseRequest,
+    organization: Organization,
+    user: User,
+    product_name: str,
+    payment: Payment | None = None,
 ) -> PurchaseRequestView:
     price = (
         {"amount": request.amount, "currency": request.currency, "period": request.period}
@@ -143,6 +169,7 @@ def _view(
         requested_by_phone=user.phone,
         created_at=request.created_at,
         updated_at=request.updated_at,
+        payment=_payment_payload(payment),
     )
 
 
@@ -171,6 +198,17 @@ async def _load_views(
         ).scalars()
     }
 
+    payments = {
+        payment.purchase_request_id: payment
+        for payment in (
+            await session.execute(
+                select(Payment).where(
+                    Payment.purchase_request_id.in_({item.id for item in requests})
+                )
+            )
+        ).scalars()
+    }
+
     def product_name(code: str) -> str:
         product = catalog.product(code)
         return product.name if product else code
@@ -181,9 +219,28 @@ async def _load_views(
             organizations[item.organization_id],
             users[item.requested_by],
             product_name(item.product_code),
+            payments.get(item.id),
         )
         for item in requests
     ]
+
+
+@dataclass(frozen=True)
+class PaymentInput:
+    method: PaymentMethod
+    # Montant réellement reçu (HT, unité mineure de la devise de la vente) ; None = prix de l'offre
+    amount: int | None
+    reference: str | None
+    received_on: date
+
+
+def _payment_required() -> AppError:
+    return AppError(
+        "PAYMENT_REQUIRED",
+        "Indiquez le paiement reçu (moyen, montant, référence) pour valider la vente.",
+        status=422,
+        errors=[{"field": "payment", "reason": "required"}],
+    )
 
 
 def _product_not_available(detail: str) -> AppError:
@@ -391,18 +448,16 @@ class PurchaseRequestService:
                 )
                 or 0
             )
+            # Montants réellement encaissés (un geste commercial réduit le chiffre d'affaires)
             revenue = (
                 await session.execute(
                     select(
-                        PurchaseRequest.currency,
-                        func.sum(PurchaseRequest.amount),
-                        func.sum(PurchaseRequest.amount).filter(
-                            PurchaseRequest.updated_at >= month_ago
-                        ),
+                        Payment.currency,
+                        func.sum(Payment.amount),
+                        func.sum(Payment.amount).filter(Payment.received_on >= month_ago.date()),
                     )
-                    .where(won, PurchaseRequest.amount.is_not(None))
-                    .group_by(PurchaseRequest.currency)
-                    .order_by(PurchaseRequest.currency)
+                    .group_by(Payment.currency)
+                    .order_by(Payment.currency)
                 )
             ).all()
         won_count = by_status.get(S.WON.value, 0)
@@ -428,6 +483,7 @@ class PurchaseRequestService:
         *,
         status: PurchaseRequestStatus | None,
         staff_note: str | None,
+        payment: PaymentInput | None = None,
     ) -> PurchaseRequestView:
         actor = Actor.user(staff_user_id)
         async with staff_transaction(self._session_factory) as session:
@@ -450,29 +506,19 @@ class PurchaseRequestService:
                         f"Une demande {current.value} ne peut pas passer à {status.value}.",
                         status=409,
                     )
+                if status is S.WON and payment is None:
+                    raise _payment_required()
                 request.status = status.value
                 request.handled_by = staff_user_id
-                if status in PLAN_ITEM_STATUS_ON_CLOSE:
+                if status is S.WON and payment is not None:
+                    await self._close_as_won(session, request, staff_user_id, payment)
+                elif status in PLAN_ITEM_STATUS_ON_CLOSE:
                     await _move_plan_items(
                         session,
                         request.organization_id,
                         request.product_code,
                         from_statuses={PlanItemStatus.PROPOSED, PlanItemStatus.ACCEPTED},
                         to=PLAN_ITEM_STATUS_ON_CLOSE[status],
-                    )
-                if status is S.WON:
-                    await _activate_offer(session, request, staff_user_id)
-                    await _mark_organization_active(session, request.organization_id)
-                    await publish(
-                        session,
-                        self._registry,
-                        PURCHASE_REQUEST_WON_EVENT,
-                        {
-                            "purchase_request_id": str(request.id),
-                            "organization_id": str(request.organization_id),
-                            "product_code": request.product_code,
-                        },
-                        organization_id=request.organization_id,
                     )
             if staff_note is not None:
                 request.staff_note = staff_note or None
@@ -490,6 +536,130 @@ class PurchaseRequestService:
             await session.flush()
             await session.refresh(request)
             return (await _load_views(session, [request]))[0]
+
+    async def admin_direct_sale(
+        self,
+        organization_id: uuid.UUID,
+        staff_user_id: uuid.UUID,
+        *,
+        product_code: str,
+        payment: PaymentInput,
+        note: str | None,
+    ) -> PurchaseRequestView:
+        """Client qui paie sans être passé par « Je veux démarrer » (téléphone, agence) : la vente
+        est enregistrée directement comme gagnée, avec la même activation qu'une demande."""
+        async with staff_transaction(self._session_factory) as session:
+            organization = await session.get(Organization, organization_id)
+            if organization is None or organization.deleted_at is not None:
+                raise AppError("NOT_FOUND", "Entreprise introuvable.", status=404)
+            if await self._open_request(session, organization_id, product_code) is not None:
+                raise AppError(
+                    "OPEN_REQUEST_EXISTS",
+                    "Ce client a déjà une demande en cours pour cette offre : passez-la à "
+                    "« Gagnée » dans l'onglet Demandes.",
+                    status=409,
+                )
+            catalog = await current_catalog(session)
+            product = catalog.product(product_code)
+            if product is None or not product.public:
+                raise _product_not_available("Cette offre n'existe pas.")
+            price = catalog.price_for(product, catalog.currency_for_country(organization.country))
+            if price is None:
+                raise _product_not_available(
+                    "Cette offre n'est pas proposée dans la devise du client."
+                )
+            request = PurchaseRequest(
+                organization_id=organization_id,
+                requested_by=staff_user_id,
+                product_code=product_code,
+                amount=price.amount,
+                currency=price.currency.value,
+                period=price.period.value,
+                channel=ContactChannel.EMAIL.value,
+                message="Vente enregistrée directement par l'équipe",
+                status=S.WON.value,
+                staff_note=note,
+                handled_by=staff_user_id,
+            )
+            session.add(request)
+            await session.flush()
+            await self._close_as_won(session, request, staff_user_id, payment)
+            await record_audit(
+                session,
+                actor=Actor.user(staff_user_id),
+                action="purchase_request.direct_sale",
+                entity_type="purchase_request",
+                entity_id=request.id,
+                organization_id=organization_id,
+                new_value={"product_code": product_code, "amount": request.amount},
+            )
+            await session.flush()
+            await session.refresh(request)
+            return (await _load_views(session, [request]))[0]
+
+    async def _close_as_won(
+        self,
+        session: AsyncSession,
+        request: PurchaseRequest,
+        staff_user_id: uuid.UUID,
+        payment: PaymentInput,
+    ) -> None:
+        """Vente gagnée : paiement enregistré, offre activée, client actif, livraison lancée."""
+        await _move_plan_items(
+            session,
+            request.organization_id,
+            request.product_code,
+            from_statuses={PlanItemStatus.PROPOSED, PlanItemStatus.ACCEPTED},
+            to=PlanItemStatus.IN_PROGRESS,
+        )
+        recorded = Payment(
+            organization_id=request.organization_id,
+            purchase_request_id=request.id,
+            product_code=request.product_code,
+            amount=payment.amount if payment.amount is not None else (request.amount or 0),
+            currency=request.currency,
+            method=payment.method.value,
+            channel=PaymentChannel.MANUAL.value,
+            reference=payment.reference,
+            received_on=payment.received_on,
+            recorded_by=staff_user_id,
+        )
+        session.add(recorded)
+        await session.flush()
+        await _activate_offer(session, request, staff_user_id)
+        await _mark_organization_active(session, request.organization_id)
+        await record_audit(
+            session,
+            actor=Actor.user(staff_user_id),
+            action="payment.record",
+            entity_type="payment",
+            entity_id=recorded.id,
+            organization_id=request.organization_id,
+            new_value={
+                "amount": recorded.amount,
+                "currency": request.currency,
+                "method": payment.method.value,
+                "reference": payment.reference,
+            },
+        )
+        await publish(
+            session,
+            self._registry,
+            PURCHASE_REQUEST_WON_EVENT,
+            {
+                "purchase_request_id": str(request.id),
+                "organization_id": str(request.organization_id),
+                "product_code": request.product_code,
+            },
+            organization_id=request.organization_id,
+        )
+        await publish(
+            session,
+            self._registry,
+            PAYMENT_RECORDED_EVENT,
+            {"payment_id": str(recorded.id)},
+            organization_id=request.organization_id,
+        )
 
     @staticmethod
     async def _open_request(
@@ -581,6 +751,71 @@ def _alert_email(view: PurchaseRequestView, recipients: list[str], admin_url: st
     )
 
 
+METHOD_LABELS = {
+    "ORANGE_MONEY": "Orange Money",
+    "MTN_MOMO": "MTN Mobile Money",
+    "MOOV_MONEY": "Moov Money",
+    "WAVE": "Wave",
+    "BANK_TRANSFER": "Virement bancaire",
+    "CASH": "Espèces",
+}
+
+
+async def _owner_emails(session: AsyncSession, organization_id: uuid.UUID) -> list[str]:
+    rows = await session.execute(
+        select(User.email)
+        .join(Membership, Membership.user_id == User.id)
+        .where(
+            Membership.organization_id == organization_id,
+            Membership.role == ClientRole.CLIENT_OWNER.value,
+            Membership.status == MembershipStatus.ACTIVE.value,
+            User.deleted_at.is_(None),
+        )
+    )
+    return list(rows.scalars())
+
+
+def _receipt_email(
+    payment: Payment, organization: Organization, product_name: str, to: list[str]
+) -> EmailMessage:
+    number = "REC-" + payment.received_on.strftime("%Y%m") + "-" + payment.id.hex[-6:].upper()
+    amount = _format_price(
+        {"amount": payment.amount, "currency": payment.currency, "period": "NONE"}
+    )
+    lines = [
+        ("Reçu n°", number),
+        ("Client", organization.legal_name or organization.commercial_name),
+        ("Offre", product_name),
+        ("Montant reçu", amount),
+        ("Moyen de paiement", METHOD_LABELS.get(payment.method, payment.method)),
+        ("Référence de la transaction", payment.reference or "—"),
+        ("Date du paiement", payment.received_on.strftime("%d/%m/%Y")),
+    ]
+    intro = "Nous confirmons la réception de votre paiement. Merci pour votre confiance."
+    note = "Ce reçu atteste de votre paiement ; il ne remplace pas une facture."
+    text = (
+        "Bonjour,\n\n"
+        + intro
+        + "\n\n"
+        + "\n".join(f"{label} : {value}" for label, value in lines)
+        + "\n\n"
+        + note
+        + "\n\nL'équipe BENILAB Digital360"
+    )
+    rows = "".join(
+        f"<tr><td><strong>{html.escape(label)}</strong></td><td>{html.escape(value)}</td></tr>"
+        for label, value in lines
+    )
+    body = (
+        f"<p>Bonjour,</p><p>{html.escape(intro)}</p><table>{rows}</table>"
+        f'<p style="color:#666;font-size:12px">{html.escape(note)}</p>'
+        "<p>L'équipe BENILAB Digital360</p>"
+    )
+    return EmailMessage(
+        to=to, subject=f"Reçu de paiement {number} : {product_name}", text=text, html=body
+    )
+
+
 def register_jobs(
     registry: JobRegistry, sender: EmailSender, *, recipients: list[str], admin_url: str
 ) -> None:
@@ -593,3 +828,16 @@ def register_jobs(
             return
         [view] = await _load_views(session, [request])
         await sender.send(_alert_email(view, recipients, admin_url))
+
+    @registry.on(PAYMENT_RECORDED_EVENT, name=SEND_RECEIPT_JOB)
+    async def send_receipt(session: AsyncSession, payload: dict[str, Any]) -> None:
+        payment = await session.get(Payment, uuid.UUID(payload["payment_id"]))
+        if payment is None:
+            return
+        organization = await session.get(Organization, payment.organization_id)
+        owners = await _owner_emails(session, payment.organization_id)
+        if organization is None or not owners:
+            return
+        product = (await current_catalog(session)).product(payment.product_code)
+        name = product.name if product else payment.product_code
+        await sender.send(_receipt_email(payment, organization, name, owners))

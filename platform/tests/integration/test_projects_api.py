@@ -17,6 +17,10 @@ from tests.integration.test_admin_api import _client_with_diagnostic, _staff_mem
 
 pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("published_config")]
 
+# Encaissement manuel : obligatoire pour passer une demande à « Gagnée »
+PAYMENT = {"method": "ORANGE_MONEY", "amount": 109900, "reference": "OM-TEST-0001"}
+WON_WITH_PAYMENT = {"status": "WON", "payment": PAYMENT}
+
 TEAM = "production@benilab.test"
 APP_URL = "https://app.example.test/"
 COMPLETE_BRIEF: dict[str, Any] = {
@@ -60,7 +64,7 @@ def _won_sale(
     ).json()["id"]
     _staff_member(staff, database_url, "ADMIN")
     assert (
-        staff.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"}).status_code == 200
+        staff.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT).status_code == 200
     )
     run_pending_jobs(http_client)
     return org

@@ -16,6 +16,10 @@ from tests.integration.test_admin_api import _client_with_diagnostic, _staff_mem
 
 pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("published_config")]
 
+# Encaissement manuel : obligatoire pour passer une demande à « Gagnée »
+PAYMENT = {"method": "ORANGE_MONEY", "amount": 109900, "reference": "OM-TEST-0001"}
+WON_WITH_PAYMENT = {"status": "WON", "payment": PAYMENT}
+
 SALES = "ventes@benilab.test"
 
 
@@ -162,7 +166,7 @@ def test_should_let_sales_team_process_request_until_won(
         f"/admin/purchase-requests/{request_id}",
         {"status": "CONTACTED", "staff_note": "Appelé, paiement Orange Money demain"},
     )
-    won = second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    won = second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     assert contacted.json()["staff_note"] == "Appelé, paiement Orange Money demain"
     assert won.status_code == 200
@@ -191,7 +195,7 @@ def test_should_refuse_reopening_a_closed_request(
     org = _client_with_diagnostic(api)
     request_id = _request(api, org["id"]).json()["id"]
     _staff_member(second_api, test_database_url, "MANAGER")
-    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     response = second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "LOST"})
 
@@ -208,7 +212,7 @@ def test_should_reserve_request_processing_to_sales_roles(
 
     assert api.get("/admin/purchase-requests").status_code == 403
     assert second_api.get("/admin/purchase-requests").status_code == 403
-    response = second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    response = second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
     assert response.status_code == 403
 
 
@@ -228,7 +232,7 @@ def test_should_activate_one_time_offer_without_expiry_when_request_is_won(
     request_id = _request(api, org["id"]).json()["id"]
     _staff_member(second_api, test_database_url, "MANAGER")
 
-    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     website = _entitlements(api, org["id"])["WEBSITE"]
     assert website["value"] is True
@@ -244,7 +248,7 @@ def test_should_activate_subscription_for_one_month_when_request_is_won(
     request_id = _request(api, org["id"], product_code="DIGITAL_ESSENTIAL").json()["id"]
     _staff_member(second_api, test_database_url, "MANAGER")
 
-    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     granted = _entitlements(api, org["id"])
     assert granted["MAINTENANCE"]["value"] is True
@@ -271,7 +275,7 @@ def test_should_record_offer_activation_in_audit_log(
     org = _client_with_diagnostic(api)
     request_id = _request(api, org["id"]).json()["id"]
     _staff_member(second_api, test_database_url, "ADMIN")
-    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     entries = second_api.get(
         f"/admin/audit-logs?organization_id={org['id']}&action=purchase_request.activate_offer"
@@ -366,7 +370,7 @@ def test_should_move_every_recommendation_of_the_offer_together(
     assert "PROPOSED" in _statuses_for(api, org["id"], "DIGITAL_START")  # autre offre intacte
 
     _staff_member(second_api, test_database_url, "MANAGER")
-    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     assert _statuses_for(api, org["id"], "DIGITAL_GROWTH") == {"IN_PROGRESS"}
 
@@ -396,7 +400,7 @@ def test_should_count_requests_and_won_revenue_in_dashboard(
     lost_id = _request(api, org["id"], product_code="DIGITAL_GROWTH").json()["id"]
 
     middle = _sales(second_api)
-    second_api.patch(f"/admin/purchase-requests/{won_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{won_id}", WON_WITH_PAYMENT)
     second_api.patch(f"/admin/purchase-requests/{lost_id}", {"status": "LOST"})
     after = _sales(second_api)
 
@@ -418,7 +422,7 @@ def test_should_turn_lead_into_active_client_on_first_won_request(
     request_id = _request(api, org["id"]).json()["id"]
     _staff_member(second_api, test_database_url, "MANAGER")
 
-    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{request_id}", WON_WITH_PAYMENT)
 
     assert api.get(f"/orgs/{org['id']}").json()["status"] == "ACTIVE"
 
