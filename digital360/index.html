@@ -689,7 +689,11 @@
     // Réaffiche la page correspondant à l'adresse, sans ajouter d'étape (retour/avance)
     function routeFromLocation() {
         const hash = location.hash.slice(1);
-        if (PAGES.includes(hash)) {
+        // Lien direct (ex. depuis l'espace client) : afficher la page ne suffit pas, il faut
+        // charger le questionnaire comme le fait le bouton « Faire mon diagnostic »
+        if (hash === 'diagnostic') {
+            startDiagnostic();
+        } else if (PAGES.includes(hash)) {
             showPage(hash, { push: false });
         } else if (hash && document.getElementById(hash)) {
             showPage('landing', { push: false });
