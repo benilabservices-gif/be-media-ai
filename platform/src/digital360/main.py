@@ -34,6 +34,8 @@ from digital360.modules.organizations.api import routes as organization_routes
 from digital360.modules.organizations.application.service import OrganizationService
 from digital360.modules.passport.api import routes as passport_routes
 from digital360.modules.passport.application.service import PassportService
+from digital360.modules.projects.api import routes as project_routes
+from digital360.modules.projects.application.service import ProjectService
 
 API_PREFIX = "/api/v1"
 
@@ -72,6 +74,7 @@ def create_app(
         app.state.catalog_service = CatalogService(session_factory)
         app.state.staff_service = StaffService(session_factory)
         app.state.purchase_request_service = PurchaseRequestService(session_factory, registry)
+        app.state.project_service = ProjectService(session_factory, registry)
         app.state.rate_limiter = RateLimiter()
 
         stop_worker = asyncio.Event()
@@ -132,6 +135,8 @@ def create_app(
     api_router.include_router(catalog_routes.admin_router)
     api_router.include_router(billing_routes.router)
     api_router.include_router(billing_routes.admin_router)
+    api_router.include_router(project_routes.router)
+    api_router.include_router(project_routes.admin_router)
     api_router.include_router(admin.router)
     app.include_router(api_router)
 

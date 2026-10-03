@@ -173,6 +173,209 @@
         "title": "AuditLogPage",
         "type": "object"
       },
+      "Brief": {
+        "additionalProperties": false,
+        "description": "Brouillon du brief : chaque champ est facultatif, mais toujours dans le cadre de l'offre.",
+        "properties": {
+          "activity": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "business_name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "desired_domain": {
+            "anyOf": [
+              {
+                "maxLength": 63,
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,40}[a-z0-9])?\\.[a-z]{2,10}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desired Domain"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "facebook": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facebook"
+          },
+          "has_logo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Logo"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "opening_hours": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opening Hours"
+          },
+          "palette": {
+            "anyOf": [
+              {
+                "pattern": "^(ATLANTIQUE|SAVANE|ELEGANCE|FRAICHEUR)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Palette"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "pattern": "^\\+[1-9]\\d{6,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/Service"
+            },
+            "maxItems": 6,
+            "title": "Services",
+            "type": "array"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "pattern": "^(CLASSIQUE|MODERNE|CHALEUREUX)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "tiktok": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiktok"
+          },
+          "whatsapp": {
+            "anyOf": [
+              {
+                "pattern": "^\\+[1-9]\\d{6,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp"
+          }
+        },
+        "title": "Brief",
+        "type": "object"
+      },
       "CatalogOut": {
         "properties": {
           "available_currencies": {
@@ -220,6 +423,29 @@
         "title": "CategoryScoreOut",
         "type": "object"
       },
+      "ChoiceOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "description"
+        ],
+        "title": "ChoiceOut",
+        "type": "object"
+      },
       "ClaimDiagnosticRequest": {
         "properties": {
           "diagnostic_id": {
@@ -232,6 +458,155 @@
           "diagnostic_id"
         ],
         "title": "ClaimDiagnosticRequest",
+        "type": "object"
+      },
+      "ClientProjectOut": {
+        "properties": {
+          "available_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Actions",
+            "type": "array"
+          },
+          "brief": {
+            "additionalProperties": true,
+            "title": "Brief",
+            "type": "object"
+          },
+          "brief_submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief Submitted At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due On"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "live_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Url"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "offer": {
+            "$ref": "#/components/schemas/OfferOut"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
+          },
+          "revision_requests": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Revision Requests",
+            "type": "array"
+          },
+          "revisions_left": {
+            "title": "Revisions Left",
+            "type": "integer"
+          },
+          "revisions_used": {
+            "title": "Revisions Used",
+            "type": "integer"
+          },
+          "scope_accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Accepted At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "organization_name",
+          "status",
+          "brief",
+          "missing_fields",
+          "scope_accepted_at",
+          "brief_submitted_at",
+          "due_on",
+          "preview_url",
+          "live_url",
+          "revisions_used",
+          "revisions_left",
+          "revision_requests",
+          "available_actions",
+          "created_at",
+          "updated_at",
+          "offer"
+        ],
+        "title": "ClientProjectOut",
         "type": "object"
       },
       "ClientRole": {
@@ -919,6 +1294,83 @@
           "permissions"
         ],
         "title": "MembershipOut",
+        "type": "object"
+      },
+      "OfferOut": {
+        "description": "Le cadre de l'offre, à afficher tel quel : le client sait ce qu'il peut demander.",
+        "properties": {
+          "delivery_business_days": {
+            "title": "Delivery Business Days",
+            "type": "integer"
+          },
+          "included": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Included",
+            "type": "array"
+          },
+          "max_revision_rounds": {
+            "title": "Max Revision Rounds",
+            "type": "integer"
+          },
+          "max_services": {
+            "title": "Max Services",
+            "type": "integer"
+          },
+          "not_included": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Not Included",
+            "type": "array"
+          },
+          "pages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "palettes": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceOut"
+            },
+            "title": "Palettes",
+            "type": "array"
+          },
+          "pitch": {
+            "title": "Pitch",
+            "type": "string"
+          },
+          "revision_categories": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Revision Categories",
+            "type": "object"
+          },
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceOut"
+            },
+            "title": "Templates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pitch",
+          "pages",
+          "included",
+          "not_included",
+          "templates",
+          "palettes",
+          "max_services",
+          "delivery_business_days",
+          "max_revision_rounds",
+          "revision_categories"
+        ],
+        "title": "OfferOut",
         "type": "object"
       },
       "OptionOut": {
@@ -2062,6 +2514,184 @@
         "title": "ProfileUpdate",
         "type": "object"
       },
+      "ProjectOut": {
+        "properties": {
+          "available_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Actions",
+            "type": "array"
+          },
+          "brief": {
+            "additionalProperties": true,
+            "title": "Brief",
+            "type": "object"
+          },
+          "brief_submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief Submitted At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due On"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "live_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Url"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
+          },
+          "revision_requests": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Revision Requests",
+            "type": "array"
+          },
+          "revisions_left": {
+            "title": "Revisions Left",
+            "type": "integer"
+          },
+          "revisions_used": {
+            "title": "Revisions Used",
+            "type": "integer"
+          },
+          "scope_accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Accepted At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "organization_name",
+          "status",
+          "brief",
+          "missing_fields",
+          "scope_accepted_at",
+          "brief_submitted_at",
+          "due_on",
+          "preview_url",
+          "live_url",
+          "revisions_used",
+          "revisions_left",
+          "revision_requests",
+          "available_actions",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProjectOut",
+        "type": "object"
+      },
+      "ProjectPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "required": [
+          "data",
+          "page"
+        ],
+        "title": "ProjectPage",
+        "type": "object"
+      },
+      "ProjectStatus": {
+        "enum": [
+          "BRIEF_PENDING",
+          "IN_PRODUCTION",
+          "CLIENT_REVIEW",
+          "REVISION",
+          "APPROVED",
+          "LIVE",
+          "CANCELLED"
+        ],
+        "title": "ProjectStatus",
+        "type": "string"
+      },
       "PurchaseRequestCreate": {
         "properties": {
           "channel": {
@@ -2419,6 +3049,61 @@
         "title": "RevenueOut",
         "type": "object"
       },
+      "RevisionCategory": {
+        "description": "Seules corrections possibles : le contenu, jamais la forme.",
+        "enum": [
+          "TEXT",
+          "PHOTO",
+          "CONTACT",
+          "HOURS"
+        ],
+        "title": "RevisionCategory",
+        "type": "string"
+      },
+      "RevisionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/RevisionCategory"
+          },
+          "page": {
+            "pattern": "^(Accueil|À propos|Services|Galerie|Contact)$",
+            "title": "Page",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "page",
+          "text"
+        ],
+        "title": "RevisionItem",
+        "type": "object"
+      },
+      "RevisionRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RevisionItem"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "RevisionRequest",
+        "type": "object"
+      },
       "SalesKpis": {
         "properties": {
           "contacted": {
@@ -2569,6 +3254,28 @@
           "questions"
         ],
         "title": "SectionOut",
+        "type": "object"
+      },
+      "Service": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Service",
         "type": "object"
       },
       "SessionResponse": {
@@ -2873,6 +3580,71 @@
           "questionnaire_version"
         ],
         "title": "StartDiagnosticResponse",
+        "type": "object"
+      },
+      "SubmitRequest": {
+        "properties": {
+          "accept_scope": {
+            "title": "Accept Scope",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accept_scope"
+        ],
+        "title": "SubmitRequest",
+        "type": "object"
+      },
+      "TransitionRequest": {
+        "properties": {
+          "live_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Url"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "target": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "title": "TransitionRequest",
         "type": "object"
       },
       "UserKpis": {
@@ -3924,6 +4696,180 @@
         ]
       }
     },
+    "/api/v1/admin/website-projects": {
+      "get": {
+        "operationId": "admin_list_api_v1_admin_website_projects_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ProjectStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin List",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/website-projects/{project_id}": {
+      "get": {
+        "operationId": "admin_get_api_v1_admin_website_projects__project_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Get",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/website-projects/{project_id}/transition": {
+      "post": {
+        "operationId": "admin_transition_api_v1_admin_website_projects__project_id__transition_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Transition",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/auth/csrf": {
       "get": {
         "description": "Pose le cookie `csrf_token` et renvoie sa valeur. À appeler au chargement du frontend.",
@@ -4818,6 +5764,253 @@
         "summary": "Create Purchase Request",
         "tags": [
           "billing"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/website-project": {
+      "get": {
+        "operationId": "get_project_api_v1_orgs__org_id__website_project_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/website-project/approve": {
+      "post": {
+        "operationId": "approve_api_v1_orgs__org_id__website_project_approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/website-project/brief": {
+      "put": {
+        "description": "Enregistre le brouillon (partiel accepté, mais toujours dans le cadre de l'offre).",
+        "operationId": "save_brief_api_v1_orgs__org_id__website_project_brief_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Brief"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Brief",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/website-project/revision": {
+      "post": {
+        "operationId": "request_revision_api_v1_orgs__org_id__website_project_revision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Revision",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/website-project/submit": {
+      "post": {
+        "description": "Brief complet et périmètre accepté : la production démarre, la date de livraison est fixée.",
+        "operationId": "submit_brief_api_v1_orgs__org_id__website_project_submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Brief",
+        "tags": [
+          "projects"
         ]
       }
     },

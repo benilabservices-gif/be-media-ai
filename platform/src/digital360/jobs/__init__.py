@@ -10,6 +10,7 @@ from digital360.core.jobs import JobRegistry
 from digital360.modules.billing.application import service as billing
 from digital360.modules.diagnostics.application import notifications as diagnostic_notifications
 from digital360.modules.identity.application import password_reset
+from digital360.modules.projects.application import notifications as project_notifications
 
 
 def build_registry(settings: Settings, email_sender: EmailSender) -> JobRegistry:
@@ -26,6 +27,13 @@ def build_registry(settings: Settings, email_sender: EmailSender) -> JobRegistry
         registry,
         email_sender,
         recipients=settings.sales_alert_emails,
+        admin_url=settings.admin_url,
+    )
+    project_notifications.register_jobs(
+        registry,
+        email_sender,
+        team_recipients=settings.sales_alert_emails,
+        app_url=settings.app_url,
         admin_url=settings.admin_url,
     )
     return registry

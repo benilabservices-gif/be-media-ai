@@ -41,7 +41,8 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `POST /auth/password/forgot` · `POST /auth/password/reset` | **Disponible** | Mot de passe oublié (§12) |
 | `POST·GET /orgs/{id}/purchase-requests` | **Disponible** | « Je veux démarrer » : demande d'achat (§11) |
 | `GET /admin/purchase-requests` · `PATCH /admin/purchase-requests/{id}` | **Disponible** | ADMIN et MANAGER : traitement des demandes (§11) |
-| `/orgs/{id}/website-projects` | À mocker | M6 |
+| `GET /orgs/{id}/website-project` · `PUT …/brief` · `POST …/submit` · `…/revision` · `…/approve` | **Disponible** | Projet de site Digital Start, offre encadrée (§13) |
+| `GET /admin/website-projects` · `POST /admin/website-projects/{id}/transition` | **Disponible** | Équipe : suivi et étapes des projets (§13) |
 
 ## 2. Configuration
 
@@ -274,6 +275,35 @@ En attendant le paiement en ligne, le client demande une offre et l'équipe le r
 - `POST /auth/password/forgot` avec `{ "email" }` renvoie toujours **202**, que le compte existe ou non. 429 au-delà de 3 demandes par heure pour une même adresse.
 - L'e-mail contient un lien vers `reset-password.html#token=…`. Le jeton est **après le `#`** : lis-le avec `new URLSearchParams(location.hash.slice(1)).get('token')`, puis efface-le avec `history.replaceState`.
 - `POST /auth/password/reset` avec `{ "token", "password" }` renvoie **204**. Toutes les sessions sont fermées : renvoie vers la connexion. Erreurs : 400 `INVALID_RESET_TOKEN` (lien expiré, déjà utilisé ou faux) et 400 `WEAK_PASSWORD` (raisons dans `errors[]`, comme à l'inscription). Après un `WEAK_PASSWORD`, le lien reste valable.
+
+## 13. Projet de site Digital Start (« Mon projet »)
+
+**L'offre est encadrée.** La conception est offerte grâce à l'IA ; le client paie le domaine, l'hébergement et la mise en ligne. Il ne commande donc pas un site sur mesure : il remplit un brief guidé, choisit un modèle et une palette, et dispose d'une seule série de corrections de **contenu**. Le serveur refuse tout ce qui sort de ce cadre. Affiche toujours le bloc `offer` (ce qui est inclus et ce qui ne l'est pas) avant l'envoi du brief.
+
+**Création** : automatique quand une demande d'achat **Start** passe à « Gagnée ». Le brief est prérempli avec la fiche entreprise, et le client reçoit l'e-mail « Votre offre Start est activée ».
+
+**`GET /orgs/{id}/website-project`** (404 tant qu'aucun projet n'existe) :
+- `status` : `BRIEF_PENDING` (brief à remplir), `IN_PRODUCTION` (en préparation), `CLIENT_REVIEW` (à relire), `REVISION` (corrections en cours), `APPROVED` (validé, mise en ligne en cours), `LIVE` (en ligne).
+- `brief`, `missing_fields` (champs encore requis : `business_name`, `activity`, `services`, `phone`, `template`, `palette`, `has_logo`), `due_on` (date de livraison promise), `preview_url`, `live_url`, `revisions_left`.
+- `available_actions` : n'affiche que ces actions. `EDIT_BRIEF` permet de modifier le brief, `IN_PRODUCTION` d'envoyer le brief, `REVISION` de demander les corrections, `APPROVED` de valider.
+- `offer` : `pitch`, `pages`, `included`, `not_included`, `templates` et `palettes` (`key`, `name`, `description`), `max_services` (6), `delivery_business_days` (7), `revision_categories` (libellés).
+
+**Côté client** (propriétaire de l'entreprise, en-tête CSRF) :
+- `PUT …/website-project/brief` : enregistre le brouillon. Les champs : `business_name`, `activity` (500 caractères au maximum), `services` (6 au maximum, chacun `{name, description}`), `city`, `address`, `phone`, `whatsapp` (format `+225…`), `email`, `opening_hours`, `facebook`, `instagram`, `tiktok` (URL), `desired_domain` (`maboutique.ci`), `template`, `palette` (une des `key` de `offer`), `has_logo` (booléen). Tout autre champ, un 7e service ou un modèle inconnu renvoie 400. Après le démarrage de la production : 409 `BRIEF_LOCKED`.
+- `POST …/website-project/submit` avec `{ "accept_scope": true }` : case à cocher obligatoire « J'ai lu ce qui est inclus et ce qui ne l'est pas ». Sinon 422 `SCOPE_NOT_ACCEPTED`. Si le brief est incomplet : 422 `TRANSITION_GUARD_FAILED`, avec la liste des champs dans `errors`. En cas de succès, `due_on` est fixée à 7 jours ouvrés.
+- `POST …/website-project/revision` avec `{ "items": [{ "category": "TEXT"|"PHOTO"|"CONTACT"|"HOURS", "page": "Accueil"|"À propos"|"Services"|"Galerie"|"Contact", "text": "…" }] }` (10 éléments au maximum). **Une seule fois** : ensuite, 422. Aucune catégorie ne concerne le design, une page inconnue renvoie 400.
+- `POST …/website-project/approve` : validation de la version proposée.
+
+**Côté équipe** (`website_project:read` pour lire, `:transition` pour agir) :
+- `GET /admin/website-projects?status=IN_PRODUCTION` : pagination du §5, `organization_name` inclus.
+- `POST /admin/website-projects/{id}/transition` avec `{ "target", "preview_url", "live_url", "reason" }` :
+  - `CLIENT_REVIEW` exige `preview_url` (première version, ou version corrigée après `REVISION`) ;
+  - `LIVE` exige `live_url` ;
+  - `CANCELLED` exige `reason` (réservé à ADMIN et MANAGER).
+
+  Une condition non remplie renvoie 422 `TRANSITION_GUARD_FAILED`.
+
+**E-mails automatiques** : au client à l'activation, à la réception du brief (avec la date de livraison), quand la préversion est prête et à la mise en ligne. À l'équipe (`SALES_ALERT_EMAILS`) : « nouveau site à produire » et « corrections demandées ».
 
 ## 8. Demander un changement
 

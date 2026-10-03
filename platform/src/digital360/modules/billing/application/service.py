@@ -39,6 +39,8 @@ from digital360.modules.organizations.infrastructure.models import (
 
 PURCHASE_REQUEST_CREATED_EVENT = "purchase_request.created"
 ALERT_SALES_JOB = "billing.alert_sales_purchase_request"
+# Vente gagnée : les modules de livraison (projets) s'y abonnent
+PURCHASE_REQUEST_WON_EVENT = "purchase_request.won"
 
 S = PurchaseRequestStatus
 # Traitement par l'équipe : WON et LOST sont définitifs (une nouvelle demande reste possible)
@@ -461,6 +463,17 @@ class PurchaseRequestService:
                 if status is S.WON:
                     await _activate_offer(session, request, staff_user_id)
                     await _mark_organization_active(session, request.organization_id)
+                    await publish(
+                        session,
+                        self._registry,
+                        PURCHASE_REQUEST_WON_EVENT,
+                        {
+                            "purchase_request_id": str(request.id),
+                            "organization_id": str(request.organization_id),
+                            "product_code": request.product_code,
+                        },
+                        organization_id=request.organization_id,
+                    )
             if staff_note is not None:
                 request.staff_note = staff_note or None
 

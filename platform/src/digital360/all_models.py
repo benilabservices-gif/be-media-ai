@@ -12,6 +12,7 @@ from digital360.modules.diagnostics.infrastructure import models as diagnostic_m
 from digital360.modules.identity.infrastructure import models as identity_models
 from digital360.modules.organizations.infrastructure import models as organization_models
 from digital360.modules.passport.infrastructure import models as passport_models
+from digital360.modules.projects.infrastructure import models as project_models
 
 __all__ = [
     "Base",
@@ -26,5 +27,6 @@ __all__ = [
     "jobs",
     "organization_models",
     "passport_models",
+    "project_models",
     "workflow",
 ]
