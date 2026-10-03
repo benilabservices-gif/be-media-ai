@@ -147,10 +147,9 @@
                               <a href="index.html#diagnostic" class="btn btn-primary btn-sm" style="display:inline-block;margin-top:0.5rem;">Faire mon diagnostic</a>
                           </div>
                          <div class="dash-next-action" id="dashNextAction" style="display:none;">
-                             <div class="label">Prochaine action</div>
-                             <p id="dashNextActionText">—</p>
-                             <button class="btn btn-primary btn-sm" id="dashNextActionBtn">Voir</button>
-                          </div>
+                             <div class="label">Recommandations</div>
+                             <div id="dashPlanItems"></div>
+                           </div>
                       </div>
                       <div id="dashDiagAction" style="display:none;margin-bottom:2rem;"></div>
 
@@ -652,6 +651,9 @@
     let _user = null;
     let _orgId = null;
     let _isStaffNoOrg = false;
+    let _meData = null;
+    let _isOwner = false;
+    let _purchaseRequests = [];
     let _orgData = null;
     let passportData = null;
     let actionPlanData = null;
@@ -870,19 +872,56 @@
               }
           }
 
-        // Next action from action plan
+        // Action plan recommendations
         if (actionPlanData?.items) {
-            const proposed = actionPlanData.items.find(i => i.status === 'PROPOSED');
-            if (proposed) {
-                document.getElementById('dashNextAction').style.display = '';
-                document.getElementById('dashNextActionText').textContent = proposed.recommended_action || proposed.reason;
-                const btn = document.getElementById('dashNextActionBtn');
-                if (proposed.product_code) {
-                    btn.textContent = 'Activer';
-                    btn.onclick = () => alert('Activation de ' + proposed.product_code + ' — module en développement');
-                } else {
-                    btn.textContent = 'Voir';
-                }
+            const proposed = actionPlanData.items.filter(i => i.status === 'PROPOSED');
+            const planEl = document.getElementById('dashNextAction');
+            const planItemsEl = document.getElementById('dashPlanItems');
+            if (proposed.length > 0 && planItemsEl) {
+                planEl.style.display = '';
+                planItemsEl.innerHTML = '';
+                proposed.forEach(item => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;';
+                    const reasonP = document.createElement('p');
+                    reasonP.style.cssText = 'font-size:13px;color:var(--text-secondary);margin:0 0 0.75rem;';
+                    reasonP.textContent = item.reason || item.recommended_action || '';
+                    card.appendChild(reasonP);
+                    if (item.product_code) {
+                        if (_isOwner) {
+                            const pr = _purchaseRequests.find(p => p.product_code === item.product_code && p.status !== 'LOST');
+                            const btn = document.createElement('button');
+                            btn.className = 'btn btn-primary btn-sm';
+                            if (pr) {
+                                if (pr.status === 'WON' || pr.status === 'CONTACTED') {
+                                    btn.textContent = 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
+                                    btn.disabled = true;
+                                    btn.style.opacity = '0.6';
+                                } else {
+                                    btn.textContent = 'Je veux démarrer';
+                                    btn.onclick = () => showPurchaseModal(item);
+                                }
+                            } else {
+                                btn.textContent = 'Je veux démarrer';
+                                btn.onclick = () => showPurchaseModal(item);
+                            }
+                            card.appendChild(btn);
+                        } else {
+                            const msg = document.createElement('div');
+                            msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
+                            msg.textContent = 'Demandez au responsable de votre entreprise';
+                            card.appendChild(msg);
+                        }
+                    } else {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-ghost btn-sm';
+                        btn.textContent = 'Voir';
+                        card.appendChild(btn);
+                    }
+                    planItemsEl.appendChild(card);
+                });
+            } else {
+                planEl.style.display = 'none';
             }
         }
 
@@ -948,8 +987,10 @@
         try {
             await getCsrf();
             const me = await checkAuth();
+            _meData = me;
             _user = me?.user;
             const membership = me?.memberships?.[0];
+            _isOwner = membership?.role === 'CLIENT_OWNER';
             if (membership) {
                 _orgId = membership.organization_id;
                 // Load org data
@@ -975,6 +1016,14 @@
                 try {
                     const entRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
                     if (entRes.ok) entitlementsData = await entRes.json();
+                } catch (_) {}
+                // Load purchase requests
+                try {
+                    const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+                    if (prRes.ok) {
+                        const prData = await prRes.json();
+                        _purchaseRequests = prData?.data || [];
+                    }
                 } catch (_) {}
                 // Load catalog for subscription page
                 await loadCatalogForDashboard();
@@ -1059,12 +1108,26 @@
                     ${(_catalogData?.products || []).map(p => {
                         const isCurrent = p.code === planCode;
                         const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
+                        const pr = _purchaseRequests.find(pr2 => pr2.product_code === p.code && pr2.status !== 'LOST');
+                        let btnHtml = '';
+                        if (!_isOwner) {
+                            btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
+                        } else if (pr) {
+                            if (pr.status === 'WON' || pr.status === 'CONTACTED') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
+                            } else {
+                                btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                            }
+                        } else {
+                            btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                        }
                         return `
                         <div class="card" style="text-align:center;${isCurrent ? 'border-color:var(--accent);' : 'opacity:0.7;'}">
                             <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
                             <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;${isCurrent ? 'color:var(--accent);' : ''}">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
                             ${isCurrent ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">← Vous êtes ici</div>' : ''}
+                            ${!isCurrent ? btnHtml : ''}
                         </div>`;
                     }).join('')}
                 </div>
@@ -1084,11 +1147,25 @@
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
                     ${(_catalogData?.products || []).map(p => {
                         const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
+                        const pr = _purchaseRequests.find(pr2 => pr2.product_code === p.code && pr2.status !== 'LOST');
+                        let btnHtml = '';
+                        if (!_isOwner) {
+                            btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
+                        } else if (pr) {
+                            if (pr.status === 'WON' || pr.status === 'CONTACTED') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
+                            } else {
+                                btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                            }
+                        } else {
+                            btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                        }
                         return `
                         <div class="card" style="text-align:center;">
                             <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
                             <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--accent);">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
+                            ${btnHtml}
                         </div>`;
                     }).join('')}
                 </div>
@@ -1108,6 +1185,121 @@
         `;
 
         container.innerHTML = html;
+    }
+
+    // ── Purchase request modal ──
+    let _pendingPurchase = null;
+    function showPurchaseModal(item) {
+        _pendingPurchase = item ? { product_code: item.product_code, plan_item_id: item.id } : null;
+        const modal = document.getElementById('purchaseModal');
+        if (!modal) return;
+        document.getElementById('purchaseProductName').textContent = item?.reason || item?.product_code || '';
+        document.getElementById('purchaseProductCode').value = item?.product_code || '';
+        document.getElementById('purchasePlanItemId').value = item?.id || '';
+        document.getElementById('purchaseMsg').value = '';
+        document.getElementById('purchaseChannel').value = 'WHATSAPP';
+        document.getElementById('purchaseError').textContent = '';
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function showPurchaseModalForProduct(productCode, planItemId, name, price) {
+        _pendingPurchase = { product_code: productCode, plan_item_id: planItemId };
+        const modal = document.getElementById('purchaseModal');
+        if (!modal) return;
+        document.getElementById('purchaseProductName').textContent = name + ' — ' + price;
+        document.getElementById('purchaseProductCode').value = productCode;
+        document.getElementById('purchasePlanItemId').value = planItemId || '';
+        document.getElementById('purchaseMsg').value = '';
+        document.getElementById('purchaseChannel').value = 'WHATSAPP';
+        document.getElementById('purchaseError').textContent = '';
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closePurchaseModal() {
+        const modal = document.getElementById('purchaseModal');
+        if (modal) modal.classList.remove('open');
+        document.body.style.overflow = '';
+        _pendingPurchase = null;
+    }
+    async function submitPurchaseRequest() {
+        const errorEl = document.getElementById('purchaseError');
+        const msgEl = document.getElementById('purchaseSuccess');
+        errorEl.textContent = '';
+        msgEl.style.display = 'none';
+        if (!_pendingPurchase || !_orgId) return;
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+                body: JSON.stringify({
+                    product_code: document.getElementById('purchaseProductCode').value,
+                    plan_item_id: document.getElementById('purchasePlanItemId').value || null,
+                    channel: document.getElementById('purchaseChannel').value,
+                    message: document.getElementById('purchaseMsg').value.trim() || null,
+                }),
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                let detail = 'Une erreur est survenue.';
+                try { const j = JSON.parse(text); if (j?.detail) detail = j.detail; } catch (_) {}
+                errorEl.textContent = detail;
+                return;
+            }
+            const data = await res.json();
+            // Reload purchase requests
+            try {
+                const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+                if (prRes.ok) { const prData = await prRes.json(); _purchaseRequests = prData?.data || []; }
+            } catch (_) {}
+            closePurchaseModal();
+            msgEl.textContent = 'Demande envoyée, un conseiller vous contacte sous 24 h.';
+            msgEl.style.display = 'block';
+            renderDashboard();
+            renderSubscriptionPage();
+        } catch (e) {
+            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
+                try {
+                    await getCsrf();
+                    // Retry once
+                    const res2 = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+                        body: JSON.stringify({
+                            product_code: document.getElementById('purchaseProductCode').value,
+                            plan_item_id: document.getElementById('purchasePlanItemId').value || null,
+                            channel: document.getElementById('purchaseChannel').value,
+                            message: document.getElementById('purchaseMsg').value.trim() || null,
+                        }),
+                    });
+                    if (!res2.ok) {
+                        const text = await res2.text();
+                        let detail = 'Une erreur est survenue.';
+                        try { const j = JSON.parse(text); if (j?.detail) detail = j.detail; } catch (_) {}
+                        errorEl.textContent = detail;
+                        return;
+                    }
+                    const data = await res2.json();
+                    try {
+                        const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+                        if (prRes.ok) { const prData = await prRes.json(); _purchaseRequests = prData?.data || []; }
+                    } catch (_) {}
+                    closePurchaseModal();
+                    msgEl.textContent = 'Demande envoyée, un conseiller vous contacte sous 24 h.';
+                    msgEl.style.display = 'block';
+                    renderDashboard();
+                    renderSubscriptionPage();
+                } finally {
+                    hideD360Loading();
+                }
+                return;
+            }
+            errorEl.textContent = e.detail || 'Une erreur est survenue.';
+        } finally {
+            hideD360Loading();
+        }
     }
 
     // ── Logout ──
@@ -1152,5 +1344,34 @@
         }
     }
     </script>
+    <!-- ═══ Purchase request modal ═══ -->
+    <div class="modal-overlay" id="purchaseModal" style="display:none;">
+        <div class="modal-box" style="max-width:480px;">
+            <button class="modal-close" onclick="closePurchaseModal()">✕</button>
+            <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.25rem;">Je veux démarrer</h2>
+            <p id="purchaseProductName" style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;"></p>
+            <div id="purchaseError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
+            <div id="purchaseSuccess" class="alert alert-success" style="display:none;margin-bottom:1rem;"></div>
+            <input type="hidden" id="purchaseProductCode">
+            <input type="hidden" id="purchasePlanItemId">
+            <div class="form-group">
+                <label class="form-label">Comment souhaitez-vous être contacté ?</label>
+                <select id="purchaseChannel" class="form-input" style="max-width:300px;">
+                    <option value="WHATSAPP">WhatsApp</option>
+                    <option value="PHONE">Téléphone</option>
+                    <option value="EMAIL">Email</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-top:1rem;">
+                <label class="form-label">Message (facultatif, 1000 caractères max)</label>
+                <textarea id="purchaseMsg" class="form-input" rows="3" maxlength="1000" placeholder="Ex: rappelez-moi le matin" style="resize:vertical;"></textarea>
+            </div>
+            <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+                <button class="btn btn-primary" onclick="submitPurchaseRequest()">Envoyer ma demande</button>
+                <button class="btn btn-ghost" onclick="closePurchaseModal()">Annuler</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

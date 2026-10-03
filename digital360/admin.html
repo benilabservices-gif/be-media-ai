@@ -84,6 +84,7 @@
                 <div class="admin-nav-section">Gestion</div>
                 <div class="admin-nav-item" data-page="entreprises" onclick="switchPage('entreprises')"><span class="nav-icon">&#128187;</span> Entreprises</div>
                 <div class="admin-nav-item" data-page="prospects" onclick="switchPage('prospects')"><span class="nav-icon">&#128203;</span> Prospects</div>
+                <div class="admin-nav-item" data-page="demandes" id="navItemDemandes" style="display:none;" onclick="switchPage('demandes')"><span class="nav-icon">&#128200;</span> Demandes</div>
                 <div class="admin-nav-section" id="navSectionTeam" style="display:none;">Organisation</div>
                 <div class="admin-nav-item" data-page="equipe" id="navItemEquipe" style="display:none;" onclick="switchPage('equipe')"><span class="nav-icon">&#128104;&#65039;</span> Équipe</div>
                 <div class="admin-nav-item" data-page="audit" id="navItemAudit" style="display:none;" onclick="switchPage('audit')"><span class="nav-icon">&#128196;</span> Journal d'audit</div>
@@ -226,6 +227,33 @@
                         <button class="btn-loadmore" id="auditLoadMore" style="display:none;" onclick="loadAuditLogs(true)">Charger plus</button>
                     </div>
                 </div>
+
+                <!-- DEMANDES D'ACHAT -->
+                <div class="admin-page" id="admin-demandes">
+                    <div class="page-header"><h1>Demandes d'achat</h1><p>Suivi des « Je veux démarrer » des clients.</p></div>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="demandeStatusFilter" onchange="resetDemandePagination()">
+                            <option value="">Tous les statuts</option>
+                            <option value="NEW">Nouvelle</option>
+                            <option value="CONTACTED">Contactée</option>
+                            <option value="WON">Gagnée</option>
+                            <option value="LOST">Perdue</option>
+                        </select>
+                        <button class="btn btn-ghost btn-sm" onclick="loadPurchaseRequests()">Filtrer</button>
+                    </div>
+                    <div id="demandeLoading" class="loading-row">Chargement des demandes…</div>
+                    <div id="demandeError" class="error-row" style="display:none;"></div>
+                    <div id="demandeEmpty" class="empty-row" style="display:none;">Aucune demande trouvée.</div>
+                    <div id="demandeContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Date</th><th>Entreprise</th><th>Demandé par</th><th>Produit</th><th>Prix</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+                                <tbody id="demandeTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="demandeLoadMore" style="display:none;" onclick="loadPurchaseRequests(true)">Charger plus</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -330,13 +358,18 @@
     let _auditHasMore = false;
     let _auditData = [];
 
+    // Purchase requests state
+    let _demandeCursor = null;
+    let _demandeHasMore = false;
+
     // ── Page navigation ──
     const pageTitles = {
         dashboard: 'Indicateurs',
         entreprises: 'Entreprises',
         prospects: 'Prospects',
         equipe: 'Équipe',
-        audit: 'Journal d\'audit'
+        audit: 'Journal d\'audit',
+        demandes: 'Demandes',
     };
 
     function switchPage(id) {
@@ -1025,6 +1058,156 @@
         tbody.appendChild(tr);
     }
 
+    // ── Purchase requests ──
+
+    function resetDemandePagination() {
+        _demandeCursor = null;
+        _demandeHasMore = false;
+        loadPurchaseRequests(false);
+    }
+
+    async function loadPurchaseRequests(append) {
+        if (!append) {
+            _demandeCursor = null;
+            _demandeHasMore = false;
+            document.getElementById('demandeTableBody').innerHTML = '';
+        }
+        setStatus('demandeLoading', 'demandeError', 'demandeContent', 'demandeEmpty', true, false, false);
+        try {
+            const params = { limit: 25 };
+            const statusFilter = document.getElementById('demandeStatusFilter')?.value;
+            if (statusFilter) params.status = statusFilter;
+            if (_demandeCursor) params.cursor = _demandeCursor;
+            const qs = new URLSearchParams(params).toString();
+            const data = await apiFetch('/admin/purchase-requests?' + qs);
+            const list = data.data || [];
+            const page = data.page || {};
+            if (!append) document.getElementById('demandeTableBody').innerHTML = '';
+            list.forEach(row => appendDemandeRow(row));
+            _demandeCursor = page.next_cursor || null;
+            _demandeHasMore = page.has_more || false;
+            const loadMoreBtn = document.getElementById('demandeLoadMore');
+            if (loadMoreBtn) loadMoreBtn.style.display = _demandeHasMore ? '' : 'none';
+            setStatus('demandeLoading', 'demandeError', 'demandeContent', 'demandeEmpty', false, false, list.length === 0 && !append);
+        } catch (e) {
+            setStatus('demandeLoading', 'demandeError', 'demandeContent', 'demandeEmpty', false, true, false);
+            document.getElementById('demandeError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function appendDemandeRow(req) {
+        const tbody = document.getElementById('demandeTableBody');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+
+        const tdDate = document.createElement('td');
+        tdDate.textContent = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        tr.appendChild(tdDate);
+
+        const tdOrg = document.createElement('td');
+        tdOrg.textContent = req.organization_name || '—';
+        tr.appendChild(tdOrg);
+
+        const tdUser = document.createElement('td');
+        tdUser.textContent = req.requested_by_name || '—';
+        tr.appendChild(tdUser);
+
+        const tdProduct = document.createElement('td');
+        tdProduct.textContent = req.product_name || req.product_code || '—';
+        tr.appendChild(tdProduct);
+
+        const tdPrice = document.createElement('td');
+        tdPrice.textContent = req.price != null ? formatPriceAdmin(req.price) : '—';
+        tr.appendChild(tdPrice);
+
+        const tdStatus = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = 'badge ' + ({ NEW: 'badge-warning', CONTACTED: 'badge-info', WON: 'badge-success', LOST: 'badge-muted' }[req.status] || 'badge-muted');
+        statusBadge.textContent = { NEW: 'Nouvelle', CONTACTED: 'Contactée', WON: 'Gagnée', LOST: 'Perdue' }[req.status] || req.status;
+        tdStatus.appendChild(statusBadge);
+        tr.appendChild(tdStatus);
+
+        const tdNote = document.createElement('td');
+        tdNote.textContent = req.staff_note || '—';
+        tr.appendChild(tdNote);
+
+        const tdActions = document.createElement('td');
+        tdActions.style.cssText = 'white-space:nowrap;';
+
+        if (req.status === 'NEW' || req.status === 'CONTACTED') {
+            const contactBtn = document.createElement('button');
+            contactBtn.className = 'btn-revoke';
+            contactBtn.textContent = req.status === 'NEW' ? 'Marquer contacté' : 'Suivant';
+            contactBtn.onclick = async () => {
+                try {
+                    showD360Loading();
+                    await apiFetch('/admin/purchase-requests/' + req.id, {
+                        method: 'PATCH',
+                        body: { status: req.status === 'NEW' ? 'CONTACTED' : 'CONTACTED' },
+                    });
+                    loadPurchaseRequests(false);
+                } catch (e) {
+                    alert('Erreur : ' + (e.detail || e.message));
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            tdActions.appendChild(contactBtn);
+        }
+
+        if (req.status === 'NEW' || req.status === 'CONTACTED') {
+            const wonBtn = document.createElement('button');
+            wonBtn.className = 'btn-revoke';
+            wonBtn.style.cssText = 'border-color:var(--success);color:var(--success);margin-left:4px;';
+            wonBtn.textContent = 'Gagnée';
+            wonBtn.onclick = async () => {
+                try {
+                    showD360Loading();
+                    await apiFetch('/admin/purchase-requests/' + req.id, {
+                        method: 'PATCH',
+                        body: { status: 'WON' },
+                    });
+                    loadPurchaseRequests(false);
+                } catch (e) {
+                    alert('Erreur : ' + (e.detail || e.message));
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            tdActions.appendChild(wonBtn);
+
+            const lostBtn = document.createElement('button');
+            lostBtn.className = 'btn-revoke';
+            lostBtn.style.cssText = 'margin-left:4px;';
+            lostBtn.textContent = 'Perdue';
+            lostBtn.onclick = async () => {
+                try {
+                    showD360Loading();
+                    await apiFetch('/admin/purchase-requests/' + req.id, {
+                        method: 'PATCH',
+                        body: { status: 'LOST' },
+                    });
+                    loadPurchaseRequests(false);
+                } catch (e) {
+                    alert('Erreur : ' + (e.detail || e.message));
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            tdActions.appendChild(lostBtn);
+        }
+
+        tbody.appendChild(tr);
+    }
+
+    function formatPriceAdmin(priceObj) {
+        if (priceObj == null) return '—';
+        const amt = typeof priceObj === 'object' ? priceObj.amount : priceObj;
+        const cur = typeof priceObj === 'object' ? (priceObj.currency || 'XOF') : 'XOF';
+        if (cur === 'EUR') return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt / 100) + ' € HT';
+        return new Intl.NumberFormat('fr-FR').format(amt) + ' FCFA HT';
+    }
+
     // ── Logout admin ──
     async function handleLogoutAdmin() {
         try {
@@ -1087,6 +1270,9 @@
             if (perms.includes('audit:read')) {
                 document.getElementById('navItemAudit').style.display = '';
             }
+            if (perms.includes('order:create')) {
+                document.getElementById('navItemDemandes').style.display = '';
+            }
             if (!perms.includes('diagnostic:read')) {
                 document.getElementById('admin-prospects')?.remove();
                 document.querySelector('.admin-nav-item[data-page="prospects"]')?.remove();
@@ -1098,6 +1284,7 @@
             if (perms.includes('diagnostic:read')) loadDiagnostics(false);
             if (perms.includes('staff:manage')) loadStaff();
             if (perms.includes('audit:read')) loadAuditLogs(false);
+            if (perms.includes('order:create')) loadPurchaseRequests(false);
             // déclencher les animations reveal sur la page active au chargement
             switchPage('dashboard');
         } catch (e) {
