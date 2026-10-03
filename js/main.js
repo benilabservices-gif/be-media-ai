@@ -194,4 +194,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (form) form.style.display = 'none';
         if (success) success.style.display = 'block';
     };
+
+    // ── Contact Modal ──
+    window.openContactModal = function() {
+        const modal = document.getElementById('contactModal');
+        if (modal) {
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+    };
+    window.closeContactModal = function() {
+        const modal = document.getElementById('contactModal');
+        if (modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    };
+    window.handleContact = function(e) {
+        e.preventDefault();
+        const form = document.getElementById('contactForm');
+        const success = document.getElementById('contactSuccess');
+        if (form) form.style.display = 'none';
+        if (success) success.style.display = 'block';
+    };
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeContactModal(); });
 });

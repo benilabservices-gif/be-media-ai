@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academy360 — Formations marketing digital & IA</title>
+    <meta name="description" content="Academy360 forme les jeunes en reconversion professionnelle au marketing digital et à l'intelligence artificielle.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0c0b0e;
+            --bg2: #13111a;
+            --bg3: #1a1725;
+            --accent: #c4a882;
+            --accent2: #d4b896;
+            --text: #e8e4df;
+            --muted: #9a95a0;
+            --dim: #5c5764;
+            --border: rgba(196,168,130,0.12);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 6vw; }
+
+        /* ── Nav ── */
+        .nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            padding: 20px 6vw;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(12,11,14,0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+        }
+        .logo em { font-style: italic; color: var(--accent); font-family: 'Playfair Display', serif; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); transition: color 0.3s; }
+        .nav-links a:hover { color: var(--accent); }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--accent); color: var(--bg);
+            padding: 12px 28px; border-radius: 100px;
+            font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(196,168,130,0.25); }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--accent); color: var(--accent);
+        }
+        .btn-outline:hover { background: var(--accent); color: var(--bg); }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center;
+            padding: 140px 6vw 80px;
+            position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 80% 30%, rgba(196,168,130,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 10% 70%, rgba(196,168,130,0.04) 0%, transparent 60%);
+        }
+        .hero-content { position: relative; z-index: 2; max-width: 620px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            border: 1px solid var(--border); border-radius: 100px;
+            padding: 8px 16px; font-size: 11px; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--accent); margin-bottom: 3vh;
+            background: rgba(196,168,130,0.04);
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.8rem, 5vw, 5rem);
+            font-weight: 400; line-height: 1.05; letter-spacing: -0.02em;
+            margin-bottom: 3vh;
+        }
+        .hero h1 .italic { font-style: italic; color: var(--accent); }
+        .hero h1 .dim { font-weight: 300; color: var(--muted); }
+        .hero p {
+            font-size: 1.05rem; color: var(--muted); line-height: 1.7;
+            max-width: 480px; margin-bottom: 4vh; font-weight: 300;
+        }
+        .hero-stats {
+            display: flex; gap: 3rem; margin-top: 5vh;
+            padding-top: 3vh; border-top: 1px solid var(--border);
+        }
+        .hero-stat .num {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem; font-weight: 700; color: var(--accent);
+        }
+        .hero-stat .label { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+
+        /* ── Programs ── */
+        .programs { padding: 12vh 6vw; }
+        .section-label {
+            font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+            color: var(--accent); margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .section-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 400; line-height: 1.1; letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+        .section-sub { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 500px; margin-bottom: 5vh; }
+        .programs-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;
+        }
+        .program-card {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: 20px; padding: 2.5rem 2rem;
+            transition: all 0.4s; position: relative; overflow: hidden;
+        }
+        .program-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0; transition: opacity 0.4s;
+        }
+        .program-card:hover::before { opacity: 1; }
+        .program-card:hover {
+            border-color: rgba(196,168,130,0.25);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .program-icon {
+            width: 52px; height: 52px; border-radius: 14px;
+            background: linear-gradient(135deg, rgba(196,168,130,0.15), rgba(196,168,130,0.05));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 1.5rem;
+        }
+        .program-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.75rem; }
+        .program-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; }
+        .program-meta { display: flex; gap: 1.5rem; font-size: 12px; color: var(--dim); }
+        .program-meta span { display: flex; align-items: center; gap: 4px; }
+
+        /* ── Who for ── */
+        .who { padding: 12vh 6vw; background: var(--bg2); }
+        .who-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;
+            margin-top: 5vh;
+        }
+        .who-card {
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 2rem 1.5rem; text-align: center; transition: all 0.4s;
+        }
+        .who-card:hover { border-color: rgba(196,168,130,0.25); transform: translateY(-4px); }
+        .who-card .icon { font-size: 2rem; margin-bottom: 1rem; }
+        .who-card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .who-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        /* ── Method ── */
+        .method { padding: 12vh 6vw; }
+        .method-steps {
+            display: flex; gap: 0; margin-top: 5vh;
+        }
+        .method-step {
+            flex: 1; padding: 2.5rem 2rem; text-align: center;
+            border-right: 1px solid var(--border); position: relative;
+        }
+        .method-step:last-child { border-right: none; }
+        .method-step .num {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem; font-weight: 700; color: var(--accent); opacity: 0.2; margin-bottom: 1rem;
+        }
+        .method-step h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+        .method-step p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        /* ── Testimonials ── */
+        .testimonials { padding: 12vh 6vw; background: var(--bg2); }
+        .testimonials-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;
+            margin-top: 5vh;
+        }
+        .testimonial-card {
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 2rem; background: var(--bg);
+        }
+        .testimonial-card .stars { color: var(--accent); font-size: 14px; margin-bottom: 1rem; letter-spacing: 2px; }
+        .testimonial-card .quote { font-size: 14px; color: var(--muted); line-height: 1.7; font-style: italic; margin-bottom: 1.5rem; }
+        .testimonial-card .author { display: flex; align-items: center; gap: 12px; }
+        .testimonial-card .avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, rgba(196,168,130,0.3), rgba(196,168,130,0.1));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; color: var(--accent);
+        }
+        .testimonial-card .name { font-size: 14px; font-weight: 600; }
+        .testimonial-card .role { font-size: 12px; color: var(--dim); }
+
+        /* ── CTA ── */
+        .cta {
+            padding: 16vh 6vw; text-align: center; position: relative; overflow: hidden;
+        }
+        .cta::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(196,168,130,0.06) 0%, transparent 70%);
+        }
+        .cta h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 400; line-height: 1.1; margin-bottom: 2vh;
+            position: relative;
+        }
+        .cta h2 .italic { font-style: italic; color: var(--accent); }
+        .cta p { color: var(--muted); font-size: 16px; margin-bottom: 4vh; position: relative; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+
+        /* ── Footer ── */
+        .footer {
+            padding: 6vh 6vw; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; color: var(--dim);
+        }
+        .footer a { color: var(--accent); transition: opacity 0.3s; }
+        .footer a:hover { opacity: 0.7; }
+        .footer-links { display: flex; gap: 2rem; }
+
+        /* ── Reveal ── */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16,1,0.3,1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+
+        @media(max-width:768px) {
+            .nav-links { display: none; }
+            .method-steps { flex-direction: column; }
+            .method-step { border-right: none; border-bottom: 1px solid var(--border); }
+            .method-step:last-child { border-bottom: none; }
+            .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+            .footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../index.html" class="logo">Academy<em>.</em>360</a>
+        <ul class="nav-links">
+            <li><a href="#programmes">Programmes</a></li>
+            <li><a href="#methode">Méthode</a></li>
+            <li><a href="#temoignages">Témoignages</a></li>
+            <li>        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn">S'inscrire</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge reveal"><span class="dot" style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s ease-in-out infinite;display:inline-block;"></span> Academy360 — Be Media AI</div>
+            <h1 class="reveal delay-1">
+                Reconvertissez-vous<br>
+                <span class="italic">vers le digital</span><br>
+                <span class="dim">& l'intelligence artificielle</span>
+            </h1>
+            <p class="reveal delay-2">
+                Academy360 forme les jeunes en situation de reconversion professionnelle
+                aux métiers porteurs du marketing digital et de l'IA. Des compétences réelles,
+                un accompagnement sur mesure, des débouchés concrets.
+            </p>
+            <div class="hero-actions reveal delay-3" style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+                <a href="#programmes" class="btn">Découvrir les formations</a>
+                <a href="#contact" class="btn btn-outline">Demander des infos →</a>
+            </div>
+            <div class="hero-stats reveal delay-3">
+                <div class="hero-stat">
+                    <div class="num">92%</div>
+                    <div class="label">Taux d'insertion</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="num">6 mois</div>
+                    <div class="label">Durée moyenne</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="num">300+</div>
+                    <div class="label">Diplômés</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="programs" id="programmes">
+        <div class="reveal">
+            <div class="section-label">Nos programmes</div>
+            <h2 class="section-title">Des formations conçues<br>pour le <span style="color:var(--accent);font-style:italic;">marché de demain</span></h2>
+            <p class="section-sub">Chaque programme combine théorie, pratique et mise en situation réelle avec des professionnels du secteur.</p>
+        </div>
+        <div class="programs-grid">
+            <div class="program-card reveal delay-1">
+                <div class="program-icon">📱</div>
+                <h3>Marketing Digital Complet</h3>
+                <p>Maîtrisez toutes les disciplines : SEO, publicité en ligne, réseaux sociaux, email marketing, analytics et growth hacking.</p>
+                <div class="program-meta">
+                    <span>📅 4 mois</span>
+                    <span>💻 100% en ligne</span>
+                    <span>🎯 Débutant accepté</span>
+                </div>
+            </div>
+            <div class="program-card reveal delay-2">
+                <div class="program-icon">🤖</div>
+                <h3>IA Appliquée au Business</h3>
+                <p>Apprenez à utiliser les outils d'intelligence artificielle pour créer du contenu, automatiser des tâches et prendre de meilleures décisions.</p>
+                <div class="program-meta">
+                    <span>📅 3 mois</span>
+                    <span>💻 En ligne + présentiel</span>
+                    <span>🎯 Tous niveaux</span>
+                </div>
+            </div>
+            <div class="program-card reveal delay-3">
+                <div class="program-icon">🎨</div>
+                <h3>Création de Contenu & Branding</h3>
+                <p>Deviens un professionnel de la création de contenu : design visuel, copywriting, vidéo, photographie et identité de marque.</p>
+                <div class="program-meta">
+                    <span>📅 3 mois</span>
+                    <span>💻 En ligne</span>
+                    <span>🎯 Débutant accepté</span>
+                </div>
+            </div>
+            <div class="program-card reveal delay-1">
+                <div class="program-icon">🛒</div>
+                <h3>E-Commerce & Vente en Ligne</h3>
+                <p>Créez et gérez votre boutique en ligne : Shopify, WooCommerce, stratétie de vente, paiement et logistique.</p>
+                <div class="program-meta">
+                    <span>📅 2 mois</span>
+                    <span>💻 En ligne</span>
+                    <span>🎯 Débutant accepté</span>
+                </div>
+            </div>
+            <div class="program-card reveal delay-2">
+                <div class="program-icon">📊</div>
+                <h3>Data & Analytics</h3>
+                <p>Interprétez les données pour prendre des décisions éclairées. Google Analytics, tableaux de bord, KPIs et reporting.</p>
+                <div class="program-meta">
+                    <span>📅 2 mois</span>
+                    <span>💻 En ligne</span>
+                    <span>🎯 Niveau intermédiaire</span>
+                </div>
+            </div>
+            <div class="program-card reveal delay-3">
+                <div class="program-icon">🚀</div>
+                <h3>Bootcamp Career Transition</h3>
+                <p>Programme intensif de 6 mois tout compris : marketing digital + IA + création de contenu + accompagnement personnalisé vers l'emploi.</p>
+                <div class="program-meta">
+                    <span>📅 6 mois</span>
+                    <span>💻 Mixte</span>
+                    <span>🎯 Reconversion</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="who" id="qui">
+        <div class="reveal">
+            <div class="section-label">À qui s'adresse Academy360</div>
+            <h2 class="section-title">Vous correspondez si...<br><span style="color:var(--accent);font-style:italic;">vous voulez changer de voie</span></h2>
+        </div>
+        <div class="who-grid">
+            <div class="who-card reveal delay-1">
+                <div class="icon">🔄</div>
+                <h4>Reconversion professionnelle</h4>
+                <p>Vous voulez quitter votre secteur actuel pour intégrer le monde du digital.</p>
+            </div>
+            <div class="who-card reveal delay-2">
+                <div class="icon">🎓</div>
+                <h4>Jeunes diplômés</h4>
+                <p>Vous sortez de l'école et souhaitez acquérir des compétences directement demandées par les entreprises.</p>
+            </div>
+            <div class="who-card reveal delay-3">
+                <div class="icon">💼</div>
+                <h4>Salariés en évolution</h4>
+                <p>Vous voulez booster vos compétences digitales pour évoluer dans votre carrière actuelle.</p>
+            </div>
+            <div class="who-card reveal delay-1">
+                <div class="icon">🌍</div>
+                <h4>Entrepreneurs</h4>
+                <p>Vous lancez votre activité et avez besoin de maîtriser le marketing digital pour développer votre business.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="method" id="methode">
+        <div class="reveal">
+            <div class="section-label">Notre méthode</div>
+            <h2 class="section-title">Apprendre en <span style="color:var(--accent);font-style:italic;">faisant</span></h2>
+        </div>
+        <div class="method-steps">
+            <div class="method-step reveal delay-1">
+                <div class="num">01</div>
+                <h3>Bilan de positionnement</h3>
+                <p>Évaluation de votre profil, de vos objectifs et définition de votre parcours personnalisé.</p>
+            </div>
+            <div class="method-step reveal delay-2">
+                <div class="num">02</div>
+                <h3>Formation理论与实践</h3>
+                <p>Cours en direct, projets pratiques, études de cas réels et mentorat par des professionnels.</p>
+            </div>
+            <div class="method-step reveal delay-3">
+                <div class="num">03</div>
+                <h3>Projet de fin</h3>
+                <p>Réalisez un projet concret pour votre portfolio — une vraie preuve de compétences.</p>
+            </div>
+            <div class="method-step reveal delay-1">
+                <div class="num">04</div>
+                <h3>Insertion professionnelle</h3>
+                <p>Accompagnement vers l'emploi : recherche de stage, CV, entretien, réseau professionnel.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonials" id="temoignages">
+        <div class="reveal" style="text-align:center;">
+            <div class="section-label" style="justify-content:center;">Témoignages</div>
+            <h2 class="section-title">Ce que disent <span style="color:var(--accent);font-style:italic;">nos diplômés</span></h2>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card reveal delay-1">
+                <div class="stars">★★★★★</div>
+                <p class="quote">"Je suis passé de comptable à community manager en 6 mois. Academy360 m'a donné les compétences et la confiance pour décrocher mon premier poste."</p>
+                <div class="author">
+                    <div class="avatar">AK</div>
+                    <div>
+                        <div class="name">Aminata K.</div>
+                        <div class="role">Community Manager, TechStart</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card reveal delay-2">
+                <div class="stars">★★★★★</div>
+                <p class="quote">"Le bootcamp était intense mais exactement ce dont j'avais besoin. J'ai appris à maîtriser l'IA pour mes projets et j'ai même lancé mon activité freelance."</p>
+                <div class="author">
+                    <div class="avatar">FD</div>
+                    <div>
+                        <div class="name">François D.</div>
+                        <div class="role">Freelance Digital Strategist</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card reveal delay-3">
+                <div class="stars">★★★★★</div>
+                <p class="quote">"Après 10 ans dans la vente, je voulais changer. Academy360 m'a montré que le digital était fait pour moi. Aujourd'hui je suis data analyste !"</p>
+                <div class="author">
+                    <div class="avatar">SM</div>
+                    <div>
+                        <div class="name">Sophie M.</div>
+                        <div class="role">Data Analyst, DataFlow</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta" id="contact">
+        <div class="reveal">
+            <div class="section-label" style="justify-content:center;">Inscription</div>
+            <h2>Prêt à <span class="italic">changer de vie</span><br>professionnelle ?</h2>
+            <p>Premier entretien gratuit. Discutons de votre projet et trouvons la formation qui vous correspond.</p>
+                <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;position:relative;">
+                <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn">Prendre RDV</a>
+                <button class="btn btn-outline" onclick="openContactModal()">Envoyer un message</button>
+                <a href="../index.html" class="btn btn-outline">Retour à Be Media AI</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <span>© 2026 Academy360 — Un service de Be Media AI</span>
+        <div class="footer-links">
+            <a href="../index.html">Be Media AI</a>
+            <a href="#">Mentions légales</a>
+        </div>
+    </footer>
+
+    <script>
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+        }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        <!-- Contact Modal -->
+    <div class="contact-modal" id="contactModal">
+        <div class="contact-modal-backdrop" onclick="closeContactModal()"></div>
+        <div class="contact-modal-box">
+            <button class="contact-modal-close" onclick="closeContactModal()">✕</button>
+            <div class="contact-modal-inner">
+                <div class="contact-modal-left">
+                    <h3>Parlons de votre<br><span style="color:var(--accent);font-style:italic;">projet</span></h3>
+                    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-top:1rem;margin-bottom:2rem;">Remplissez le formulaire ou prenez rendez-vous directement via Calendly.</p>
+                    <div style="display:flex;flex-direction:column;gap:1rem;">
+                        <a href="https://calendly.com/benilabservices/45min" target="_blank" class="modal-btn" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text);transition:all 0.3s;">
+                            <span style="font-size:1.3rem;">📅</span>
+                            <div><div style="font-weight:600;font-size:14px;">Prendre rendez-vous</div><div style="font-size:12px;color:var(--dim);">Créneau de 45 min — consultation gratuite</div></div>
+                        </a>
+                        <a href="mailto:contact@bemediiai.com" class="modal-btn" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-decoration:none;color:var(--text);transition:all 0.3s;">
+                            <span style="font-size:1.3rem;">✉️</span>
+                            <div><div style="font-weight:600;font-size:14px;">Envoyer un email</div><div style="font-size:12px;color:var(--dim);">contact@bemediiai.com</div></div>
+                        </a>
+                    </div>
+                </div>
+                <div class="contact-modal-right">
+                    <h4 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;">Envoyer un message</h4>
+                    <form id="contactForm" onsubmit="handleContact(event)">
+                        <div style="margin-bottom:1rem;"><input type="text" class="contact-input" placeholder="Votre nom complet" required style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--text);font-family:Outfit,sans-serif;font-size:14px;outline:none;transition:border-color 0.3s;"></div>
+                        <div style="margin-bottom:1rem;"><input type="email" class="contact-input" placeholder="Votre email" required style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--text);font-family:Outfit,sans-serif;font-size:14px;outline:none;transition:border-color 0.3s;"></div>
+                        <div style="margin-bottom:1rem;"><textarea class="contact-input" placeholder="Décrivez votre projet..." rows="4" required style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--text);font-family:Outfit,sans-serif;font-size:14px;outline:none;transition:border-color 0.3s;resize:vertical;min-height:100px;"></textarea></div>
+                        <button type="submit" style="width:100%;background:var(--accent);border:none;border-radius:12px;padding:14px;color:var(--bg);font-weight:600;font-size:14px;font-family:Outfit,sans-serif;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;">Envoyer le message</button>
+                    </form>
+                    <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 0;"><div style="font-size:2.5rem;margin-bottom:1rem;">✓</div><div style="font-size:16px;font-weight:600;margin-bottom:0.5rem;">Message envoyé !</div><div style="font-size:14px;color:var(--dim);">Nous vous répondrons dans les 24h.</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        .contact-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s cubic-bezier(.16,1,.3,1)}
+        .contact-modal.open{opacity:1;pointer-events:all}
+        .contact-modal-backdrop{position:absolute;inset:0;background:rgba(12,11,14,.85);backdrop-filter:blur(12px)}
+        .contact-modal-box{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:24px;width:90%;max-width:900px;max-height:90vh;overflow-y:auto;padding:3rem;box-shadow:0 40px 80px rgba(0,0,0,.5);transform:translateY(30px) scale(.95);transition:transform .4s cubic-bezier(.16,1,.3,1)}
+        .contact-modal.open .contact-modal-box{transform:translateY(0) scale(1)}
+        .contact-modal-close{position:absolute;top:1.5rem;right:1.5rem;background:none;border:1px solid var(--border);color:var(--dim);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:14px;transition:all .3s;display:flex;align-items:center;justify-content:center}
+        .contact-modal-close:hover{border-color:var(--accent);color:var(--accent)}
+        .contact-modal-inner{display:grid;grid-template-columns:1fr 1.2fr;gap:3rem}
+        .contact-modal-left h3{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400;line-height:1.2}
+        .modal-btn:hover{border-color:rgba(196,168,130,.3)}
+        @media(max-width:768px){.contact-modal-inner{grid-template-columns:1fr}.contact-modal-box{padding:2rem}}
+    </style>
+    <script>
+        window.openContactModal=function(){const m=document.getElementById('contactModal');if(m){m.classList.add('open');document.body.style.overflow='hidden'}};
+        window.closeContactModal=function(){const m=document.getElementById('contactModal');if(m){m.classList.remove('open');document.body.style.overflow=''}};
+        window.handleContact=function(e){e.preventDefault();const f=document.getElementById('contactForm'),s=document.getElementById('contactSuccess');if(f)f.style.display='none';if(s)s.style.display='block'};
+        document.addEventListener('keydown',e=>{if(e.key==='Escape')closeContactModal()});
+    </script>
+</body>
+</html>

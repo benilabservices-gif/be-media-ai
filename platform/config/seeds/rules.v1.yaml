@@ -1,0 +1,161 @@
+# Règles de recommandation — version 1
+#
+# Chaque règle : si `when` est vraie sur les faits du diagnostic, elle produit un élément du
+# plan d'action. Dans un même `exclusivity_group`, seule la règle la plus prioritaire est
+# gardée. Faits disponibles : voir `facts` dans questionnaire.v1.yaml.
+#
+# phase : regroupement affiché (PRESENT → VISIBLE → ATTRACT → CONVERT → RETAIN)
+
+key: default
+version: 1
+
+rules:
+  - key: no_website
+    module: PRESENCE
+    phase: PRESENT
+    priority: CRITICAL
+    exclusivity_group: website
+    when: { all: [{ fact: has_website, eq: false }, { fact: website_in_progress, eq: false }] }
+    reason: "Sans site, votre entreprise n'existe pas pour les clients qui cherchent en ligne."
+    current_state: "Aucun site web"
+    recommended_action: "Créer un site professionnel avec nom de domaine et email pro"
+    product_code: DIGITAL_START
+    cta: BUY
+
+  - key: website_in_progress
+    module: PRESENCE
+    phase: PRESENT
+    priority: HIGH
+    exclusivity_group: website
+    when: { fact: website_in_progress, eq: true }
+    reason: "Votre site est en cours de création : chaque semaine sans site est une semaine de clients perdus."
+    current_state: "Site en cours de création"
+    recommended_action: "Finaliser et mettre en ligne un site professionnel"
+    product_code: DIGITAL_START
+    cta: BUY
+
+  - key: no_domain
+    module: PRESENCE
+    phase: PRESENT
+    priority: HIGH
+    exclusivity_group: website
+    when: { all: [{ fact: has_website, eq: true }, { fact: has_domain, eq: false }] }
+    reason: "Un site sans nom de domaine propre inspire moins confiance et se retient mal."
+    current_state: "Site sans nom de domaine"
+    recommended_action: "Obtenir un nom de domaine à votre nom"
+    product_code: DIGITAL_START
+    cta: CONTACT
+
+  - key: no_professional_email
+    module: PRESENCE
+    phase: PRESENT
+    priority: MEDIUM
+    when: { all: [{ fact: has_professional_email, eq: false }, { fact: has_website, eq: true }] }
+    reason: "Une adresse personnelle (Gmail, Outlook) donne une image moins professionnelle."
+    current_state: "Email personnel utilisé"
+    recommended_action: "Créer une adresse email à votre nom de domaine"
+    product_code: DIGITAL_ESSENTIAL
+    cta: ACTIVATE
+
+  - key: no_google_business
+    module: VISIBILITY
+    phase: VISIBLE
+    priority: HIGH
+    exclusivity_group: google_business
+    when: { all: [{ fact: has_google_business, eq: false }, { fact: google_business_incomplete, eq: false }] }
+    reason: "Entreprise locale sans fiche Google Business : vous êtes absent de Google Maps."
+    current_state: "Aucune fiche Google Business"
+    recommended_action: "Créer et optimiser la fiche Google Business"
+    product_code: DIGITAL_ESSENTIAL
+    cta: ACTIVATE
+
+  - key: google_business_incomplete
+    module: VISIBILITY
+    phase: VISIBLE
+    priority: HIGH
+    exclusivity_group: google_business
+    when: { fact: google_business_incomplete, eq: true }
+    reason: "Une fiche Google Business incomplète est moins bien classée et moins cliquée."
+    current_state: "Fiche Google Business incomplète"
+    recommended_action: "Compléter la fiche : photos, horaires, catégories, description"
+    product_code: DIGITAL_GROWTH
+    cta: ACTIVATE
+
+  - key: no_social_presence
+    module: VISIBILITY
+    phase: VISIBLE
+    priority: MEDIUM
+    exclusivity_group: social
+    when: { fact: social_networks_count, eq: 0 }
+    reason: "Vos clients passent du temps sur les réseaux sociaux, mais n'y trouvent pas votre entreprise."
+    current_state: "Aucun réseau social"
+    recommended_action: "Ouvrir et animer une page Facebook et Instagram"
+    product_code: DIGITAL_GROWTH
+    cta: ACTIVATE
+
+  - key: social_low_frequency
+    module: VISIBILITY
+    phase: VISIBLE
+    priority: MEDIUM
+    exclusivity_group: social
+    when: { all: [{ fact: social_networks_count, gt: 0 }, { fact: content_frequency, in: [monthly, rarely] }] }
+    reason: "Votre fréquence de publication est insuffisante pour rester visible."
+    current_state: "Publications rares"
+    recommended_action: "Structurer un calendrier éditorial et publier chaque semaine"
+    product_code: DIGITAL_GROWTH
+    cta: ACTIVATE
+
+  - key: no_ads
+    module: ACQUISITION
+    phase: ATTRACT
+    priority: LOW
+    when: { all: [{ fact: runs_ads, eq: false }, { fact: has_website, eq: true }] }
+    reason: "Aucune publicité en ligne : les campagnes ciblées peuvent accélérer l'arrivée de nouveaux clients."
+    current_state: "Aucune campagne publicitaire"
+    recommended_action: "Lancer une première campagne Meta Ads ciblée (budget publicitaire séparé)"
+    product_code: DIGITAL_PERFORMANCE
+    cta: CONTACT
+
+  - key: weak_contact_channel
+    module: CONVERSION
+    phase: CONVERT
+    priority: MEDIUM
+    when: { fact: contact_channel, in: [walkin, dm, phone] }
+    reason: "Vos clients ont peu de moyens simples de vous contacter ou de demander un devis."
+    current_state: "Contact peu structuré"
+    recommended_action: "Ajouter un bouton WhatsApp et un formulaire de contact sur votre site"
+    product_code: DIGITAL_START
+    cta: CONTACT
+
+  - key: no_online_booking
+    module: CONVERSION
+    phase: CONVERT
+    priority: LOW
+    when: { all: [{ fact: has_online_booking_or_payment, eq: false }, { fact: sector, in: [restaurant, beauty, health, education] }] }
+    reason: "Dans votre secteur, la réservation en ligne transforme plus de visiteurs en clients."
+    current_state: "Aucune réservation en ligne"
+    recommended_action: "Mettre en place la réservation en ligne"
+    cta: CONTACT
+
+  - key: no_client_base
+    module: RETENTION
+    phase: RETAIN
+    priority: MEDIUM
+    exclusivity_group: crm
+    when: { fact: client_base, in: [none, notebook] }
+    reason: "Sans fichier clients structuré, impossible de relancer ou fidéliser vos clients."
+    current_state: "Pas de base clients structurée"
+    recommended_action: "Mettre en place un suivi des clients et des prospects"
+    product_code: DIGITAL_GROWTH
+    cta: ACTIVATE
+
+  - key: no_retention_communication
+    module: RETENTION
+    phase: RETAIN
+    priority: LOW
+    when: { all: [{ fact: retention_channel, eq: none }, { fact: client_base, in: [crm, spreadsheet] }] }
+    reason: "Vous avez une base clients mais ne la sollicitez pas : c'est du chiffre d'affaires qui dort."
+    current_state: "Aucune communication aux clients existants"
+    recommended_action: "Lancer des relances et offres régulières par email ou WhatsApp"
+    product_code: DIGITAL_PERFORMANCE
+    cta: ACTIVATE

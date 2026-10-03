@@ -1,0 +1,180 @@
+/* ═══════════════════════════════════════════════════════
+   BENILAB Digital360 — Dashboard Client Styles
+   ═══════════════════════════════════════════════════════ */
+
+.dash-layout { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.dash-sidebar {
+    width: 260px; background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    position: fixed; top: 0; left: 0; height: 100vh;
+    overflow-y: auto; z-index: 200;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.dash-sidebar-header {
+    padding: 24px 20px; border-bottom: 1px solid var(--border);
+}
+.dash-sidebar-logo {
+    font-size: 16px; font-weight: 700; letter-spacing: -0.02em;
+}
+.dash-sidebar-logo em { font-style: italic; color: var(--accent); font-family: 'Playfair Display', serif; }
+.dash-sidebar-user {
+    margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+}
+.dash-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-warm));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--text-inverse);
+}
+.dash-user-info { flex: 1; min-width: 0; }
+.dash-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-user-role { font-size: 11px; color: var(--text-muted); }
+.dash-sidebar-nav { padding: 16px 12px; }
+.dash-nav-section {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-muted); padding: 12px 12px 6px;
+}
+.dash-nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: var(--radius-md);
+    font-size: 14px; color: var(--text-secondary);
+    transition: all 0.3s; cursor: pointer;
+}
+.dash-nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.dash-nav-item.active { background: rgba(127,181,168,0.1); color: var(--accent); }
+.dash-nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.dash-nav-item .nav-badge {
+    margin-left: auto; background: var(--accent); color: var(--text-inverse);
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px;
+}
+.dash-sidebar-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 199; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+}
+.dash-sidebar-overlay.open { opacity: 1; pointer-events: all; }
+
+/* ── Main ── */
+.dash-main { flex: 1; margin-left: 260px; min-height: 100vh; background: var(--bg-primary); }
+.dash-topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.dash-topbar-title { font-size: 1.1rem; font-weight: 600; }
+.dash-topbar-actions { display: flex; gap: 1rem; align-items: center; }
+.dash-hamburger {
+    display: none; background: none; border: 1px solid var(--border);
+    color: var(--text-primary); width: 40px; height: 40px;
+    border-radius: var(--radius-sm); font-size: 18px;
+}
+.dash-content { padding: 2rem; }
+
+/* ── Dashboard Home ── */
+.dash-welcome { margin-bottom: 2rem; }
+.dash-welcome h1 {
+    font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 400; margin-bottom: 0.25rem;
+}
+.dash-welcome h1 .name { color: var(--accent); }
+.dash-welcome p { color: var(--text-muted); font-size: 14px; }
+.dash-score-banner {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 2rem;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 2rem;
+    align-items: center; margin-bottom: 2rem;
+}
+.dash-score-info h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 0.5rem; }
+.dash-score-info p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+.dash-next-action {
+    background: rgba(127,181,168,0.06); border: 1px solid rgba(127,181,168,0.2);
+    border-radius: var(--radius-md); padding: 1rem 1.5rem; text-align: center;
+}
+.dash-next-action .label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem; }
+.dash-next-action p { font-size: 13px; color: var(--text-secondary); margin-bottom: 0.75rem; }
+
+/* ── Stats ── */
+.dash-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+}
+.dash-stat {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 1.25rem;
+}
+.dash-stat-value { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--accent); }
+.dash-stat-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+.dash-stat-change { font-size: 11px; margin-top: 4px; }
+.dash-stat-change.up { color: var(--success); }
+.dash-stat-change.down { color: var(--error); }
+
+/* ── Modules ── */
+.dash-modules {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+}
+.dash-module {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+    transition: all 0.3s; cursor: pointer;
+}
+.dash-module:hover { border-color: rgba(127,181,168,0.25); transform: translateY(-2px); }
+.dash-module-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+.dash-module h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+.dash-module p { font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; }
+.dash-module-status { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+
+/* ── Kanban ── */
+.kanban { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; }
+.kanban-col {
+    min-width: 220px; flex: 1; background: var(--bg-secondary);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1rem;
+}
+.kanban-col-header {
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 1rem; padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.kanban-col-count { background: var(--bg-tertiary); padding: 2px 8px; border-radius: 100px; font-size: 11px; }
+.kanban-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 1rem; margin-bottom: 0.75rem;
+    cursor: pointer; transition: all 0.3s;
+}
+.kanban-card:hover { border-color: rgba(127,181,168,0.25); }
+.kanban-card-title { font-size: 14px; font-weight: 500; margin-bottom: 0.5rem; }
+.kanban-card-meta { font-size: 12px; color: var(--text-muted); }
+
+/* ── Calendar ── */
+.calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+    background: var(--border); border-radius: var(--radius-md); overflow: hidden;
+}
+.calendar-day-header {
+    background: var(--bg-tertiary); padding: 10px; text-align: center;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+}
+.calendar-day {
+    background: var(--bg-card); padding: 10px; min-height: 80px;
+    font-size: 13px; cursor: pointer; transition: all 0.3s;
+}
+.calendar-day:hover { background: var(--bg-elevated); }
+.calendar-day.today { background: rgba(127,181,168,0.06); }
+.calendar-day .day-num { font-weight: 600; margin-bottom: 4px; }
+.calendar-event {
+    font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.calendar-event.post { background: rgba(127,181,168,0.15); color: var(--accent); }
+.calendar-event.pending { background: rgba(251,191,36,0.15); color: var(--warning); }
+
+/* ── Chart container ── */
+.chart-container {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); pad

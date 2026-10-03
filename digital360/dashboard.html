@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Client — BENILAB Digital360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .dash-page { display: none; }
+        .dash-page.active { display: block; }
+        .chart-placeholder {
+            width: 100%; height: 200px;
+            background: linear-gradient(135deg, rgba(127,181,168,0.03), rgba(127,181,168,0.01));
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 13px;
+        }
+        /* Simple CSS bar chart */
+        .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 1rem; }
+        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 1s cubic-bezier(0.16,1,0.3,1); min-height: 4px; }
+        .bar-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .bar-value { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div id="d360-loading-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,10,15,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+        <div style="text-align:center">
+            <div style="width:36px;height:36px;border:3px solid rgba(127,181,168,0.2);border-top-color:#7fb5a8;border-radius:50%;animation:d360spin .8s linear infinite;margin:0 auto 1rem;"></div>
+            <div style="color:#c8c4d0;font-size:14px;font-weight:500;">Connexion au serveur…</div>
+        </div>
+    </div>
+    <style>@keyframes d360spin{to{transform:rotate(360deg)}}</style>
+    <div class="noise"></div>
+
+    <div class="dash-layout">
+        <!-- Sidebar -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="dash-sidebar-header">
+                <div class="dash-sidebar-logo">BENILAB <em>Digital360</em></div>
+                <div class="dash-sidebar-user">
+                    <div class="dash-avatar" id="userAvatar">A</div>
+                    <div class="dash-user-info">
+                        <div class="dash-user-name" id="userName">Amadou Diallo</div>
+                        <div class="dash-user-role">Client</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="dash-sidebar-nav">
+                <div class="dash-nav-section">Principal</div>
+                <div class="dash-nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <span class="nav-icon">📊</span> Tableau de bord
+                </div>
+                <div class="dash-nav-item" data-page="entreprise" onclick="switchPage('entreprise')">
+                    <span class="nav-icon">🏢</span> Mon entreprise
+                </div>
+                <div class="dash-nav-item" data-page="site" onclick="switchPage('site')">
+                    <span class="nav-icon">🌐</span> Mon site web
+                </div>
+                <div class="dash-nav-section">Modules</div>
+                <div class="dash-nav-item" data-page="google" onclick="switchPage('google')">
+                    <span class="nav-icon">📍</span> Google Business
+                </div>
+                <div class="dash-nav-item" data-page="reseaux" onclick="switchPage('reseaux')">
+                    <span class="nav-icon">📱</span> Réseaux sociaux
+                </div>
+                <div class="dash-nav-item" data-page="contenus" onclick="switchPage('contenus')">
+                    <span class="nav-icon">✍️</span> Contenus
+                </div>
+                <div class="dash-nav-item" data-page="prospects" onclick="switchPage('prospects')">
+                    <span class="nav-icon">👥</span> Prospects
+                </div>
+                <div class="dash-nav-item" data-page="publicite" onclick="switchPage('publicite')">
+                    <span class="nav-icon">⚡</span> Publicité
+                </div>
+                <div class="dash-nav-item" data-page="conversion" onclick="switchPage('conversion')">
+                    <span class="nav-icon">🔄</span> Conversion
+                </div>
+                <div class="dash-nav-section">Suivi</div>
+                <div class="dash-nav-item" data-page="analytics" onclick="switchPage('analytics')">
+                    <span class="nav-icon">📈</span> Analytics
+                </div>
+                <div class="dash-nav-item" data-page="abonnement" onclick="switchPage('abonnement')">
+                    <span class="nav-icon">💳</span> Abonnement
+                </div>
+                <div class="dash-nav-item" data-page="support" onclick="switchPage('support')">
+                    <span class="nav-icon">💬</span> Support
+                </div>
+                <div style="padding:12px;">
+                    <a href="index.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Retour à l'accueil</a>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="dash-sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- Main -->
+        <main class="dash-main">
+            <header class="dash-topbar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="dash-hamburger" onclick="toggleSidebar()">☰</button>
+                    <div class="dash-topbar-title" id="pageTitle">Tableau de bord</div>
+                </div>
+                <div class="dash-topbar-actions">
+                    <button class="btn btn-ghost btn-sm" style="position:relative;" onclick="showNotifications()">
+                        🔔
+                    </button>
+                    <a href="admin.html" class="btn btn-ghost btn-sm" id="navAdminLink" style="display:none;">Espace Admin</a>
+                    <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Déconnexion</button>
+                </div>
+            </header>
+
+            <div class="dash-content">
+
+                 <!-- ═══ DASHBOARD ═══ -->
+                 <div class="dash-page active" id="page-dashboard">
+                     <div class="dash-welcome reveal">
+                         <h1>Bonjour <span class="name" id="welcomeName">—</span></h1>
+                         <p id="welcomeSub">Chargement de vos données…</p>
+                     </div>
+
+                     <!-- Score Banner -->
+                     <div class="dash-score-banner reveal delay-1" id="scoreBanner">
+                         <div class="dash-score-ring score-ring">
+                             <svg viewBox="0 0 120 120">
+                                 <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                 <circle class="score-ring-fill" id="dashScoreCircle" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+                             </svg>
+                             <div class="score-ring-text">
+                                 <div class="score-ring-value" id="dashScoreValue" style="font-size:2rem;">—</div>
+                                 <div class="score-ring-label">/100</div>
+                             </div>
+                         </div>
+                           <div class="dash-score-info">
+                               <h2>Votre Digital Score</h2>
+                               <p id="dashScoreMsg">Aucun diagnostic effectué.</p>
+                               <p id="dashScoreEvolution" style="font-size:13px;color:var(--accent);margin-top:4px;display:none;"></p>
+                           </div>
+                          <div class="dash-next-action" id="dashNoDiagCta" style="display:none;">
+                              <div class="label">Premier pas</div>
+                              <p>Faites votre diagnostic gratuit pour obtenir votre plan de transformation.</p>
+                              <a href="index.html#diagnostic" class="btn btn-primary btn-sm" style="display:inline-block;margin-top:0.5rem;">Faire mon diagnostic</a>
+                          </div>
+                         <div class="dash-next-action" id="dashNextAction" style="display:none;">
+                             <div class="label">Recommandations</div>
+                             <div id="dashPlanItems"></div>
+                           </div>
+                      </div>
+                      <div id="dashDiagAction" style="display:none;margin-bottom:2rem;"></div>
+
+                      <!-- Stats -->
+                     <div class="dash-stats reveal delay-2" id="dashStats">
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change">Module Analytics</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Leads captés</div><div class="dash-stat-change">Module CRM</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Contenus publiés</div><div class="dash-stat-change">Module Contenu</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Campagnes actives</div><div class="dash-stat-change">Module Publicité</div></div>
+                     </div>
+
+                     <!-- Modules quick access -->
+                     <div class="reveal delay-3" style="margin-bottom:2rem;">
+                         <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Vos modules</h3>
+                         <div class="dash-modules" id="dashModules"></div>
+                     </div>
+
+                     <!-- Chart + Recent -->
+                     <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;" class="reveal delay-4">
+                         <div class="chart-container">
+                             <h3>Trafic — 6 derniers mois</h3>
+                             <div class="chart-placeholder" id="dashTrafficChart">Graphique en chargement…</div>
+                         </div>
+                         <div class="chart-container">
+                             <h3>Activité récente</h3>
+                             <div id="dashRecentActivity"><div class="empty-state" style="padding:2rem;"><div class="empty-state-icon">📭</div><p>Aucune activité récente</p></div></div>
+                         </div>
+                     </div>
+
+                     <!-- Welcome message -->
+                     <div id="welcomeMessage" style="display:none;margin-top:2rem;padding:1.5rem;background:rgba(127,181,168,0.06);border:1px solid rgba(127,181,168,0.2);border-radius:var(--radius-lg);">
+                         <p style="color:var(--accent);font-weight:600;margin-bottom:0.5rem;">✅ Votre espace est prêt</p>
+                         <p style="color:var(--text-secondary);font-size:14px;">Votre diagnostic a été enregistré. Vous pouvez maintenant suivre votre transformation digitale.</p>
+                     </div>
+                 </div>
+                         <div class="chart-container">
+                             <h3>Activité récente</h3>
+                             <div id="dashRecentActivity"><div class="empty-state" style="padding:2rem;"><div class="empty-state-icon">📭</div><p>Aucune activité récente</p></div></div>
+                         </div>
+                     </div>
+                 </div>
+
+                <!-- ═══ ENTREPRISE ═══ -->
+                <div class="dash-page" id="page-entreprise">
+                    <div class="page-header reveal">
+                        <h1>Mon entreprise</h1>
+                        <p>Votre Digital Passport — informations centrales de votre activité.</p>
+                    </div>
+                    <div class="passport-grid reveal delay-1">
+                        <div class="passport-section">
+                            <h3>Identité</h3>
+                            <div class="passport-field"><div class="passport-field-label">Nom</div><div class="passport-field-value">Restaurant Le Délice</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Secteur</div><div class="passport-field-value">Restaurant / Hospitality</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Ville</div><div class="passport-field-value">Abidjan, Cocody</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Description</div><div class="passport-field-value" style="font-size:14px;color:var(--text-secondary);">Cuisine ivoirienne et internationale dans un cadre moderne. Ouvert midi et soir.</div></div>
+                        </div>
+                        <div class="passport-section">
+                            <h3>Coordonnées</h3>
+                            <div class="passport-field"><div class="passport-field-label">Téléphone</div><div class="passport-field-value">+225 07 08 09 10</div></div>
+                            <div class="passport-field"><div class="passport-field-label">WhatsApp</div><div class="passport-field-value">+225 07 08 09 10</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Email</div><div class="passport-field-value">contact@letedelice.ci</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Adresse</div><div class="passport-field-value">Bd Latrille, Cocody Abidjan</div></div>
+                        </div>
+                        <div class="passport-section">
+                            <h3>Présence digitale</h3>
+                            <div class="passport-field"><div class="passport-field-label">Site web</div><div class="passport-field-value">www.letedelice.ci ✓</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Domaine</div><div class="passport-field-value">letedelice.ci — valide jusqu'en 2027</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Email pro</div><div class="passport-field-value">contact@letedelice.ci ✓</div></div>
+                        </div>
+                        <div class="passport-section">
+                            <h3>Google & Réseaux</h3>
+                            <div class="passport-field"><div class="passport-field-label">Google Business</div><div class="passport-field-value"><span class="badge badge-warning">À optimiser</span></div></div>
+                            <div class="passport-field"><div class="passport-field-label">Avis Google</div><div class="passport-field-value">7 avis — note 4.2/5</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Facebook</div><div class="passport-field-value">@letedelice.ci — 340 abonnés</div></div>
+                            <div class="passport-field"><div class="passport-field-label">Instagram</div><div class="passport-field-value">@letedelice_ci — 180 abonnés</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ SITE WEB ═══ -->
+                <div class="dash-page" id="page-site">
+                    <div class="page-header reveal">
+                        <h1>Mon site web</h1>
+                        <p>Votre brief, l'avancement de la réalisation, la relecture et la mise en ligne.</p>
+                    </div>
+                    <div id="projectRoot"></div>
+                </div>
+
+                <div class="dash-page" id="page-google">
+                    <div class="page-header reveal">
+                        <h1>Google Business</h1>
+                        <p>Gérez votre fiche Google pour être trouvé localement.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="card" style="margin-bottom:1.5rem;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                                <div>
+                                    <div style="font-size:1.2rem;font-weight:600;">Restaurant Le Délice</div>
+                                    <div style="font-size:13px;color:var(--text-muted);">Restaurant · Abidjan</div>
+                                </div>
+                                <span class="badge badge-warning">Score: 62/100</span>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;">
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Avis</div><div style="font-size:1.5rem;font-weight:700;">7 <span style="font-size:0.8rem;color:var(--warning);">★</span> 4.2</div></div>
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Vues fiche</div><div style="font-size:1.5rem;font-weight:700;color:var(--accent);">234</div></div>
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Appels</div><div style="font-size:1.5rem;font-weight:700;">12</div></div>
+                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Itinéraires</div><div style="font-size:1.5rem;font-weight:700;">38</div></div>
+                            </div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <div><strong>Optimisation en cours :</strong> Votre fiche peut être améliorée — ajoutez plus de photos, répondre aux avis et complétez vos horaires.</div>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top:1rem;">Demander l'optimisation complète</button>
+                    </div>
+                </div>
+
+                <!-- ═══ RÉSEAUX SOCIAUX ═══ -->
+                <div class="dash-page" id="page-reseaux">
+                    <div class="page-header reveal">
+                        <h1>Réseaux sociaux</h1>
+                        <p>Calendrier éditorial et performances de vos réseaux.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;">
+                            <div class="card" style="text-align:center;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">📘</div>
+                                <div style="font-weight:600;">Facebook</div>
+                                <div style="font-size:13px;color:var(--text-muted);">340 abonnés</div>
+                                <div style="font-size:12px;color:var(--success);margin-top:0.5rem;">✓ Connecté</div>
+                            </div>
+                            <div class="card" style="text-align:center;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">📸</div>
+                                <div style="font-weight:600;">Instagram</div>
+                                <div style="font-size:13px;color:var(--text-muted);">180 abonnés</div>
+                                <div style="font-size:12px;color:var(--success);margin-top:0.5rem;">✓ Connecté</div>
+                            </div>
+                            <div class="card" style="text-align:center;opacity:0.5;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">🎵</div>
+                                <div style="font-weight:600;">TikTok</div>
+                                <div style="font-size:13px;color:var(--text-muted);">Non connecté</div>
+                                <div style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;">— Pas connecté</div>
+                            </div>
+                        </div>
+
+                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Calendrier éditorial — Septembre 2025</h3>
+                        <div class="calendar-grid">
+                            <div class="calendar-day-header">Lun</div><div class="calendar-day-header">Mar</div><div class="calendar-day-header">Mer</div><div class="calendar-day-header">Jeu</div><div class="calendar-day-header">Ven</div><div class="calendar-day-header">Sam</div><div class="calendar-day-header">Dim</div>
+                            <div class="calendar-day" style="opacity:0.3;"><div class="day-num">1</div></div>
+                            <div class="calendar-day"><div class="day-num">2</div></div>
+                            <div class="calendar-day"><div class="day-num">3</div><div class="calendar-event post">Post Facebook</div></div>
+                            <div class="calendar-day"><div class="day-num">4</div></div>
+                            <div class="calendar-day"><div class="day-num">5</div><div class="calendar-event post">Post Instagram</div></div>
+                            <div class="calendar-day"><div class="day-num">6</div></div>
+                            <div class="calendar-day"><div class="day-num">7</div></div>
+                            <div class="calendar-day"><div class="day-num">8</div><div class="calendar-event post">Reels Instagram</div></div>
+                            <div class="calendar-day today"><div class="day-num">9</div><div class="calendar-event pending">En validation</div></div>
+                            <div class="calendar-day"><div class="day-num">10</div><div class="calendar-event post">Post Facebook</div></div>
+                            <div class="calendar-day"><div class="day-num">11</div></div>
+                            <div class="calendar-day"><div class="day-num">12</div><div class="calendar-event post">Story WhatsApp</div></div>
+                            <div class="calendar-day"><div class="day-num">13</div></div>
+                            <div class="calendar-day"><div class="day-num">14</div><div class="calendar-event pending">En validation</div></div>
+                        </div>
+                        <div style="margin-top:1rem;display:flex;gap:1rem;font-size:12px;color:var(--text-muted);">
+                            <span><span class="badge badge-accent" style="margin-right:4px;">●</span> Publié</span>
+                            <span><span class="badge badge-warning" style="margin-right:4px;">●</span> En validation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ CONTENUS ═══ -->
+                <div class="dash-page" id="page-contenus">
+                    <div class="page-header reveal">
+                        <h1>Content Studio</h1>
+                        <p>Gérez vos contenus de A à Z.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="tab-group">
+                            <button class="tab-btn active" onclick="switchTab(this,'cont-all')">Tous</button>
+                            <button class="tab-btn" onclick="switchTab(this,'cont-published')">Publiés</button>
+                            <button class="tab-btn" onclick="switchTab(this,'cont-validating')">En validation</button>
+                            <button class="tab-btn" onclick="switchTab(this,'cont-draft')">Brouillons</button>
+                        </div>
+                        <div class="card" id="cont-all">
+                            <div style="display:flex;flex-direction:column;gap:1rem;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight:500;">Post Facebook — Spécial weekend</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">📘 Facebook · 5 sept · 245 vues</div>
+                                    </div>
+                                    <span class="badge badge-success">Publié</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight:500;">Reels Instagram — detrás du chef</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">📸 Instagram · 8 sept · En attente</div>
+                                    </div>
+                                    <span class="badge badge-warning">En validation</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight:500;">Carrousel — Nos 5 plats signature</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">📸 Instagram · 12 sept</div>
+                                    </div>
+                                    <span class="badge badge-muted">Brouillon</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+                                    <div>
+                                        <div style="font-weight:500;">Story WhatsApp — Offer du jour</div>
+                                        <div style="font-size:12px;color:var(--text-muted);">💬 WhatsApp · 14 sept</div>
+                                    </div>
+                                    <span class="badge badge-warning">En validation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ PROSPECTS ═══ -->
+                <div class="dash-page" id="page-prospects">
+                    <div class="page-header reveal">
+                        <h1>Prospects</h1>
+                        <p>Suivez vos prospects et convertissez-les en clients.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:flex;gap:1rem;margin-bottom:1.5rem;">
+                            <button class="btn btn-primary btn-sm" onclick="alert('Formulaire d\'ajout de prospect')">+ Ajouter un prospect</button>
+                            <button class="btn btn-outline btn-sm" onclick="toggleKanbanView()">Vue Kanban</button>
+                        </div>
+                        <div id="kanbanView" style="display:none;">
+                            <div class="kanban">
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Nouveaux</span><span class="kanban-col-count">3</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Marie K.</div><div class="kanban-card-meta">Facebook · Il y a 2j · Budget: Event privé</div></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Jean M.</div><div class="kanban-card-meta">Site web · Il y a 3j · Déjeuner entreprise</div></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Sophie B.</div><div class="kanban-card-meta">WhatsApp · Il y a 5j · Birthday</div></div>
+                                </div>
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Contactés</span><span class="kanban-col-count">4</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Patrick T.</div><div class="kanban-card-meta">Google · 10 sept · Repas famille</div></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Aminata D.</div><div class="kanban-card-meta">Instagram · 8 sept · Corporate lunch</div></div>
+                                </div>
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Qualifiés</span><span class="kanban-col-count">2</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Hotel Ivoire</div><div class="kanban-card-meta">Site web · 5 sept · Traiteur événement</div></div>
+                                </div>
+                                <div class="kanban-col">
+                                    <div class="kanban-col-header"><span>Gagnés</span><span class="kanban-col-count">3</span></div>
+                                    <div class="kanban-card"><div class="kanban-card-title">Event Corporate ABC</div><div class="kanban-card-meta">Facebook · Gagné · 250 000 FCFA</div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tableView">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead><tr><th>Prospect</th><th>Source</th><th>Statut</th><th>Date</th><th>Valeur</th><th>Action</th></tr></thead>
+                                    <tbody>
+                                        <tr><td style="font-weight:500;">Marie K.</td><td>Facebook</td><td><span class="badge badge-muted">Nouveau</span></td><td>7 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Jean M.</td><td>Site web</td><td><span class="badge badge-muted">Nouveau</span></td><td>6 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Patrick T.</td><td>Google</td><td><span class="badge badge-info">Contacté</span></td><td>3 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Hotel Ivoire</td><td>Site web</td><td><span class="badge badge-warning">Qualifié</span></td><td>5 sept</td><td>250 000 FCFA HT</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                        <tr><td style="font-weight:500;">Event ABC</td><td>Facebook</td><td><span class="badge badge-success">Gagné</span></td><td>28 août</td><td>250 000 FCFA HT</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ PUBLICITÉ ═══ -->
+                <div class="dash-page" id="page-publicite">
+                    <div class="page-header reveal">
+                        <h1>Ads Center</h1>
+                        <p>Campagnes publicitaires et performances.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
+                            <span>ℹ️</span>
+                            <div><strong>Module en construction.</strong> La gestion publicitaire sera disponible prochainement. Contactez-nous pour en discuter.</div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                            <div class="card metric-card">
+                                <div class="metric-value">1</div>
+                                <div class="metric-label">Campagne active</div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-value">45K</div>
+                                <div class="metric-label">Budget média (FCFA)</div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-value">12K</div>
+                                <div class="metric-label">Coût par lead (FCFA)</div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:1.5rem;">
+                            <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Répartition budget</h3>
+                            <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;">
+                                <div style="text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:var(--accent);">30 000</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">Frais BENILAB</div>
+                                </div>
+                                <div style="text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:var(--warning);">15 000</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">Budget média (client)</div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info" style="margin-top:1rem;">
+                                <span>💡</span> Le budget publicitaire est déterminé ensemble selon vos objectifs et votre capacité. Les frais BENILAB couvrent la gestion et l'optimisation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ CONVERSION ═══ -->
+                <div class="dash-page" id="page-conversion">
+                    <div class="page-header reveal">
+                        <h1>Conversion Center</h1>
+                        <p>Landing pages, formulaires, WhatsApp et tunnels de conversion.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
+                            <span>🚧</span>
+                            <div><strong>Module en développement.</strong> Le Conversion Center et Virtuoso Funnel seront intégrés prochainement.</div>
+                        </div>
+                        <div class="modules-grid">
+                            <div class="module-card">
+                                <div class="module-icon">💬</div>
+                                <div class="module-name">WhatsApp Business</div>
+                                <div class="module-status badge badge-success">Configuré</div>
+                            </div>
+                            <div class="module-card">
+                                <div class="module-icon">📝</div>
+                                <div class="module-name">Formulaire contact</div>
+                                <div class="module-status badge badge-success">Actif</div>
+                            </div>
+                            <div class="module-card">
+                                <div class="module-icon">🎯</div>
+                                <div class="module-name">Landing page</div>
+                                <div class="module-status badge badge-muted">Non activé</div>
+                            </div>
+                            <div class="module-card">
+                                <div class="module-icon">🛒</div>
+                                <div class="module-name">Paiement en ligne</div>
+                                <div class="module-status badge badge-muted">Module V2</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ ANALYTICS ═══ -->
+                <div class="dash-page" id="page-analytics">
+                    <div class="page-header reveal">
+                        <h1>Analytics</h1>
+                        <p>Trafic, sources, conversions et performances.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div class="dash-stats">
+                            <div class="dash-stat"><div class="dash-stat-value">129</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change up">↑ 18%</div></div>
+                            <div class="dash-stat"><div class="dash-stat-value">3</div><div class="dash-stat-label">Leads</div><div class="dash-stat-change up">↑ 1</div></div>
+                            <div class="dash-stat"><div class="dash-stat-value">2</div><div class="dash-stat-label">Conversions</div><div class="dash-stat-change">—</div></div>
+                            <div class="dash-stat"><div class="dash-stat-value">4.2%</div><div class="dash-stat-label">Taux conversion</div><div class="dash-stat-change up">↑ 0.8%</div></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                            <div class="chart-container">
+                                <h3>Sources de trafic</h3>
+                                <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Google</span><span style="color:var(--accent);font-weight:600;">45%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:45%;background:var(--accent);"></div></div></div>
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Facebook</span><span style="color:var(--accent-warm);font-weight:600;">30%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:30%;background:var(--accent-warm);"></div></div></div>
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>WhatsApp</span><span style="color:var(--success);font-weight:600;">15%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:15%;background:var(--success);"></div></div></div>
+                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Direct</span><span style="color:var(--text-muted);font-weight:600;">10%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:10%;background:var(--text-muted);"></div></div></div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <h3>Évolution trafic</h3>
+                                <div class="bar-chart">
+                                    <div class="bar-col"><div class="bar-value">12</div><div class="bar" style="height:50px;background:var(--accent);"></div><div class="bar-label">Avr</div></div>
+                                    <div class="bar-col"><div class="bar-value">18</div><div class="bar" style="height:75px;background:var(--accent);"></div><div class="bar-label">Mai</div></div>
+                                    <div class="bar-col"><div class="bar-value">15</div><div class="bar" style="height:65px;background:var(--accent);"></div><div class="bar-label">Jun</div></div>
+                                    <div class="bar-col"><div class="bar-value">22</div><div class="bar" style="height:95px;background:var(--accent);"></div><div class="bar-label">Juil</div></div>
+                                    <div class="bar-col"><div class="bar-value">28</div><div class="bar" style="height:120px;background:var(--accent);"></div><div class="bar-label">Aoû</div></div>
+                                    <div class="bar-col"><div class="bar-value">34</div><div class="bar" style="height:140px;background:var(--accent-light);"></div><div class="bar-label">Sep</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- ═══ ABONNEMENT ═══ -->
+                 <div class="dash-page" id="page-abonnement">
+                     <div class="page-header reveal">
+                         <h1>Mon abonnement</h1>
+                         <p>Gérez votre offre et consultez vos factures.</p>
+                     </div>
+                     <div class="reveal delay-1" id="subscriptionContent">
+                         <!-- Chargement des données -->
+                     </div>
+                 </div>
+
+                <!-- ═══ SUPPORT ═══ -->
+                <div class="dash-page" id="page-support">
+                    <div class="page-header reveal">
+                        <h1>Support</h1>
+                        <p>Besoin d'aide ? Nous sommes là pour vous.</p>
+                    </div>
+                    <div class="reveal delay-1">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                            <div class="card">
+                                <h3 style="margin-bottom:1rem;">📅 Prendre rendez-vous</h3>
+                                <p style="font-size:14px;color:var(--text-muted);margin-bottom:1.5rem;">Réservez un créneau de consultation gratuit avec notre équipe.</p>
+                                <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-primary">Voir les créneaux</a>
+                            </div>
+                            <div class="card">
+                                <h3 style="margin-bottom:1rem;">💬 Nous contacter</h3>
+                                <p style="font-size:14px;color:var(--text-muted);margin-bottom:1rem;">
+                                    Email: contact@benilab.ci<br>
+                                    WhatsApp: +225 07 00 00 00
+                                </p>
+                                <button class="btn btn-outline">Ouvrir WhatsApp</button>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:1.5rem;">
+                            <h3 style="margin-bottom:1rem;">📋 Tickets existants</h3>
+                            <div class="empty-state" style="padding:2rem;">
+                                <div class="empty-state-icon">📭</div>
+                                <p>Vous n'avez aucun ticket ouvert.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // ── Configuration ──
+    const D360_API_BASE = window.D360_API_BASE
+        // En local : API sur localhost:8000. En ligne : même adresse que le site, relayée par Vercel vers l'API
+        || (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8000/api/v1' : '/api/v1');
+    let _csrfToken = '';
+
+    async function getCsrf() {
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/auth/csrf', { credentials: 'include' });
+            const data = await res.json();
+            _csrfToken = data.csrf_token || '';
+        } catch (_) {}
+        finally { hideD360Loading(); }
+    }
+    function showD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'flex';
+    }
+    function hideD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'none';
+    }
+
+    function csrfHeaders() {
+        return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
+    }
+
+    // ── State ──
+    let _user = null;
+    let _orgId = null;
+    let _isStaffNoOrg = false;
+    let _meData = null;
+    let _isOwner = false;
+    let _purchaseRequests = [];
+    let _orgData = null;
+    let passportData = null;
+    let actionPlanData = null;
+    let diagnosticsData = null;
+    let entitlementsData = null;
+
+    // ── Price formatter ──
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return null;
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || 'XOF';
+        if (cur === 'EUR') {
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    // ── Auth guard ──
+    async function checkAuth() {
+        try {
+            const data = await fetch(D360_API_BASE + '/me', { credentials: 'include' }).then(r => {
+                if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' });
+                return r.json();
+            });
+            return data;
+        } catch (e) {
+            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
+                window.location.href = 'index.html';
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    // ── Page routing ──
+    const pageTitles = {
+        dashboard: 'Tableau de bord',
+        entreprise: 'Mon entreprise',
+        site: 'Mon site web',
+        google: 'Google Business',
+        reseaux: 'Réseaux sociaux',
+        contenus: 'Content Studio',
+        prospects: 'Prospects',
+        publicite: 'Publicité',
+        conversion: 'Conversion Center',
+        analytics: 'Analytics',
+        abonnement: 'Mon abonnement',
+        support: 'Support'
+    };
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+        const page = document.getElementById('page-' + pageId);
+        if (page) page.classList.add('active');
+
+        document.querySelectorAll('.dash-nav-item').forEach(n => n.classList.remove('active'));
+        const navItem = document.querySelector(`.dash-nav-item[data-page="${pageId}"]`);
+        if (navItem) navItem.classList.add('active');
+
+        document.getElementById('pageTitle').textContent = pageTitles[pageId] || pageId;
+        window.scrollTo({ top: 0 });
+
+        // Close mobile sidebar
+        document.getElementById('dashSidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+
+        // Trigger reveals
+        setTimeout(() => {
+            document.querySelectorAll(`#page-${pageId} .reveal`).forEach(el => {
+                if (isInViewport(el)) el.classList.add('active');
+            });
+        }, 100);
+    }
+
+    function isInViewport(el) {
+        return el.getBoundingClientRect().top < window.innerHeight * 0.9;
+    }
+
+    function toggleSidebar() {
+        document.getElementById('dashSidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+
+    function switchTab(btn, panelId) {
+        btn.closest('.tab-group').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function toggleKanbanView() {
+        const kv = document.getElementById('kanbanView');
+        const tv = document.getElementById('tableView');
+        if (kv.style.display === 'none') {
+            kv.style.display = 'block'; tv.style.display = 'none';
+        } else {
+            kv.style.display = 'none'; tv.style.display = 'block';
+        }
+    }
+
+    function showNotifications() {
+        // Remove hardcoded notification
+    }
+
+    // ── Render dashboard from API ──
+    function renderDashboard() {
+        // Welcome message for ?welcome=1 or ?notice=…
+        const params = new URLSearchParams(window.location.search);
+        const noticeMap = {
+            diagnostic_claimed:    'Diagnostic rattaché à votre entreprise.',
+            diagnostic_already_claimed: 'Ce diagnostic était déjà rattaché à une entreprise.',
+            diagnostic_claim_failed: 'Le rattachement du diagnostic a échoué.',
+            org_created:           'Espace créé pour votre entreprise. Votre diagnostic y est enregistré.',
+            org_creation_failed:   'Compte connecté, mais le diagnostic n\'a pas pu être rattaché.',
+            account_created:       'Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.',
+        };
+        const welcomeEl = document.getElementById('welcomeMessage');
+        const noticeParam = params.get('notice');
+        if (params.get('welcome') === '1') {
+            welcomeEl.style.display = 'block';
+            if (noticeParam !== null && noticeMap[noticeParam] !== undefined) {
+                const p = welcomeEl.querySelector('p:last-child');
+                if (p) p.textContent = noticeMap[noticeParam];
+            }
+        }
+
+        // Score from last diagnostic
+        const diagList = diagnosticsData?.data || [];
+        const latest = diagList[0];
+        if (latest) {
+            const total = latest.score?.total || 0;
+            document.getElementById('dashScoreValue').textContent = total;
+            const circumference = 326.7;
+            const offset = circumference - (total / 100) * circumference;
+            document.getElementById('dashScoreCircle').style.strokeDashoffset = offset;
+            const welcomeSub = document.getElementById('welcomeSub');
+            welcomeSub.textContent = '';
+            const span1 = document.createElement('span');
+            span1.textContent = 'Votre présence digitale est à ';
+            const strong = document.createElement('strong');
+            strong.style.color = 'var(--accent)';
+            strong.textContent = total + '%';
+            const span2 = document.createElement('span');
+            span2.textContent = ' — ' + (latest.score?.maturity_label || 'voici où vous en êtes.');
+            welcomeSub.appendChild(span1);
+            welcomeSub.appendChild(strong);
+            welcomeSub.appendChild(span2);
+          } else {
+               document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
+               if (_isStaffNoOrg) {
+                   const el = document.getElementById('dashNoDiagCta');
+                   el.innerHTML = '<div class="label">Compte d\'équipe</div><p style="margin:0.5rem 0;">Ce compte est un compte d\'équipe BENILAB.</p><a href="admin.html" class="btn btn-primary btn-sm">Aller à l\'administration</a>';
+                   el.style.display = '';
+               } else {
+                   document.getElementById('dashNoDiagCta').style.display = '';
+               }
+               document.getElementById('dashNextAction').style.display = 'none';
+           }
+
+          // Score evolution and diagnostic info
+          if (diagList.length > 0) {
+              const scores = diagList;
+              const first = scores[scores.length - 1];
+              const last = scores[0];
+              // Update "Aucun diagnostic" msg if we have data
+              const dashScoreMsg = document.getElementById('dashScoreMsg');
+              dashScoreMsg.textContent = '';
+              if (last.score) {
+                  const s1 = document.createElement('span');
+                  s1.textContent = 'Votre présence digitale est à ';
+                  const sStrong = document.createElement('strong');
+                  sStrong.style.color = 'var(--accent)';
+                  sStrong.textContent = last.score.total + '%';
+                  const s2 = document.createElement('span');
+                  s2.textContent = ' — ' + (last.score.maturity_label || '');
+                  dashScoreMsg.appendChild(s1);
+                  dashScoreMsg.appendChild(sStrong);
+                  dashScoreMsg.appendChild(s2);
+              }
+              // Evolution
+              const evEl = document.getElementById('dashScoreEvolution');
+              if (scores.length >= 2 && first.score?.total != null && last.score?.total != null) {
+                  const diff = last.score.total - first.score.total;
+                  const dateStr = last.completed_at ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+                  const sign = diff >= 0 ? '+' : '';
+                  evEl.textContent = sign + diff + ' points depuis le ' + dateStr;
+                  evEl.style.display = '';
+              }
+          }
+
+          // Diagnostic action button (show below score banner)
+          const diagActionEl = document.getElementById('dashDiagAction');
+          if (diagActionEl) {
+              diagActionEl.innerHTML = '';
+              if (diagList.length > 0) {
+                  const last = diagList[0];
+                  const dateStr = last.completed_at
+                      ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+                      : '';
+                  const span = document.createElement('span');
+                  span.style.cssText = 'font-size:13px;color:var(--text-muted);';
+                  span.textContent = 'Dernier diagnostic : ' + dateStr + ' · ';
+                  const btn = document.createElement('a');
+                  btn.href = 'index.html#diagnostic';
+                  btn.className = 'btn btn-outline btn-sm';
+                  btn.style.marginLeft = '0.5rem';
+                  btn.textContent = 'Mettre à jour mon diagnostic';
+                  diagActionEl.appendChild(span);
+                  diagActionEl.appendChild(btn);
+                  diagActionEl.style.display = '';
+              } else {
+                  const btn = document.createElement('a');
+                  btn.href = 'index.html#diagnostic';
+                  btn.className = 'btn btn-primary btn-sm';
+                  btn.textContent = 'Faire mon premier diagnostic';
+                  diagActionEl.appendChild(btn);
+                  diagActionEl.style.display = '';
+              }
+          }
+
+        // Action plan recommendations
+        if (actionPlanData?.items) {
+            const shown = actionPlanData.items.filter(i => i.status === 'PROPOSED' || i.status === 'ACCEPTED' || i.status === 'IN_PROGRESS');
+            const planEl = document.getElementById('dashNextAction');
+            const planItemsEl = document.getElementById('dashPlanItems');
+            if (shown.length > 0 && planItemsEl) {
+                planEl.style.display = '';
+                planItemsEl.innerHTML = '';
+                // Une offre couvre souvent plusieurs recommandations : une carte et un bouton par offre
+                const groups = new Map();
+                const standalone = [];
+                shown.forEach(item => {
+                    if (!item.product_code) { standalone.push(item); return; }
+                    if (!groups.has(item.product_code)) groups.set(item.product_code, []);
+                    groups.get(item.product_code).push(item);
+                });
+                groups.forEach((items, code) => planItemsEl.appendChild(offerCard(code, items)));
+                standalone.forEach(item => planItemsEl.appendChild(recommendationCard(item)));
+            } else {
+                planEl.style.display = 'none';
+            }
+        }
+
+        // Modules from passport
+        const modulesGrid = document.getElementById('dashModules');
+        modulesGrid.innerHTML = '';
+        const moduleConfig = [
+            { key: 'WEBSITE', icon: '🌐', name: 'Site web', page: 'site', entitlement: 'WEBSITE' },
+            { key: 'GOOGLE_BUSINESS', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'GOOGLE_BUSINESS_MANAGEMENT' },
+            { key: 'FACEBOOK', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'SOCIAL_MANAGEMENT' },
+            { key: 'CRM', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'LEAD_TRACKING' },
+            { key: 'ADS', icon: '⚡', name: 'Publicité', page: 'publicite', entitlement: 'ADS_MANAGEMENT' },
+            { key: 'ANALYTICS', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'ADVANCED_REPORTING' },
+        ];
+        const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
+        const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
+        const entitlements = {};
+        (entitlementsData?.entitlements || []).forEach(e => { entitlements[e.key] = e.value; });
+
+        moduleConfig.forEach(mod => {
+            const passportItem = passportData?.items?.find(i => i.key === mod.key);
+            const rawVal = entitlements[mod.entitlement];
+            const isEnabled = rawVal === true || (typeof rawVal === 'number' && rawVal > 0) || rawVal === 'UNLIMITED';
+            const status = passportItem?.status || (isEnabled ? 'NOT_CONFIGURED' : 'NOT_CONFIGURED');
+            const label = statusLabels[status] || status;
+            const badgeClass = statusBadges[status] || 'badge-muted';
+            const desc = isEnabled
+                ? (passportItem ? (status === 'ACTIVE' ? 'Configurez votre module' : 'En cours de configuration') : 'Module activé')
+                : 'Non inclus dans votre offre';
+            const card = document.createElement('div');
+            card.className = 'dash-module';
+            card.onclick = () => { if (isEnabled) switchPage(mod.page); };
+            card.innerHTML = `
+                <div class="dash-module-icon">${mod.icon}</div>
+                <h3>${mod.name}</h3>
+                <p>${desc}</p>
+                <div class="dash-module-status"><span class="badge ${isEnabled ? badgeClass : 'badge-muted'}">${isEnabled ? label : 'Non activé'}</span></div>
+            `;
+            modulesGrid.appendChild(card);
+        });
+
+        // Stats — show empty states with offer info
+        const offerCode = _orgData?.subscription?.plan_code || '';
+        const statData = [
+            { id: 'statVisitors', label: 'Visiteurs ce mois', sub: 'Module Analytics', offer: 'DIGITAL_PERFORMANCE' },
+            { id: 'statLeads', label: 'Leads captés', sub: 'Module CRM', offer: 'DIGITAL_GROWTH' },
+            { id: 'statContents', label: 'Contenus publiés', sub: 'Module Contenu', offer: 'DIGITAL_ESSENTIAL' },
+            { id: 'statCampaigns', label: 'Campagnes actives', sub: 'Module Publicité', offer: 'DIGITAL_PERFORMANCE' },
+        ];
+        statData.forEach(s => {
+            const el = document.getElementById(s.id);
+            if (el) el.textContent = '—';
+        });
+
+        // Trigger reveals
+        document.querySelectorAll('.reveal').forEach(el => {
+            if (isInViewport(el)) el.classList.add('active');
+        });
+    }
+
+    // ── Init ──
+    (async () => {
+        try {
+            await getCsrf();
+            const me = await checkAuth();
+            _meData = me;
+            _user = me?.user;
+            const membership = me?.memberships?.[0];
+            _isOwner = membership?.role === 'CLIENT_OWNER';
+            if (membership) {
+                _orgId = membership.organization_id;
+                // Load org data
+                try {
+                    _orgData = await fetch(D360_API_BASE + '/orgs/' + _orgId, { credentials: 'include' }).then(r => r.json());
+                } catch (_) {}
+                // Load passport
+                try {
+                    const passportRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/passport', { credentials: 'include' });
+                    if (passportRes.ok) passportData = await passportRes.json();
+                } catch (_) {}
+                // Load action plan
+                try {
+                    const planRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/action-plan', { credentials: 'include' });
+                    if (planRes.ok) actionPlanData = await planRes.json();
+                } catch (_) {}
+                // Load diagnostics
+                try {
+                    const diagRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/diagnostics', { credentials: 'include' });
+                    if (diagRes.ok) diagnosticsData = await diagRes.json();
+                } catch (_) {}
+                // Load entitlements
+                try {
+                    const entRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
+                    if (entRes.ok) entitlementsData = await entRes.json();
+                } catch (_) {}
+                // Load purchase requests
+                try {
+                    const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+                    if (prRes.ok) {
+                        const prData = await prRes.json();
+                        _purchaseRequests = prData?.data || [];
+                    }
+                } catch (_) {}
+                // Load catalog for subscription page
+                await loadCatalogForDashboard();
+                await loadProject();
+            }
+            // Update UI with real data
+            if (_user) {
+                const initial = _user.full_name?.charAt(0).toUpperCase() || 'A';
+                document.getElementById('userAvatar').textContent = initial;
+                document.getElementById('userName').textContent = _user.full_name || _user.email || 'Utilisateur';
+            }
+            if (_orgData) {
+                document.getElementById('welcomeName').textContent = _orgData.commercial_name || _orgData.legal_name || 'Entreprise';
+            }
+            if (me?.staff_roles?.length > 0) {
+                document.getElementById('navAdminLink').style.display = 'inline-flex';
+                _isStaffNoOrg = !membership;
+            }
+            renderDashboard();
+            renderSubscriptionPage();
+        } catch (e) {
+            console.error('[D360] Dashboard init error:', e);
+        }
+    })();
+
+    // ── Price formatter ──
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return '—';
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || 'XOF';
+        if (cur === 'EUR') {
+            const decimals = amount % 100 === 0 ? 0 : 2;
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    // ── Load catalog for subscription page ──
+    let _catalogData = null;
+    async function loadCatalogForDashboard() {
+        try {
+            const res = await fetch(D360_API_BASE + '/public/catalog', { credentials: 'include' });
+            if (res.ok) _catalogData = await res.json();
+        } catch (_) {}
+    }
+
+    function renderSubscriptionPage() {
+        const container = document.getElementById('subscriptionContent');
+        if (!container) return;
+
+        // Check if user has an active subscription
+        const subscription = _orgData?.subscription;
+        const hasSubscription = subscription && subscription.plan_code;
+
+        let html = '';
+
+        if (hasSubscription) {
+            const planCode = subscription.plan_code;
+            const product = _catalogData?.products?.find(p => p.code === planCode);
+            const productName = product?.name || planCode;
+            const priceText = product?.price ? formatPrice(product.price, subscription.currency) : '—';
+            const nextBilling = subscription.next_billing_date
+                ? new Date(subscription.next_billing_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '—';
+
+            html = `
+                <div class="card" style="margin-bottom:2rem;border-color:var(--border-strong);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                        <div>
+                            <div class="label" style="margin-bottom:0.5rem;">Offre actuelle</div>
+                            <div style="font-size:1.5rem;font-weight:700;">${productName}</div>
+                            <div style="font-size:14px;color:var(--text-muted);">${priceText}${subscription.period ? ' / ' + subscription.period.toLowerCase() : ''}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="label" style="margin-bottom:0.5rem;">Prochaine échéance</div>
+                            <div style="font-size:1.1rem;font-weight:600;">${nextBilling}</div>
+                            <span class="badge badge-success" style="margin-top:0.5rem;">Actif</span>
+                        </div>
+                    </div>
+                </div>
+                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Offres disponibles</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
+                    ${(_catalogData?.products || []).map(p => {
+                        const isCurrent = p.code === planCode;
+                        const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
+                        const pr = _purchaseRequests.find(pr2 => pr2.product_code === p.code && pr2.status !== 'LOST');
+                        let btnHtml = '';
+                        if (!_isOwner) {
+                            btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
+                        } else if (pr) {
+                            if (pr.status === 'WON') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Offre en cours d\'activation</button>';
+                            } else if (pr.status === 'CONTACTED' || pr.status === 'NEW') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
+                            } else {
+                                btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                            }
+                        } else {
+                            btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                        }
+                        return `
+                        <div class="card" style="text-align:center;${isCurrent ? 'border-color:var(--accent);' : 'opacity:0.7;'}">
+                            <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
+                            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;${isCurrent ? 'color:var(--accent);' : ''}">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
+                            ${isCurrent ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">← Vous êtes ici</div>' : ''}
+                            ${!isCurrent ? btnHtml : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <div>La facturation et le changement d'offre seront disponibles prochainement. Contactez-nous pour en discuter.</div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="empty-state" style="padding:3rem;">
+                    <div class="empty-state-icon">💳</div>
+                    <h3>Aucun abonnement actif</h3>
+                    <p>Vous n'avez pas encore souscrit à un accompagnement mensuel.</p>
+                </div>
+                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Nos offres</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+                    ${(_catalogData?.products || []).map(p => {
+                        const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
+                        const pr = _purchaseRequests.find(pr2 => pr2.product_code === p.code && pr2.status !== 'LOST');
+                        let btnHtml = '';
+                        if (!_isOwner) {
+                            btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
+                        } else if (pr) {
+                            if (pr.status === 'WON') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Offre en cours d\'activation</button>';
+                            } else if (pr.status === 'CONTACTED' || pr.status === 'NEW') {
+                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
+                            } else {
+                                btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                            }
+                        } else {
+                            btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
+                        }
+                        return `
+                        <div class="card" style="text-align:center;">
+                            <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
+                            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--accent);">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
+                            ${btnHtml}
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div style="margin-top:2rem;">
+                    <a href="index.html#diagnostic" class="btn btn-primary">Faire mon diagnostic</a>
+                </div>
+            `;
+        }
+
+        // Invoices section (placeholder)
+        html += `
+            <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Historique des factures</h3>
+            <div class="empty-state" style="padding:2rem;">
+                <div class="empty-state-icon">🧾</div>
+                <p>La facturation sera disponible avec l'étape M5.</p>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    // ── Purchase request modal ──
+    let _pendingPurchase = null;
+    // ── Mon site web : projet Digital Start (offre encadrée) ──
+    let _project = null;
+
+    // Petit constructeur d'éléments : tout le texte passe par textContent (jamais d'HTML injecté)
+    function h(tag, props = {}, children = []) {
+        const el = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+            if (key === 'style') el.style.cssText = value;
+            else if (key === 'text') el.textContent = value;
+            else if (key.startsWith('on')) el[key] = value;
+            else el.setAttribute(key, value);
+        });
+        (Array.isArray(children) ? children : [children]).forEach(child => {
+            if (child) el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+        });
+        return el;
+    }
+
+    async function sendJson(method, path, body) {
+        const send = () => fetch(D360_API_BASE + path, {
+            method,
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        if (!_csrfToken) await getCsrf();
+        let res = await send();
+        if (res.status === 403) {
+            const problem = await res.clone().json().catch(() => null);
+            if (problem?.code === 'CSRF_FAILED') { await getCsrf(); res = await send(); }
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+            const err = new Error(data?.detail || 'Une erreur est survenue.');
+            err.code = data?.code;
+            err.errors = data?.errors || [];
+            throw err;
+        }
+        return data;
+    }
+
+    async function loadProject() {
+        _project = null;
+        if (_orgId) {
+            try {
+                const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/website-project', { credentials: 'include' });
+                if (res.ok) _project = await res.json();
+            } catch (_) {}
+        }
+        renderProject();
+    }
+
+    const PROJECT_STEPS = [
+        ['BRIEF_PENDING', 'Brief'],
+        ['IN_PRODUCTION', 'Réalisation'],
+        ['CLIENT_REVIEW', 'Relecture'],
+        ['APPROVED', 'Validation'],
+        ['LIVE', 'En ligne'],
+    ];
+    const FIELD_LABELS = {
+        business_name: "Nom de l'entreprise", activity: 'Votre activité', services: 'Au moins un service',
+        phone: 'Téléphone', template: 'Modèle', palette: 'Couleurs', has_logo: 'Logo (oui ou non)',
+    };
+
+    function frenchDate(iso) {
+        return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    }
+
+    function projectStepper(status) {
+        const order = PROJECT_STEPS.map(step => step[0]);
+        const current = order.indexOf(status === 'REVISION' ? 'CLIENT_REVIEW' : status);
+        return h('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;' },
+            PROJECT_STEPS.map(([key, label], index) => h('span', {
+                class: 'badge ' + (index < current ? 'badge-success' : index === current ? 'badge-accent' : 'badge-muted'),
+                text: (index + 1) + '. ' + label,
+            })));
+    }
+
+    function renderProject() {
+        const root = document.getElementById('projectRoot');
+        if (!root) return;
+        root.textContent = '';
+        if (!_project) {
+            const card = h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: "Vous n'avez pas encore de site" }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;margin-bottom:1rem;',
+                    text: "Avec l'offre Start, la conception de votre site est offerte grâce à l'IA : vous ne payez que le nom de domaine, l'hébergement et la mise en ligne." }),
+            ]);
+            if (_isOwner) {
+                const info = productInfo('DIGITAL_START');
+                card.appendChild(h('button', { class: 'btn btn-primary btn-sm', text: 'Je veux démarrer',
+                    onclick: () => showPurchaseModalForProduct('DIGITAL_START', null, info.name, info.price) }));
+            }
+            root.appendChild(card);
+            return;
+        }
+        const p = _project;
+        root.appendChild(projectStepper(p.status));
+        if (p.status === 'BRIEF_PENDING') {
+            root.appendChild(p.available_actions.includes('EDIT_BRIEF') ? briefForm(p)
+                : h('div', { class: 'alert alert-accent', text: 'Le responsable de votre entreprise remplit actuellement le brief du site.' }));
+        } else if (p.status === 'IN_PRODUCTION') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre site est en préparation' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;',
+                    text: 'Nous réalisons votre site à partir de votre brief. Vous recevrez la première version au plus tard le ' + frenchDate(p.due_on) + '.' }),
+            ]));
+            root.appendChild(briefSummary(p));
+        } else if (p.status === 'CLIENT_REVIEW') {
+            root.appendChild(reviewPanel(p));
+        } else if (p.status === 'REVISION') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Vos corrections sont en cours' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;', text: 'Nous appliquons vos corrections et vous prévenons dès que la nouvelle version est prête.' }),
+            ]));
+        } else if (p.status === 'APPROVED') {
+            root.appendChild(h('div', { class: 'alert alert-success', text: 'Merci pour votre validation ! Nous mettons votre site en ligne sur votre nom de domaine.' }));
+        } else if (p.status === 'LIVE') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.75rem;', text: 'Votre site est en ligne 🎉' }),
+                h('a', { class: 'btn btn-primary btn-sm', href: p.live_url, target: '_blank', rel: 'noopener', text: 'Voir mon site' }),
+            ]));
+        }
+    }
+
+    function briefSummary(p) {
+        const b = p.brief || {};
+        const template = p.offer.templates.find(t => t.key === b.template);
+        const palette = p.offer.palettes.find(t => t.key === b.palette);
+        const rows = [
+            ['Entreprise', b.business_name], ['Modèle', template?.name], ['Couleurs', palette?.name],
+            ['Services', (b.services || []).map(s => s.name).join(', ')], ['Domaine souhaité', b.desired_domain],
+        ];
+        return h('div', { class: 'card', style: 'margin-top:1rem;' }, [
+            h('h3', { style: 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem;', text: 'Votre brief' }),
+            ...rows.filter(row => row[1]).map(([label, value]) => h('div', { style: 'display:flex;justify-content:space-between;gap:1rem;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;' }, [
+                h('span', { style: 'color:var(--text-muted);', text: label }), h('span', { text: value }),
+            ])),
+        ]);
+    }
+
+    function field(label, input, hint) {
+        return h('div', { class: 'form-group' }, [
+            h('label', { class: 'form-label', text: label }), input,
+            hint ? h('div', { style: 'font-size:11px;color:var(--text-muted);margin-top:4px;', text: hint }) : null,
+        ]);
+    }
+    function textInput(name, value, attrs = {}) {
+        return h('input', { class: 'form-input', name, value: value || '', ...attrs });
+    }
+    function choiceGrid(name, choices, selected) {
+        return h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0.75rem;' },
+            choices.map(choice => {
+                const radio = h('input', { type: 'radio', name, value: choice.key });
+                radio.checked = choice.key === selected;
+                return h('label', { class: 'card', style: 'cursor:pointer;padding:0.9rem;display:block;' }, [
+                    h('div', { style: 'display:flex;gap:0.5rem;align-items:center;font-weight:600;' }, [radio, choice.name]),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);margin-top:4px;', text: choice.description }),
+                ]);
+            }));
+    }
+
+    function briefForm(p) {
+        const b = p.brief || {};
+        const offer = p.offer;
+        const form = h('form', { class: 'card', id: 'briefForm', onsubmit: event => event.preventDefault() });
+        form.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-bottom:1.25rem;', text: offer.pitch }));
+        form.appendChild(h('h3', { style: 'margin-bottom:1rem;', text: 'Votre brief' }));
+        form.appendChild(field("Nom de l'entreprise", textInput('business_name', b.business_name, { maxlength: '80' })));
+        const activity = h('textarea', { class: 'form-input', name: 'activity', rows: '3', maxlength: '500',
+            placeholder: 'Ce que vous faites, pour qui, ce qui vous distingue. Nous rédigeons les textes à partir de cela.' });
+        activity.value = b.activity || '';
+        form.appendChild(field('Votre activité', activity));
+
+        const services = h('div', { id: 'briefServices' });
+        const addService = (service = {}) => {
+            if (services.children.length >= offer.max_services) return;
+            const row = h('div', { style: 'display:grid;grid-template-columns:1fr 2fr auto;gap:0.5rem;margin-bottom:0.5rem;' }, [
+                h('input', { class: 'form-input', 'data-service': 'name', placeholder: 'Service', maxlength: '80', value: service.name || '' }),
+                h('input', { class: 'form-input', 'data-service': 'description', placeholder: 'Courte description (facultatif)', maxlength: '200', value: service.description || '' }),
+                h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '✕', onclick: () => row.remove() }),
+            ]);
+            services.appendChild(row);
+        };
+        (b.services && b.services.length ? b.services : [{}]).forEach(addService);
+        form.appendChild(field('Vos services (' + offer.max_services + ' au maximum)', services));
+        form.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-sm', style: 'margin:-0.5rem 0 1.25rem;', text: '+ Ajouter un service', onclick: () => addService() }));
+
+        const grid = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 1rem;' }, [
+            field('Ville', textInput('city', b.city, { maxlength: '100' })),
+            field('Adresse', textInput('address', b.address, { maxlength: '200' })),
+            field('Téléphone', textInput('phone', b.phone, { type: 'tel', placeholder: '+2250700000000' })),
+            field('WhatsApp', textInput('whatsapp', b.whatsapp, { type: 'tel', placeholder: '+2250500000000' })),
+            field('E-mail affiché sur le site', textInput('email', b.email, { type: 'email' })),
+            field('Horaires', textInput('opening_hours', b.opening_hours, { placeholder: 'Lun-Sam 8h-19h', maxlength: '300' })),
+            field('Facebook', textInput('facebook', b.facebook, { placeholder: 'https://facebook.com/…' })),
+            field('Instagram', textInput('instagram', b.instagram, { placeholder: 'https://instagram.com/…' })),
+            field('TikTok', textInput('tiktok', b.tiktok, { placeholder: 'https://tiktok.com/@…' })),
+            field('Nom de domaine souhaité', textInput('desired_domain', b.desired_domain, { placeholder: 'monentreprise.ci' }), 'Sans « www » ni « https ». Nous vérifions sa disponibilité.'),
+        ]);
+        form.appendChild(grid);
+
+        form.appendChild(field('Modèle de site', choiceGrid('template', offer.templates, b.template)));
+        form.appendChild(field('Couleurs', choiceGrid('palette', offer.palettes, b.palette)));
+        const logoYes = h('input', { type: 'radio', name: 'has_logo', value: 'true' });
+        const logoNo = h('input', { type: 'radio', name: 'has_logo', value: 'false' });
+        logoYes.checked = b.has_logo === true;
+        logoNo.checked = b.has_logo === false;
+        form.appendChild(field('Avez-vous un logo ?', h('div', { style: 'display:flex;gap:1.5rem;' }, [
+            h('label', {}, [logoYes, ' Oui, je l\'enverrai sur WhatsApp']), h('label', {}, [logoNo, ' Non, utilisez le nom de mon entreprise']),
+        ])));
+
+        const scope = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1.5rem 0 1rem;' }, [
+            h('div', { class: 'card' }, [h('strong', { text: 'Inclus dans votre offre' }),
+                h('ul', { style: 'margin:0.5rem 0 0 1.1rem;font-size:13px;color:var(--text-secondary);' }, offer.included.map(item => h('li', { text: item })))]),
+            h('div', { class: 'card' }, [h('strong', { text: 'Non inclus' }),
+                h('ul', { style: 'margin:0.5rem 0 0 1.1rem;font-size:13px;color:var(--text-secondary);' }, offer.not_included.map(item => h('li', { text: item })))]),
+        ]);
+        form.appendChild(scope);
+        const accept = h('input', { type: 'checkbox', id: 'briefAcceptScope' });
+        form.appendChild(h('label', { style: 'display:flex;gap:0.5rem;font-size:13px;margin-bottom:1rem;' }, [accept,
+            "J'ai lu ce qui est inclus et ce qui ne l'est pas. Je comprends que le brief ne pourra plus être modifié une fois la réalisation lancée."]));
+        const message = h('div', { id: 'briefMessage', style: 'font-size:13px;margin-bottom:1rem;min-height:18px;' });
+        form.appendChild(message);
+        form.appendChild(h('div', { style: 'display:flex;gap:1rem;flex-wrap:wrap;' }, [
+            h('button', { type: 'button', class: 'btn btn-outline', text: 'Enregistrer le brouillon', onclick: () => saveBrief(false) }),
+            h('button', { type: 'button', class: 'btn btn-primary', text: 'Lancer la réalisation', onclick: () => saveBrief(true) }),
+        ]));
+        return form;
+    }
+
+    function readBrief() {
+        const form = document.getElementById('briefForm');
+        const value = name => form.querySelector('[name="' + name + '"]')?.value.trim() || null;
+        const checked = name => form.querySelector('input[name="' + name + '"]:checked')?.value || null;
+        const phone = name => { const raw = value(name); return raw ? normalizeNumber(raw) : null; };
+        const services = [...form.querySelectorAll('#briefServices > div')].map(row => ({
+            name: row.querySelector('[data-service="name"]').value.trim(),
+            description: row.querySelector('[data-service="description"]').value.trim(),
+        })).filter(service => service.name);
+        const logo = checked('has_logo');
+        const brief = {
+            business_name: value('business_name'), activity: value('activity'), services,
+            city: value('city'), address: value('address'), phone: phone('phone'), whatsapp: phone('whatsapp'),
+            email: value('email'), opening_hours: value('opening_hours'), facebook: value('facebook'),
+            instagram: value('instagram'), tiktok: value('tiktok'),
+            desired_domain: value('desired_domain')?.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '').toLowerCase() || null,
+            template: checked('template'), palette: checked('palette'), has_logo: logo === null ? null : logo === 'true',
+        };
+        Object.keys(brief).forEach(key => { if (brief[key] === null) delete brief[key]; });
+        return brief;
+    }
+
+    function explainError(err) {
+        const fields = (err.errors || []).map(item => item.field || item.reason).filter(Boolean);
+        if (err.code === 'TRANSITION_GUARD_FAILED') {
+            const missing = (_project?.missing_fields || []).map(name => FIELD_LABELS[name] || name);
+            return 'Brief incomplet : ' + (missing.join(', ') || (err.errors || []).map(e => e.reason).join(', ')) + '.';
+        }
+        return err.message + (fields.length ? ' (' + fields.join(', ') + ')' : '');
+    }
+
+    async function saveBrief(launch) {
+        const message = document.getElementById('briefMessage');
+        message.style.color = 'var(--error)';
+        if (launch && !document.getElementById('briefAcceptScope').checked) {
+            message.textContent = 'Cochez la case pour confirmer que vous avez lu ce qui est inclus.';
+            return;
+        }
+        showD360Loading();
+        try {
+            _project = await sendJson('PUT', '/orgs/' + _orgId + '/website-project/brief', readBrief());
+            if (launch) {
+                _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/submit', { accept_scope: true });
+                renderProject();
+                return;
+            }
+            message.style.color = 'var(--success)';
+            message.textContent = 'Brouillon enregistré.' + (_project.missing_fields.length
+                ? ' Il reste à compléter : ' + _project.missing_fields.map(name => FIELD_LABELS[name] || name).join(', ') + '.' : ' Votre brief est complet.');
+        } catch (err) {
+            message.textContent = explainError(err);
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    function reviewPanel(p) {
+        const panel = h('div', { class: 'card' }, [
+            h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre site est prêt : à vous de le relire' }),
+            h('a', { class: 'btn btn-primary btn-sm', style: 'margin:0.5rem 0 1.25rem;', href: p.preview_url, target: '_blank', rel: 'noopener', text: 'Voir mon site' }),
+        ]);
+        const message = h('div', { style: 'font-size:13px;margin:0.75rem 0;min-height:18px;color:var(--error);' });
+        if (p.available_actions.includes('APPROVED')) {
+            panel.appendChild(h('button', { class: 'btn btn-primary', text: 'Je valide mon site', onclick: async () => {
+                if (!confirm('Valider votre site ? Nous le mettrons ensuite en ligne sur votre nom de domaine.')) return;
+                showD360Loading();
+                try { _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/approve'); renderProject(); }
+                catch (err) { message.textContent = explainError(err); }
+                finally { hideD360Loading(); }
+            } }));
+        }
+        if (!p.available_actions.includes('REVISION')) {
+            panel.appendChild(h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:1rem;', text: 'La série de corrections incluse dans votre offre a été utilisée.' }));
+            panel.appendChild(message);
+            return panel;
+        }
+        const categories = p.offer.revision_categories;
+        const list = h('div');
+        const addItem = () => {
+            if (list.children.length >= 10) return;
+            const row = h('div', { style: 'display:grid;grid-template-columns:170px 140px 1fr auto;gap:0.5rem;margin-bottom:0.5rem;' }, [
+                h('select', { class: 'form-input', 'data-revision': 'category' }, Object.entries(categories).map(([key, label]) => h('option', { value: key, text: label }))),
+                h('select', { class: 'form-input', 'data-revision': 'page' }, p.offer.pages.map(page => h('option', { value: page, text: page }))),
+                h('input', { class: 'form-input', 'data-revision': 'text', maxlength: '500', placeholder: 'Ce qu\'il faut corriger' }),
+                h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '✕', onclick: () => row.remove() }),
+            ]);
+            list.appendChild(row);
+        };
+        addItem();
+        panel.appendChild(h('h4', { style: 'margin:1.5rem 0 0.25rem;', text: 'Demander mes corrections' }));
+        panel.appendChild(h('p', { style: 'font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;',
+            text: 'Une seule série, limitée au contenu : textes, photos, coordonnées, horaires. Le modèle, les couleurs et les pages restent ceux de votre brief.' }));
+        panel.appendChild(list);
+        panel.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-sm', text: '+ Ajouter une correction', onclick: addItem }));
+        panel.appendChild(message);
+        panel.appendChild(h('button', { class: 'btn btn-outline', text: 'Envoyer mes corrections', onclick: async () => {
+            const items = [...list.children].map(row => ({
+                category: row.querySelector('[data-revision="category"]').value,
+                page: row.querySelector('[data-revision="page"]').value,
+                text: row.querySelector('[data-revision="text"]').value.trim(),
+            })).filter(item => item.text.length >= 3);
+            if (!items.length) { message.textContent = 'Décrivez au moins une correction (3 caractères minimum).'; return; }
+            if (!confirm('Envoyer ces ' + items.length + ' correction(s) ? Votre offre comprend une seule série de corrections.')) return;
+            showD360Loading();
+            try { _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/revision', { items }); renderProject(); }
+            catch (err) { message.textContent = explainError(err); }
+            finally { hideD360Loading(); }
+        } }));
+        return panel;
+    }
+
+    // ── « Je veux démarrer » ──
+    function productInfo(code) {
+        const product = (_catalogData?.products || []).find(p => p.code === code);
+        return {
+            name: product?.name || code,
+            price: product?.price ? formatPrice(product.price, product.price.currency) : '',
+        };
+    }
+    function planCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;';
+        return card;
+    }
+    function offerCard(code, items) {
+        const info = productInfo(code);
+        const card = planCard();
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;';
+        title.textContent = 'Offre ' + info.name + (info.price ? ' — ' + info.price : '');
+        card.appendChild(title);
+        const list = document.createElement('ul');
+        list.style.cssText = 'margin:0 0 0.75rem 1.1rem;padding:0;font-size:13px;color:var(--text-secondary);';
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item.recommended_action || item.reason || '';
+            list.appendChild(li);
+        });
+        card.appendChild(list);
+        card.appendChild(offerAction(code, items[0]));
+        return card;
+    }
+    function offerAction(code, firstItem) {
+        if (!_isOwner) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
+            msg.textContent = 'Demandez au responsable de votre entreprise';
+            return msg;
+        }
+        // Liste triée de la plus récente à la plus ancienne ; une demande perdue n'en bloque pas une nouvelle
+        const pr = _purchaseRequests.find(p => p.product_code === code && p.status !== 'LOST');
+        if (!pr) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-primary btn-sm';
+            btn.textContent = 'Je veux démarrer';
+            btn.onclick = () => showPurchaseModal(firstItem);
+            return btn;
+        }
+        const status = document.createElement('div');
+        status.style.cssText = 'font-size:13px;font-weight:500;color:var(--accent);';
+        const date = new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
+        if (pr.status === 'WON' && code === 'DIGITAL_START') {
+            const follow = document.createElement('button');
+            follow.className = 'btn btn-primary btn-sm';
+            follow.textContent = 'Suivre mon site';
+            follow.onclick = () => switchPage('site');
+            return follow;
+        }
+        if (pr.status === 'WON') {
+            status.textContent = "Offre en cours d'activation";
+        } else if (pr.status === 'CONTACTED') {
+            status.textContent = 'Un conseiller vous a contacté au sujet de cette offre';
+        } else {
+            status.textContent = 'Couvert par votre demande ' + productInfo(code).name + ' du ' + date;
+        }
+        return status;
+    }
+    function recommendationCard(item) {
+        const card = planCard();
+        const text = document.createElement('p');
+        text.style.cssText = 'font-size:13px;color:var(--text-secondary);margin:0;';
+        text.textContent = item.recommended_action || item.reason || '';
+        card.appendChild(text);
+        return card;
+    }
+
+    function knownNumber(channel) {
+        const org = _orgData || {};
+        const user = _meData?.user || {};
+        const order = channel === 'WHATSAPP' ? [org.whatsapp, org.phone, user.phone] : [org.phone, org.whatsapp, user.phone];
+        return order.find(number => number) || '';
+    }
+    function onPurchaseChannelChange() {
+        const channel = document.getElementById('purchaseChannel').value;
+        const needsNumber = channel !== 'EMAIL';
+        document.getElementById('purchaseNumberGroup').style.display = needsNumber ? '' : 'none';
+        document.getElementById('purchaseNumberError').textContent = '';
+        if (needsNumber) {
+            document.getElementById('purchaseNumberLabel').textContent = channel === 'WHATSAPP' ? 'Numéro WhatsApp' : 'Numéro de téléphone';
+            document.getElementById('purchaseNumber').value = knownNumber(channel);
+        }
+    }
+    function showPurchaseModal(item) {
+        const info = productInfo(item.product_code);
+        showPurchaseModalForProduct(item.product_code, item.id, info.name, info.price);
+    }
+    function showPurchaseModalForProduct(productCode, planItemId, name, price) {
+        _pendingPurchase = { product_code: productCode, plan_item_id: planItemId || null };
+        const modal = document.getElementById('purchaseModal');
+        if (!modal) return;
+        document.getElementById('purchaseProductName').textContent = price ? name + ' — ' + price : name;
+        document.getElementById('purchaseMsg').value = '';
+        document.getElementById('purchaseChannel').value = 'WHATSAPP';
+        document.getElementById('purchaseError').textContent = '';
+        document.getElementById('purchaseForm').style.display = '';
+        document.getElementById('purchaseDone').style.display = 'none';
+        onPurchaseChannelChange();
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closePurchaseModal() {
+        const modal = document.getElementById('purchaseModal');
+        if (modal) modal.classList.remove('open');
+        document.body.style.overflow = '';
+        _pendingPurchase = null;
+    }
+    // « 07 00 00 00 00 » ou « 00225… » → format international attendu par l'API (+2250700000000)
+    function normalizeNumber(raw) {
+        const compact = raw.replace(/[^\d+]/g, '');
+        return compact.startsWith('00') ? '+' + compact.slice(2) : compact;
+    }
+    async function reloadPurchaseRequests() {
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+            if (res.ok) _purchaseRequests = (await res.json())?.data || [];
+        } catch (_) {}
+    }
+    async function postPurchaseRequest(body) {
+        const send = () => fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: JSON.stringify(body),
+        });
+        if (!_csrfToken) await getCsrf();
+        let res = await send();
+        // fetch ne lève pas d'erreur sur un 403 : jeton expiré → on en redemande un, une seule fois
+        if (res.status === 403) {
+            const problem = await res.clone().json().catch(() => null);
+            if (problem?.code === 'CSRF_FAILED') {
+                await getCsrf();
+                res = await send();
+            }
+        }
+        return res;
+    }
+    async function submitPurchaseRequest() {
+        const errorEl = document.getElementById('purchaseError');
+        const numberErrorEl = document.getElementById('purchaseNumberError');
+        errorEl.textContent = '';
+        numberErrorEl.textContent = '';
+        if (!_pendingPurchase || !_orgId) return;
+        const channel = document.getElementById('purchaseChannel').value;
+        const body = {
+            product_code: _pendingPurchase.product_code,
+            plan_item_id: _pendingPurchase.plan_item_id,
+            channel,
+            message: document.getElementById('purchaseMsg').value.trim() || null,
+        };
+        if (channel !== 'EMAIL') {
+            const number = normalizeNumber(document.getElementById('purchaseNumber').value.trim());
+            if (!/^\+[1-9]\d{6,14}$/.test(number)) {
+                numberErrorEl.textContent = 'Indiquez votre numéro au format international, par exemple +2250700000000.';
+                return;
+            }
+            body.contact_number = number;
+        }
+        showD360Loading();
+        try {
+            const res = await postPurchaseRequest(body);
+            if (!res.ok) {
+                const problem = await res.json().catch(() => null);
+                const target = problem?.code === 'CONTACT_NUMBER_REQUIRED' ? numberErrorEl : errorEl;
+                target.textContent = problem?.detail || 'Une erreur est survenue. Réessayez.';
+                return;
+            }
+            const created = await res.json();
+            await reloadPurchaseRequests();
+            document.getElementById('purchaseForm').style.display = 'none';
+            document.getElementById('purchaseDoneText').textContent = channel === 'EMAIL'
+                ? 'Demande envoyée. Un conseiller vous contacte sous 24 h par e-mail.'
+                : 'Demande envoyée. Un conseiller vous contacte sous 24 h au ' + (created.contact_number || body.contact_number) + '.';
+            document.getElementById('purchaseDone').style.display = '';
+            renderDashboard();
+            renderSubscriptionPage();
+        } catch (_) {
+            errorEl.textContent = 'Serveur injoignable. Réessayez dans un instant.';
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    // ── Logout ──
+    async function handleLogout() {
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: csrfHeaders(),
+            });
+            if (res.status === 204) {
+                window.location.href = 'index.html';
+            } else {
+                alert('Déconnexion impossible (HTTP ' + res.status + '). Veuillez rafraîchir la page.');
+            }
+        } catch (e) {
+            // Si CSRF_FAILED, rafraîchir le jeton et réessayer une fois
+            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
+                try {
+                    await getCsrf();
+                    const res2 = await fetch(D360_API_BASE + '/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: csrfHeaders(),
+                    });
+                    if (res2.status === 204) {
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('Déconnexion impossible (HTTP ' + res2.status + '). Veuillez rafraîchir la page.');
+                    }
+                } catch (_) {
+                    alert('Erreur lors de la déconnexion : ' + e.message);
+                } finally {
+                    hideD360Loading();
+                }
+                return;
+            }
+            alert('Erreur lors de la déconnexion : ' + e.message);
+        } finally {
+            hideD360Loading();
+        }
+    }
+    </script>
+    <!-- ═══ Purchase request modal ═══ -->
+    <div class="modal-overlay" id="purchaseModal">
+        <div class="modal-box" style="max-width:480px;">
+            <button class="modal-close" onclick="closePurchaseModal()">✕</button>
+            <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.25rem;">Je veux démarrer</h2>
+            <p id="purchaseProductName" style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;"></p>
+            <div id="purchaseError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
+            <div id="purchaseForm">
+                <div class="form-group">
+                    <label class="form-label" for="purchaseChannel">Comment souhaitez-vous être contacté ?</label>
+                    <select id="purchaseChannel" class="form-input" style="max-width:300px;" onchange="onPurchaseChannelChange()">
+                        <option value="WHATSAPP">WhatsApp</option>
+                        <option value="PHONE">Téléphone</option>
+                        <option value="EMAIL">Email</option>
+                    </select>
+                </div>
+                <div class="form-group" id="purchaseNumberGroup" style="margin-top:1rem;">
+                    <label class="form-label" for="purchaseNumber" id="purchaseNumberLabel">Numéro WhatsApp</label>
+                    <input type="tel" id="purchaseNumber" class="form-input" style="max-width:300px;" placeholder="+2250700000000" autocomplete="tel">
+                    <div id="purchaseNumberError" style="color:var(--error);font-size:12px;margin-top:4px;"></div>
+                </div>
+                <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label" for="purchaseMsg">Message (facultatif, 1000 caractères max)</label>
+                    <textarea id="purchaseMsg" class="form-input" rows="3" maxlength="1000" placeholder="Ex: rappelez-moi le matin" style="resize:vertical;"></textarea>
+                </div>
+                <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+                    <button class="btn btn-primary" onclick="submitPurchaseRequest()">Envoyer ma demande</button>
+                    <button class="btn btn-ghost" onclick="closePurchaseModal()">Annuler</button>
+                </div>
+            </div>
+            <div id="purchaseDone" style="display:none;">
+                <div class="alert alert-success" id="purchaseDoneText" style="margin-bottom:1rem;"></div>
+                <button class="btn btn-primary" onclick="closePurchaseModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+name: platform
+
+on:
+  push:
+    branches: [master]
+    paths: ["platform/**", ".github/workflows/platform.yml"]
+  pull_request:
+    paths: ["platform/**", ".github/workflows/platform.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      APP_ENV: test
+      # Rôle applicatif non superuser : sans lui, la RLS ne serait pas testée réellement
+      DATABASE_URL: postgresql+asyncpg://digital360:digital360@localhost:5432/digital360_test
+      TEST_DATABASE_URL: postgresql+asyncpg://digital360:digital360@localhost:5432/digital360_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: platform/pyproject.toml
+
+      - name: Installer
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: |
+          ruff check .
+          black --check .
+
+      - name: Typage
+        run: mypy src
+
+      - name: Frontières entre modules
+        run: lint-imports
+
+      - name: Créer le rôle applicatif et la base de test
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f docker/postgres-init/01-app-role.sql -c "CREATE DATABASE digital360_test OWNER digital360;"
+
+      - name: Migrations réversibles et alignées sur les modèles
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+          alembic check
+          python -m digital360.cli seed-config
+
+      - name: Tests (unitaires + intégration)
+        run: pytest -ra
+
+      - name: Audit des dépendances
+        run: pip-audit --skip-editable
