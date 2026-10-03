@@ -169,11 +169,13 @@
 
         <!-- ABOUT -->
         <section class="section" id="about">
+            <div class="kn-section-pattern"></div>
             <div class="kn-about-grid container">
                 <div class="kn-about-visual reveal">
                     <div class="kn-about-img">
                         <img src="images/about-hero.webp" alt="Atelier Kara Nice — fabrication artisanale au Bénin" onerror="this.parentElement.classList.add('kn-about-img-placeholder'); this.style.display='none';">
                     </div>
+                    <div class="kn-about-pattern-border"></div>
                     <div class="kn-about-accent"></div>
                 </div>
                 <div class="kn-about-content reveal delay-1">
@@ -276,7 +278,7 @@
                             </div>
                             <div class="kn-formation-footer">
                                 <div class="kn-formation-price">50 000 <span>FCFA</span></div>
-                                <a href="https://wa.me/22900000000?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20formation%20savonnerie%20Kara%20Nice" target="_blank" class="btn btn-primary btn-sm">S'inscrire</a>
+                                <a href="https://wa.me/2290195517485?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20formation%20savonnerie%20Kara%20Nice" target="_blank" class="btn btn-primary btn-sm">S'inscrire</a>
                             </div>
                         </div>
                     </div>
@@ -294,7 +296,7 @@
                             </div>
                             <div class="kn-formation-footer">
                                 <div class="kn-formation-price">35 000 <span>FCFA</span></div>
-                                <a href="https://wa.me/22900000000?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20formation%20cosm%C3%A9tique%20capillaire%20Kara%20Nice" target="_blank" class="btn btn-outline btn-sm">S'inscrire</a>
+                                <a href="https://wa.me/2290195517485?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20formation%20cosm%C3%A9tique%20capillaire%20Kara%20Nice" target="_blank" class="btn btn-outline btn-sm">S'inscrire</a>
                             </div>
                         </div>
                     </div>
@@ -418,15 +420,79 @@
             </div>
         </section>
 
-        <!-- CTA -->
-        <section class="kn-cta section" id="contact">
-            <div class="reveal">
-                <div class="section-label" style="justify-content:center;">Passez à l'action</div>
-                <h2 class="section-title" style="text-align:center;">Prêt à découvrir<br>le <span style="color:var(--accent);font-style:italic;">pouvoir</span> du naturel ?</h2>
-                <p class="section-sub" style="text-align:center; margin:0 auto 2rem;">Commandez nos produits ou inscrivez-vous à une formation. Nous sommes à votre écoute.</p>
-                <div class="kn-cta-actions">
-                    <a href="boutique.html" class="btn btn-primary btn-lg">Commander maintenant</a>
-                    <a href="https://wa.me/22900000000?text=Bonjour%2C%20je%20souhaite%20avoir%20des%20informations%20sur%20Kara%20Nice" target="_blank" class="btn btn-outline btn-lg">💬 WhatsApp</a>
+        <!-- CONTACT -->
+        <section class="section section-alt" id="contact">
+            <div class="container">
+                <div class="reveal" style="text-align:center; margin-bottom:3rem;">
+                    <div class="section-label" style="justify-content:center;">Contact</div>
+                    <h2 class="section-title">Parlons de<br><span style="color:var(--accent);font-style:italic;">votre projet</span></h2>
+                    <p class="section-sub" style="margin:0.75rem auto 0; text-align:center;">Une question, une commande ou envie de former votre équipe ? Écrivez-nous ou passez nous voir à Abomey-Calavi.</p>
+                </div>
+                <div class="kn-contact-grid">
+                    <div class="kn-contact-form reveal delay-1">
+                        <h3>Envoyez-nous un message</h3>
+                        <p>Nous répondons sous 24 heures.</p>
+                        <form id="contactForm" onsubmit="submitContact(event)">
+                            <div class="kn-form-row">
+                                <div class="kn-form-group">
+                                    <label for="contactName">Nom complet *</label>
+                                    <input type="text" id="contactName" placeholder="Votre nom" required>
+                                </div>
+                                <div class="kn-form-group">
+                                    <label for="contactPhone">Téléphone *</label>
+                                    <input type="tel" id="contactPhone" placeholder="+229 XX XX XX XX" required>
+                                </div>
+                            </div>
+                            <div class="kn-form-group">
+                                <label for="contactEmail">E-mail</label>
+                                <input type="email" id="contactEmail" placeholder="votre@email.com">
+                            </div>
+                            <div class="kn-form-group">
+                                <label for="contactSubject">Sujet</label>
+                                <select id="contactSubject">
+                                    <option value="">Sélectionnez un sujet</option>
+                                    <option value="commande">Passer une commande</option>
+                                    <option value="formation">Formation savonnerie</option>
+                                    <option value="partenariat">Partenariat</option>
+                                    <option value="autre">Autre demande</option>
+                                </select>
+                            </div>
+                            <div class="kn-form-group">
+                                <label for="contactMessage">Message *</label>
+                                <textarea id="contactMessage" placeholder="Décrivez votre demande..." required></textarea>
+                            </div>
+                            <button type="submit" class="kn-submit-btn">Envoyer le message →</button>
+                        </form>
+                        <div id="contactSuccess" class="hidden" style="text-align:center; padding:2rem 0;">
+                            <div style="font-size:3rem; margin-bottom:1rem;">✅</div>
+                            <h3 style="font-family:var(--font-display); margin-bottom:0.5rem;">Message envoyé !</h3>
+                            <p style="color:var(--text-muted); font-size:14px;">Nous vous répondrons dans les plus brefs délais.</p>
+                        </div>
+                        <div class="kn-contact-info">
+                            <div class="kn-contact-info-item">
+                                <span>📍</span>
+                                <span>Abomey-Calavi, Bénin</span>
+                            </div>
+                            <div class="kn-contact-info-item">
+                                <span>💬</span>
+                                <a href="https://wa.me/2290195517485" target="_blank" style="color:var(--accent);">WhatsApp : +229 01 95 51 74 85</a>
+                            </div>
+                            <div class="kn-contact-info-item">
+                                <span>📧</span>
+                                <span>contact@karanice.bj</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kn-map-wrapper reveal delay-2">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.123456789!2d2.4077!3d6.4489!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x102337!2sAbomey-Calavi%2C+Benin!5e0!3m2!1sfr!2sbj!4v1700000000000!5m2!1sfr!2sbj" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Localisation Kara Nice — Abomey-Calavi"></iframe>
+                        <div class="kn-map-overlay">
+                            <div class="kn-map-overlay-icon">📍</div>
+                            <div class="kn-map-overlay-text">
+                                <strong>Kara Nice Academy & PLUS</strong>
+                                Abomey-Calavi, Bénin
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -460,7 +526,7 @@
                 <div class="kn-footer-col">
                     <h4>Contact</h4>
                     <ul>
-                        <li><a href="https://wa.me/22900000000" target="_blank">WhatsApp</a></li>
+                        <li><a href="https://wa.me/2290195517485" target="_blank">WhatsApp</a></li>
                         <li><a href="https://www.tiktok.com/@karanicenice" target="_blank">TikTok</a></li>
                         <li><a href="https://www.instagram.com/kara_nice_academy/" target="_blank">Instagram</a></li>
                         <li><a href="https://www.facebook.com/karanice.shop" target="_blank">Facebook</a></li>
@@ -630,12 +696,15 @@
     </div>
 
     <!-- ═══════════════ WHATSAPP FLOAT ═══════════════ -->
-    <a href="https://wa.me/22900000000?text=Bonjour%2C%20je%20souhaite%20avoir%20des%20informations%20sur%20Kara%20Nice"
+    <a href="https://wa.me/2290195517485?text=Bonjour%2C%20je%20souhaite%20avoir%20des%20informations%20sur%20Kara%20Nice"
        target="_blank"
        class="kn-whatsapp-float"
        title="Contactez-nous sur WhatsApp">
         💬
     </a>
+
+    <!-- ═══════════════ SCROLL TO TOP ═══════════════ -->
+    <button class="kn-scroll-top" id="scrollTopBtn" onclick="scrollToTop()" title="Retour en haut">↑</button>
 
     <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
     <script src="js/app.js"></script>

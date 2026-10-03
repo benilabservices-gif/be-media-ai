@@ -477,7 +477,7 @@ ${notes ? '\n📝 *Notes:* ' + notes : ''}`;
     // Open WhatsApp after a short delay
     setTimeout(() => {
         const encoded = encodeURIComponent(message);
-        window.open(`https://wa.me/22900000000?text=${encoded}`, '_blank');
+        window.open(`https://wa.me/2290195517485?text=${encoded}`, '_blank');
     }, 1500);
 }
 
@@ -492,3 +492,61 @@ function showToast(msg, icon = '✓') {
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
+
+// ── Scroll to Top ──
+function initScrollTop() {
+    const btn = document.getElementById('scrollTopBtn');
+    if (!btn) return;
+    window.addEventListener('scroll', () => {
+        btn.classList.toggle('visible', window.scrollY > 500);
+    });
+}
+
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Contact Form ──
+function submitContact(e) {
+    e.preventDefault();
+    const name = document.getElementById('contactName')?.value.trim();
+    const phone = document.getElementById('contactPhone')?.value.trim();
+    const email = document.getElementById('contactEmail')?.value.trim();
+    const subject = document.getElementById('contactSubject')?.value;
+    const message = document.getElementById('contactMessage')?.value.trim();
+
+    if (!name || !phone || !message) {
+        showToast('Veuillez remplir les champs obligatoires', '⚠️');
+        return;
+    }
+
+    const subjectNames = {
+        'commande': 'Commande',
+        'formation': 'Formation',
+        'partenariat': 'Partenariat',
+        'autre': 'Autre demande'
+    };
+
+    const waMessage = `📩 *Nouveau message — Kara Nice*
+
+👤 *Nom:* ${name}
+📞 *Téléphone:* ${phone}
+📧 *E-mail:* ${email || 'Non renseigné'}
+📋 *Sujet:* ${subjectNames[subject] || subject || 'Non spécifié'}
+
+💬 *Message:*
+${message}`;
+
+    document.getElementById('contactForm').classList.add('hidden');
+    document.getElementById('contactSuccess').classList.remove('hidden');
+
+    setTimeout(() => {
+        const encoded = encodeURIComponent(waMessage);
+        window.open(`https://wa.me/2290195517485?text=${encoded}`, '_blank');
+    }, 1200);
+}
+
+// ── Init on DOM ready ──
+document.addEventListener('DOMContentLoaded', () => {
+    initScrollTop();
+});
