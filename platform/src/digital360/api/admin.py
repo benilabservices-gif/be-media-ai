@@ -17,6 +17,8 @@ from digital360.core.csrf import require_csrf
 from digital360.core.pagination import PageInfo, PageParams, build_page_info, page_params
 from digital360.core.permissions import Permission, Principal, StaffRole
 from digital360.core.tenancy import TenantContext, staff_transaction
+from digital360.modules.billing.api.routes import get_purchase_request_service
+from digital360.modules.billing.application.service import PurchaseRequestService
 from digital360.modules.catalog.api.routes import EntitlementOut, get_catalog_service
 from digital360.modules.catalog.application.service import CatalogService
 from digital360.modules.diagnostics.api.routes import get_diagnostic_service, to_result_out
@@ -41,6 +43,7 @@ Diagnostics = Annotated[DiagnosticService, Depends(get_diagnostic_service)]
 Passports = Annotated[PassportService, Depends(get_passport_service)]
 Catalog = Annotated[CatalogService, Depends(get_catalog_service)]
 Staff = Annotated[StaffService, Depends(get_staff_service)]
+Sales = Annotated[PurchaseRequestService, Depends(get_purchase_request_service)]
 
 
 def _staff(permission: Permission) -> Any:
@@ -66,10 +69,31 @@ class UserKpis(BaseModel):
     created_last_7_days: int
 
 
+class RevenueOut(BaseModel):
+    # Unité mineure, HT (prix figé au moment de la demande)
+    currency: str
+    total: int
+    last_30_days: int
+
+
+class SalesKpis(BaseModel):
+    # Demandes « Je veux démarrer » par statut
+    new: int
+    contacted: int
+    won: int
+    lost: int
+    won_last_30_days: int
+    # Part des demandes closes qui ont abouti à une vente (0 à 1), null si aucune close
+    win_rate: float | None
+    # Chiffre d'affaires gagné, par devise
+    revenue: list[RevenueOut]
+
+
 class DashboardOut(BaseModel):
     diagnostics: DiagnosticKpis
     organizations_by_status: dict[str, int]
     users: UserKpis
+    sales: SalesKpis
 
 
 @router.get("/dashboard", response_model=DashboardOut)
@@ -78,11 +102,13 @@ async def get_dashboard(
     organizations: OrganizationServiceDep,
     diagnostics: Diagnostics,
     staff: Staff,
+    sales: Sales,
 ) -> DashboardOut:
     return DashboardOut(
         diagnostics=DiagnosticKpis(**await diagnostics.admin_stats()),
         organizations_by_status=await organizations.admin_stats(),
         users=UserKpis(**asdict(await staff.user_stats())),
+        sales=SalesKpis(**await sales.admin_stats()),
     )
 
 

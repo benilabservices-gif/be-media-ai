@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -32,7 +32,10 @@ from digital360.modules.catalog.application.service import current_catalog
 from digital360.modules.catalog.infrastructure.models import EntitlementOverride
 from digital360.modules.diagnostics.infrastructure.models import ActionPlanItem, PlanItemStatus
 from digital360.modules.identity.infrastructure.models import User
-from digital360.modules.organizations.infrastructure.models import Organization
+from digital360.modules.organizations.infrastructure.models import (
+    Organization,
+    OrganizationStatus,
+)
 
 PURCHASE_REQUEST_CREATED_EVENT = "purchase_request.created"
 ALERT_SALES_JOB = "billing.alert_sales_purchase_request"
@@ -188,6 +191,18 @@ def _product_not_available(detail: str) -> AppError:
 # Durée d'un droit accordé pour un abonnement payé hors ligne : sans renouvellement payé,
 # l'accès s'arrête de lui-même (le paiement en ligne, M5, prendra le relais)
 SUBSCRIPTION_PERIOD = {"MONTH": timedelta(days=31), "YEAR": timedelta(days=366)}
+
+
+async def _mark_organization_active(session: AsyncSession, organization_id: uuid.UUID) -> None:
+    """Premier achat : le prospect (LEAD) devient client (ACTIVE). Les autres statuts ne bougent pas."""
+    await session.execute(
+        update(Organization)
+        .where(
+            Organization.id == organization_id,
+            Organization.status == OrganizationStatus.LEAD.value,
+        )
+        .values(status=OrganizationStatus.ACTIVE.value)
+    )
 
 
 async def _activate_offer(
@@ -350,6 +365,60 @@ class PurchaseRequestService:
             kept, page = build_page_info([item.id for item in requests], params)
             return await _load_views(session, requests[:kept]), page
 
+    async def admin_stats(self) -> dict[str, Any]:
+        """Entonnoir de vente et chiffre d'affaires gagné (montants HT figés à la demande)."""
+        month_ago = datetime.now(UTC) - timedelta(days=30)
+        async with staff_transaction(self._session_factory) as session:
+            by_status = dict(
+                (
+                    await session.execute(
+                        select(PurchaseRequest.status, func.count()).group_by(
+                            PurchaseRequest.status
+                        )
+                    )
+                )
+                .tuples()
+                .all()
+            )
+            won = PurchaseRequest.status == S.WON.value
+            won_last_30_days = (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(PurchaseRequest)
+                    .where(won, PurchaseRequest.updated_at >= month_ago)
+                )
+                or 0
+            )
+            revenue = (
+                await session.execute(
+                    select(
+                        PurchaseRequest.currency,
+                        func.sum(PurchaseRequest.amount),
+                        func.sum(PurchaseRequest.amount).filter(
+                            PurchaseRequest.updated_at >= month_ago
+                        ),
+                    )
+                    .where(won, PurchaseRequest.amount.is_not(None))
+                    .group_by(PurchaseRequest.currency)
+                    .order_by(PurchaseRequest.currency)
+                )
+            ).all()
+        won_count = by_status.get(S.WON.value, 0)
+        closed = won_count + by_status.get(S.LOST.value, 0)
+        return {
+            "new": by_status.get(S.NEW.value, 0),
+            "contacted": by_status.get(S.CONTACTED.value, 0),
+            "won": won_count,
+            "lost": by_status.get(S.LOST.value, 0),
+            "won_last_30_days": won_last_30_days,
+            # Part des demandes closes qui ont abouti à une vente (0 à 1), null si aucune close
+            "win_rate": round(won_count / closed, 3) if closed else None,
+            "revenue": [
+                {"currency": currency, "total": int(total or 0), "last_30_days": int(recent or 0)}
+                for currency, total, recent in revenue
+            ],
+        }
+
     async def admin_update(
         self,
         request_id: uuid.UUID,
@@ -391,6 +460,7 @@ class PurchaseRequestService:
                     )
                 if status is S.WON:
                     await _activate_offer(session, request, staff_user_id)
+                    await _mark_organization_active(session, request.organization_id)
             if staff_note is not None:
                 request.staff_note = staff_note or None
 

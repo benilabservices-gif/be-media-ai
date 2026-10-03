@@ -217,9 +217,16 @@ npx openapi-typescript platform/contracts/openapi.json -o digital360/js/api/type
     "conversion_rate": 0.375, "average_score": 41.2
   },
   "organizations_by_status": { "LEAD": 15, "ACTIVE": 3, "SUSPENDED": 0, "CHURNED": 0 },
-  "users": { "total": 40, "created_last_7_days": 9 }
+  "users": { "total": 40, "created_last_7_days": 9 },
+  "sales": {
+    "new": 2, "contacted": 1, "won": 5, "lost": 2, "won_last_30_days": 3, "win_rate": 0.714,
+    "revenue": [{ "currency": "XOF", "total": 449500, "last_30_days": 269700 }]
+  }
 }
 ```
+
+- `sales` : demandes « Je veux démarrer » par statut, `win_rate` = gagnées / (gagnées + perdues), `null` tant qu'aucune n'est close. `revenue` : chiffre d'affaires HT des ventes gagnées, **une entrée par devise** (ne jamais additionner FCFA et euros), en unité mineure.
+- Une vente gagnée fait passer l'entreprise de `LEAD` à `ACTIVE` : `organizations_by_status.ACTIVE` compte donc les clients.
 
 - `completed_not_claimed` : les **prospects à relancer** (diagnostic terminé, pas de compte).
 - `conversion_rate` est compris entre 0 et 1 (afficher `37,5 %`). Il vaut `null`, comme `average_score`, tant qu'aucun diagnostic n'est terminé : afficher « — ».

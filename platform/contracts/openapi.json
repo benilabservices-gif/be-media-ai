@@ -320,6 +320,9 @@
             "title": "Organizations By Status",
             "type": "object"
           },
+          "sales": {
+            "$ref": "#/components/schemas/SalesKpis"
+          },
           "users": {
             "$ref": "#/components/schemas/UserKpis"
           }
@@ -327,7 +330,8 @@
         "required": [
           "diagnostics",
           "organizations_by_status",
-          "users"
+          "users",
+          "sales"
         ],
         "title": "DashboardOut",
         "type": "object"
@@ -2390,6 +2394,82 @@
           "full_name"
         ],
         "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RevenueOut": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "last_30_days": {
+            "title": "Last 30 Days",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "currency",
+          "total",
+          "last_30_days"
+        ],
+        "title": "RevenueOut",
+        "type": "object"
+      },
+      "SalesKpis": {
+        "properties": {
+          "contacted": {
+            "title": "Contacted",
+            "type": "integer"
+          },
+          "lost": {
+            "title": "Lost",
+            "type": "integer"
+          },
+          "new": {
+            "title": "New",
+            "type": "integer"
+          },
+          "revenue": {
+            "items": {
+              "$ref": "#/components/schemas/RevenueOut"
+            },
+            "title": "Revenue",
+            "type": "array"
+          },
+          "win_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate"
+          },
+          "won": {
+            "title": "Won",
+            "type": "integer"
+          },
+          "won_last_30_days": {
+            "title": "Won Last 30 Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "new",
+          "contacted",
+          "won",
+          "lost",
+          "won_last_30_days",
+          "win_rate",
+          "revenue"
+        ],
+        "title": "SalesKpis",
         "type": "object"
       },
       "SaveAnswersRequest": {

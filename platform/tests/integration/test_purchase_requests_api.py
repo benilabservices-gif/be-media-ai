@@ -369,3 +369,67 @@ def test_should_move_every_recommendation_of_the_offer_together(
     second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
 
     assert _statuses_for(api, org["id"], "DIGITAL_GROWTH") == {"IN_PROGRESS"}
+
+
+# ── Indicateurs de vente et statut client ──
+
+
+def _sales(api: ApiClient) -> dict[str, Any]:
+    body: dict[str, Any] = api.get("/admin/dashboard").json()["sales"]
+    return body
+
+
+def _xof_revenue(sales: dict[str, Any]) -> dict[str, int]:
+    return next(
+        (entry for entry in sales["revenue"] if entry["currency"] == "XOF"),
+        {"total": 0, "last_30_days": 0},
+    )
+
+
+def test_should_count_requests_and_won_revenue_in_dashboard(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    _staff_member(second_api, test_database_url, "MANAGER")
+    before = _sales(second_api)
+    org = _client_with_diagnostic(api)
+    won_id = _request(api, org["id"]).json()["id"]  # Start : 89 900 FCFA HT
+    lost_id = _request(api, org["id"], product_code="DIGITAL_GROWTH").json()["id"]
+
+    middle = _sales(second_api)
+    second_api.patch(f"/admin/purchase-requests/{won_id}", {"status": "WON"})
+    second_api.patch(f"/admin/purchase-requests/{lost_id}", {"status": "LOST"})
+    after = _sales(second_api)
+
+    assert middle["new"] == before["new"] + 2
+    assert after["new"] == before["new"]
+    assert after["won"] == before["won"] + 1
+    assert after["lost"] == before["lost"] + 1
+    assert after["won_last_30_days"] == before["won_last_30_days"] + 1
+    assert _xof_revenue(after)["total"] == _xof_revenue(before)["total"] + 89900
+    assert _xof_revenue(after)["last_30_days"] == _xof_revenue(before)["last_30_days"] + 89900
+    assert 0 < after["win_rate"] < 1
+
+
+def test_should_turn_lead_into_active_client_on_first_won_request(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    assert api.get(f"/orgs/{org['id']}").json()["status"] == "LEAD"
+    request_id = _request(api, org["id"]).json()["id"]
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "WON"})
+
+    assert api.get(f"/orgs/{org['id']}").json()["status"] == "ACTIVE"
+
+
+def test_should_keep_lead_status_when_request_is_lost(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    request_id = _request(api, org["id"]).json()["id"]
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "LOST"})
+
+    assert api.get(f"/orgs/{org['id']}").json()["status"] == "LEAD"
