@@ -86,6 +86,7 @@
                 <div class="admin-nav-item" data-page="entreprises" onclick="switchPage('entreprises')"><span class="nav-icon">&#128187;</span> Entreprises</div>
                 <div class="admin-nav-item" data-page="prospects" onclick="switchPage('prospects')"><span class="nav-icon">&#128203;</span> Prospects</div>
                 <div class="admin-nav-item" data-page="demandes" id="navItemDemandes" style="display:none;" onclick="switchPage('demandes')"><span class="nav-icon">&#128200;</span> Demandes</div>
+                <div class="admin-nav-item" data-page="projets" id="navItemProjets" style="display:none;" onclick="switchPage('projets')"><span class="nav-icon">&#127760;</span> Projets de site</div>
                 <div class="admin-nav-section" id="navSectionTeam" style="display:none;">Organisation</div>
                 <div class="admin-nav-item" data-page="equipe" id="navItemEquipe" style="display:none;" onclick="switchPage('equipe')"><span class="nav-icon">&#128104;&#65039;</span> Équipe</div>
                 <div class="admin-nav-item" data-page="audit" id="navItemAudit" style="display:none;" onclick="switchPage('audit')"><span class="nav-icon">&#128196;</span> Journal d'audit</div>
@@ -138,6 +139,36 @@
                             <div class="kpi-card"><div class="kpi-value" id="kpiUsersTotal">—</div><div class="kpi-label">Comptes</div><div class="kpi-sub" id="kpiUsersLast7"></div></div>
                         </div>
                     </div>
+                </div>
+
+                <!-- PROJETS -->
+                <div class="admin-page" id="admin-projets">
+                    <div class="page-header"><h1>Projets de site</h1><p>Réalisation des sites Digital Start, du brief à la mise en ligne.</p></div>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="projectStatusFilter" onchange="loadProjects()">
+                            <option value="">Toutes les étapes</option>
+                            <option value="BRIEF_PENDING">Brief à remplir (client)</option>
+                            <option value="IN_PRODUCTION" selected>À produire</option>
+                            <option value="CLIENT_REVIEW">En relecture (client)</option>
+                            <option value="REVISION">Corrections à faire</option>
+                            <option value="APPROVED">Validé, à mettre en ligne</option>
+                            <option value="LIVE">En ligne</option>
+                            <option value="CANCELLED">Annulé</option>
+                        </select>
+                    </div>
+                    <div id="projectLoading" class="loading-row" style="display:none;">Chargement des projets…</div>
+                    <div id="projectError" class="error-row" style="display:none;"></div>
+                    <div id="projectEmpty" class="empty-row" style="display:none;">Aucun projet à cette étape.</div>
+                    <div id="projectContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Créé le</th><th>Entreprise</th><th>Étape</th><th>Livraison promise</th><th></th></tr></thead>
+                                <tbody id="projectTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="projectLoadMore" style="display:none;" onclick="loadProjects(true)">Charger plus</button>
+                    </div>
+                    <div id="projectDetail" class="card" style="display:none;margin-top:1.5rem;"></div>
                 </div>
 
                 <!-- ENTREPRISES -->
@@ -383,6 +414,7 @@
         equipe: 'Équipe',
         audit: 'Journal d\'audit',
         demandes: 'Demandes',
+        projets: 'Projets de site',
     };
 
     function switchPage(id) {
@@ -1298,6 +1330,167 @@
         return new Intl.NumberFormat('fr-FR').format(amt) + ' FCFA HT';
     }
 
+    // ── Projets de site (Digital Start) ──
+    let _projectCursor = null;
+    const PROJECT_STATUS_LABELS = {
+        BRIEF_PENDING: ['Brief à remplir', 'badge-muted'], IN_PRODUCTION: ['À produire', 'badge-warning'],
+        CLIENT_REVIEW: ['En relecture', 'badge-info'], REVISION: ['Corrections à faire', 'badge-warning'],
+        APPROVED: ['À mettre en ligne', 'badge-accent'], LIVE: ['En ligne', 'badge-success'], CANCELLED: ['Annulé', 'badge-muted'],
+    };
+    const BRIEF_LABELS = {
+        business_name: 'Entreprise', activity: 'Activité', city: 'Ville', address: 'Adresse', phone: 'Téléphone',
+        whatsapp: 'WhatsApp', email: 'E-mail', opening_hours: 'Horaires', facebook: 'Facebook', instagram: 'Instagram',
+        tiktok: 'TikTok', desired_domain: 'Domaine souhaité', template: 'Modèle', palette: 'Palette', has_logo: 'Logo fourni',
+    };
+    const REVISION_LABELS = { TEXT: 'Texte', PHOTO: 'Photo', CONTACT: 'Coordonnée', HOURS: 'Horaires' };
+
+    function projectBadge(status) {
+        const [label, css] = PROJECT_STATUS_LABELS[status] || [status, 'badge-muted'];
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + css;
+        badge.textContent = label;
+        return badge;
+    }
+
+    async function loadProjects(append) {
+        if (!append) {
+            _projectCursor = null;
+            document.getElementById('projectTableBody').innerHTML = '';
+            document.getElementById('projectDetail').style.display = 'none';
+        }
+        setStatus('projectLoading', 'projectError', 'projectContent', 'projectEmpty', true, false, false);
+        try {
+            const params = { limit: 25 };
+            const status = document.getElementById('projectStatusFilter').value;
+            if (status) params.status = status;
+            if (_projectCursor) params.cursor = _projectCursor;
+            const data = await apiFetch('/admin/website-projects?' + new URLSearchParams(params).toString());
+            const list = data.data || [];
+            list.forEach(appendProjectRow);
+            _projectCursor = data.page?.next_cursor || null;
+            document.getElementById('projectLoadMore').style.display = data.page?.has_more ? '' : 'none';
+            const total = document.getElementById('projectTableBody').children.length;
+            setStatus('projectLoading', 'projectError', 'projectContent', 'projectEmpty', false, false, total === 0);
+        } catch (e) {
+            setStatus('projectLoading', 'projectError', 'projectContent', 'projectEmpty', false, true, false);
+            document.getElementById('projectError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function appendProjectRow(project) {
+        const tr = document.createElement('tr');
+        const cell = (text) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+        cell(formatDate(project.created_at));
+        cell(project.organization_name || '—').className = 'client-name';
+        const statusTd = document.createElement('td');
+        statusTd.appendChild(projectBadge(project.status));
+        tr.appendChild(statusTd);
+        cell(project.due_on ? formatDate(project.due_on) : '—');
+        const actionTd = document.createElement('td');
+        const open = document.createElement('button');
+        open.className = 'btn btn-ghost btn-sm';
+        open.textContent = 'Ouvrir';
+        open.onclick = () => showProject(project);
+        actionTd.appendChild(open);
+        tr.appendChild(actionTd);
+        document.getElementById('projectTableBody').appendChild(tr);
+    }
+
+    function showProject(project) {
+        const panel = document.getElementById('projectDetail');
+        panel.innerHTML = '';
+        panel.style.display = '';
+        const add = (tag, text, css) => { const el = document.createElement(tag); el.textContent = text; if (css) el.style.cssText = css; panel.appendChild(el); return el; };
+
+        const header = add('div', '', 'display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;');
+        const title = document.createElement('h3');
+        title.textContent = project.organization_name;
+        header.appendChild(title);
+        header.appendChild(projectBadge(project.status));
+        if (project.due_on) add('p', 'Livraison promise au client : ' + formatDate(project.due_on), 'font-size:13px;color:var(--warning);margin-bottom:1rem;');
+
+        add('h4', 'Brief du client', 'font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin:1rem 0 0.5rem;');
+        const brief = project.brief || {};
+        Object.entries(BRIEF_LABELS).forEach(([key, label]) => {
+            if (brief[key] === undefined || brief[key] === null || brief[key] === '') return;
+            const row = add('div', '', 'display:flex;gap:1rem;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;');
+            const name = document.createElement('span'); name.style.cssText = 'min-width:140px;color:var(--text-muted);'; name.textContent = label;
+            const value = document.createElement('span'); value.textContent = typeof brief[key] === 'boolean' ? (brief[key] ? 'Oui' : 'Non') : String(brief[key]);
+            row.appendChild(name); row.appendChild(value);
+        });
+        if ((brief.services || []).length) {
+            add('div', 'Services :', 'font-size:13px;color:var(--text-muted);margin-top:0.5rem;');
+            const ul = add('ul', '', 'margin:0.25rem 0 0 1.2rem;font-size:13px;');
+            brief.services.forEach(service => {
+                const li = document.createElement('li');
+                li.textContent = service.name + (service.description ? ' — ' + service.description : '');
+                ul.appendChild(li);
+            });
+        }
+        if (project.missing_fields?.length && project.status === 'BRIEF_PENDING') {
+            add('p', 'Le client doit encore compléter : ' + project.missing_fields.join(', '), 'font-size:12px;color:var(--text-muted);margin-top:0.5rem;');
+        }
+
+        (project.revision_requests || []).forEach((request, index) => {
+            add('h4', 'Corrections demandées (série ' + (index + 1) + ')', 'font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin:1.25rem 0 0.5rem;');
+            const ul = add('ul', '', 'margin:0 0 0 1.2rem;font-size:13px;');
+            request.items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = (REVISION_LABELS[item.category] || item.category) + ' · ' + item.page + ' : ' + item.text;
+                ul.appendChild(li);
+            });
+        });
+        if (project.preview_url) add('p', 'Préversion : ' + project.preview_url, 'font-size:12px;color:var(--text-muted);margin-top:1rem;');
+        if (project.live_url) add('p', 'Site en ligne : ' + project.live_url, 'font-size:12px;color:var(--text-muted);');
+
+        const actions = add('div', '', 'display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;max-width:520px;');
+        const message = add('div', '', 'font-size:13px;color:var(--error);min-height:18px;');
+        const actionRow = (placeholder, label, buildBody, confirmText) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:0.5rem;';
+            const input = document.createElement('input');
+            input.className = 'filter-input';
+            input.style.flex = '1';
+            input.placeholder = placeholder;
+            const button = document.createElement('button');
+            button.className = 'btn btn-primary btn-sm';
+            button.textContent = label;
+            button.onclick = async () => {
+                const value = input.value.trim();
+                if (!value) { message.textContent = 'Champ obligatoire.'; return; }
+                if (confirmText && !confirm(confirmText)) return;
+                try {
+                    showD360Loading();
+                    const updated = await apiFetch('/admin/website-projects/' + project.id + '/transition', { method: 'POST', body: buildBody(value) });
+                    loadProjects(false);
+                    showProject(updated);
+                } catch (e) {
+                    message.textContent = (e.detail || e.message) + ((e.errors || []).length ? ' : ' + e.errors.map(x => x.reason).join(', ') : '');
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            row.appendChild(input);
+            row.appendChild(button);
+            actions.appendChild(row);
+        };
+        const available = project.available_actions || [];
+        if (available.includes('CLIENT_REVIEW')) {
+            actionRow('Lien de la préversion (https://…)', project.status === 'REVISION' ? 'Publier la version corrigée' : 'Publier la préversion',
+                value => ({ target: 'CLIENT_REVIEW', preview_url: value }), 'Le client va recevoir un e-mail pour relire son site. Continuer ?');
+        }
+        if (available.includes('LIVE')) {
+            actionRow('Adresse du site en ligne (https://…)', 'Mettre en ligne', value => ({ target: 'LIVE', live_url: value }), 'Le client va être prévenu que son site est en ligne. Continuer ?');
+        }
+        if (available.includes('CANCELLED')) {
+            actionRow("Motif de l'annulation", 'Annuler le projet', value => ({ target: 'CANCELLED', reason: value }), 'Annuler définitivement ce projet ?');
+        }
+        if (!available.some(target => ['CLIENT_REVIEW', 'LIVE', 'CANCELLED'].includes(target))) {
+            add('p', "Aucune action de l'équipe à cette étape : on attend le client.", 'font-size:13px;color:var(--text-muted);');
+        }
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     // ── Logout admin ──
     async function handleLogoutAdmin() {
         try {
@@ -1375,6 +1568,10 @@
             if (perms.includes('staff:manage')) loadStaff();
             if (perms.includes('audit:read')) loadAuditLogs(false);
             if (perms.includes('order:create')) loadPurchaseRequests(false);
+            if (perms.includes('website_project:read')) {
+                document.getElementById('navItemProjets').style.display = '';
+                loadProjects(false);
+            }
             // déclencher les animations reveal sur la page active au chargement
             switchPage('dashboard');
         } catch (e) {
