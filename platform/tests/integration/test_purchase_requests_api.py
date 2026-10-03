@@ -60,14 +60,14 @@ def test_should_create_request_from_recommendation_and_alert_sales(
     body = response.json()
     assert body["status"] == "NEW"
     assert body["product_name"]
-    assert body["price"] == {"amount": 89900, "currency": "XOF", "period": "NONE"}
+    assert body["price"] == {"amount": 109900, "currency": "XOF", "period": "NONE"}
     assert "staff_note" not in body  # réservé à l'équipe
     assert _website_item(api, org["id"])["status"] == "ACCEPTED"
 
     run_pending_jobs(http_client)
     [alert] = [m for m in outbox.sent if m.subject.startswith("Demande d'achat")]
     assert alert.to == [SALES]
-    assert "89 900 FCFA HT" in alert.text
+    assert "109 900 FCFA HT" in alert.text
     assert "Rappelez-moi le matin" in alert.text
 
 
@@ -248,7 +248,7 @@ def test_should_activate_subscription_for_one_month_when_request_is_won(
 
     granted = _entitlements(api, org["id"])
     assert granted["MAINTENANCE"]["value"] is True
-    assert granted["CONTENT_MONTHLY_LIMIT"]["value"] == 4
+    assert granted["CONTENT_MONTHLY_LIMIT"]["value"] == 10
     expires_at = datetime.fromisoformat(granted["MAINTENANCE"]["sources"][0]["expires_at"])
     assert timedelta(days=30) < expires_at - datetime.now(UTC) <= timedelta(days=31)
 
@@ -392,7 +392,7 @@ def test_should_count_requests_and_won_revenue_in_dashboard(
     _staff_member(second_api, test_database_url, "MANAGER")
     before = _sales(second_api)
     org = _client_with_diagnostic(api)
-    won_id = _request(api, org["id"]).json()["id"]  # Start : 89 900 FCFA HT
+    won_id = _request(api, org["id"]).json()["id"]  # Start : 109 900 FCFA HT
     lost_id = _request(api, org["id"], product_code="DIGITAL_GROWTH").json()["id"]
 
     middle = _sales(second_api)
@@ -405,8 +405,8 @@ def test_should_count_requests_and_won_revenue_in_dashboard(
     assert after["won"] == before["won"] + 1
     assert after["lost"] == before["lost"] + 1
     assert after["won_last_30_days"] == before["won_last_30_days"] + 1
-    assert _xof_revenue(after)["total"] == _xof_revenue(before)["total"] + 89900
-    assert _xof_revenue(after)["last_30_days"] == _xof_revenue(before)["last_30_days"] + 89900
+    assert _xof_revenue(after)["total"] == _xof_revenue(before)["total"] + 109900
+    assert _xof_revenue(after)["last_30_days"] == _xof_revenue(before)["last_30_days"] + 109900
     assert 0 < after["win_rate"] < 1
 
 

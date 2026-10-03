@@ -586,7 +586,7 @@
     const MOCK_CATALOG = {
         currency: 'XOF',
         products: [
-            { code: 'DIGITAL_START', name: 'Start', kind: 'ONE_TIME', module: 'PRESENCE', price: { amount: 89900, currency: 'XOF' }, description: 'Pack complet : site web, domaine, hébergement, SEO de base.' },
+            { code: 'DIGITAL_START', name: 'Start', kind: 'ONE_TIME', module: 'PRESENCE', price: { amount: 109900, currency: 'XOF' }, description: 'Pack complet : site web, domaine, hébergement, SEO de base.' },
             { code: 'DIGITAL_ESSENTIAL', name: 'Essential', kind: 'SUBSCRIPTION', module: 'PRESENCE', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, description: 'Maintenance, mises à jour, 4 contenus/mois, suivi Google Business.' },
             { code: 'DIGITAL_GROWTH', name: 'Growth', kind: 'SUBSCRIPTION', module: 'VISIBILITY', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Essential + gestion réseaux, 8 contenus/mois, SEO local.' },
             { code: 'DIGITAL_PERFORMANCE', name: 'Performance', kind: 'SUBSCRIPTION', module: 'ACQUISITION', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, description: 'Tout Growth + publicité, email marketing, automatisations, reporting avancé.' }
@@ -791,7 +791,7 @@
          const grid = document.getElementById('pricingGrid');
          if (!grid) { console.error('[D360] renderPricingDefault: pricingGrid not found'); return; }
         const products = [
-             { code: 'DIGITAL_START', name: 'Start', price: { amount: 89900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
+             { code: 'DIGITAL_START', name: 'Start', price: { amount: 109900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
              { code: 'DIGITAL_ESSENTIAL', name: 'Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
              { code: 'DIGITAL_GROWTH', name: 'Growth', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
              { code: 'DIGITAL_PERFORMANCE', name: 'Performance', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
@@ -832,9 +832,9 @@
         const el = document.getElementById('planPricingCta');
         if (catalogData) {
             const start = catalogData.products.find(p => p.code === 'DIGITAL_START');
-             el.textContent = start ? formatPrice(start.price, start.price?.currency) : formatPrice({ amount: 89900, currency: 'XOF' });
+             el.textContent = start ? formatPrice(start.price, start.price?.currency) : formatPrice({ amount: 109900, currency: 'XOF' });
         } else {
-             el.textContent = formatPrice({ amount: 89900, currency: 'XOF' });
+             el.textContent = formatPrice({ amount: 109900, currency: 'XOF' });
         }
     }
 

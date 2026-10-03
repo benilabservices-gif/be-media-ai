@@ -1,0 +1,170 @@
+# Catalogue BENILAB Digital360 — version 3
+#
+# Prix HT, en unité mineure : FCFA pour XOF et XAF, CENTIMES pour EUR (137,05 € = 13705).
+# Une offre sans prix dans une devise n'est pas vendable dans cette devise.
+# v2 : XAF et EUR calculés automatiquement depuis XOF (parité fixe, voir derived_pricing) ;
+# offres renommées Start, Essential, Growth, Performance (codes internes inchangés).
+# v3 : nouveaux prix (Start 109 900, Essential 45 000, Growth 75 000, Performance 150 000 FCFA HT)
+# et nombre de contenus mensuels détaillé par type (10, 16 et 20).
+# Pour fixer un prix « commercial » (ex. 139 €), l'ajouter dans `prices` du produit :
+# un prix explicite remplace toujours le prix calculé.
+#
+# Modifier : copier en catalog.v4.yaml, incrémenter `version`, puis
+# `python -m digital360.cli seed-config`. Les commandes passées gardent le prix payé.
+
+key: default
+version: 3
+default_currency: XOF
+
+# Parités fixes du franc CFA : 1 EUR = 655,957 XOF ; 1 XAF = 1 XOF.
+# CEIL_MAJOR : arrondi à l'unité supérieure (89 900 FCFA = 137,05 € → 138 € HT).
+derived_pricing:
+  EUR: { source: XOF, rate: "655.957", rounding: CEIL_MAJOR }
+  XAF: { source: XOF, rate: "1", rounding: NEAREST_MINOR }
+
+# Devise de facturation proposée selon le pays de l'entreprise
+currency_by_country:
+  CI: XOF
+  SN: XOF
+  BJ: XOF
+  TG: XOF
+  BF: XOF
+  ML: XOF
+  NE: XOF
+  CM: XAF
+  GA: XAF
+  CG: XAF
+  FR: EUR
+
+entitlements:
+  - { key: WEBSITE, type: BOOLEAN, description: "Site web professionnel (jusqu'à 5 pages)" }
+  - { key: MAINTENANCE, type: BOOLEAN, description: "Maintenance, mises à jour et sauvegardes" }
+  - { key: SUPPORT, type: BOOLEAN, description: "Assistance et petites modifications" }
+  - { key: CONTENT_MONTHLY_LIMIT, type: LIMIT, description: "Contenus produits par mois" }
+  - { key: GOOGLE_BUSINESS_MONITORING, type: BOOLEAN, description: "Suivi de la fiche Google Business" }
+  - { key: GOOGLE_BUSINESS_MANAGEMENT, type: BOOLEAN, description: "Optimisation de la fiche Google Business" }
+  - { key: SOCIAL_MANAGEMENT, type: BOOLEAN, description: "Gestion Facebook et Instagram" }
+  - { key: SEO, type: BOOLEAN, description: "SEO local" }
+  - { key: VISUAL_CREATION, type: BOOLEAN, description: "Création de visuels" }
+  - { key: LEAD_TRACKING, type: BOOLEAN, description: "Suivi des prospects" }
+  - { key: MONTHLY_REPORT, type: BOOLEAN, description: "Rapport mensuel" }
+  - { key: LANDING_PAGE_LIMIT, type: LIMIT, description: "Landing pages" }
+  - { key: EDITORIAL_STRATEGY, type: BOOLEAN, description: "Stratégie éditoriale" }
+  - { key: EMAIL_MARKETING, type: BOOLEAN, description: "Email marketing" }
+  - { key: AUTOMATION, type: BOOLEAN, description: "Automatisations" }
+  - { key: ADS_MANAGEMENT, type: BOOLEAN, description: "Gestion des campagnes publicitaires (budget séparé)" }
+  - { key: CONVERSION_OPTIMIZATION, type: BOOLEAN, description: "Optimisation de la conversion" }
+  - { key: ADVANCED_REPORTING, type: BOOLEAN, description: "Reporting avancé" }
+
+products:
+  - code: DIGITAL_START
+    name: "Start"
+    kind: ONE_TIME
+    module: PRESENCE
+    description: "Conception de votre site offerte grâce à l'IA : vous payez le domaine, l'hébergement et la mise en ligne."
+    includes:
+      - "Nom de domaine et hébergement (1re année)"
+      - "Conception du site offerte : 5 pages à partir d'un modèle professionnel"
+      - "Présentation, services, galerie, contact"
+      - "WhatsApp, Google Maps et réseaux sociaux intégrés"
+      - "Formulaire de contact"
+      - "SEO technique de base et Analytics"
+      - "Email professionnel de base"
+      - "Mise en ligne"
+    prices:
+      - { currency: XOF, amount: 109900 }
+    entitlements:
+      WEBSITE: true
+
+  - code: DIGITAL_ESSENTIAL
+    name: "Essential"
+    kind: SUBSCRIPTION
+    family: support_plan
+    module: PRESENCE
+    description: "Maintenance, mises à jour, 10 contenus par mois, suivi Google Business."
+    includes:
+      - "Maintenance et mises à jour"
+      - "Sauvegardes"
+      - "Assistance et petites modifications"
+      - "10 contenus par mois : 8 publications réseaux sociaux (visuel + texte) et 2 actualités Google Business"
+      - "Suivi Google Business"
+    prices:
+      - { currency: XOF, amount: 45000, period: MONTH }
+    entitlements:
+      MAINTENANCE: true
+      SUPPORT: true
+      CONTENT_MONTHLY_LIMIT: 10
+      GOOGLE_BUSINESS_MONITORING: true
+
+  - code: DIGITAL_GROWTH
+    name: "Growth"
+    kind: SUBSCRIPTION
+    family: support_plan
+    module: VISIBILITY
+    description: "Tout Essential, gestion des réseaux, 16 contenus par mois, SEO local."
+    includes:
+      - "Tout Essential"
+      - "16 contenus par mois : 12 publications réseaux sociaux, 2 actualités Google Business et 2 vidéos courtes (Reels, TikTok)"
+      - "Gestion Facebook et Instagram"
+      - "Optimisation Google Business et SEO local"
+      - "Création de visuels et optimisation du site"
+      - "Landing page simple selon besoin"
+      - "Suivi des prospects et rapport mensuel"
+    prices:
+      - { currency: XOF, amount: 75000, period: MONTH }
+    entitlements:
+      MAINTENANCE: true
+      SUPPORT: true
+      CONTENT_MONTHLY_LIMIT: 16
+      GOOGLE_BUSINESS_MONITORING: true
+      GOOGLE_BUSINESS_MANAGEMENT: true
+      SOCIAL_MANAGEMENT: true
+      SEO: true
+      VISUAL_CREATION: true
+      LEAD_TRACKING: true
+      MONTHLY_REPORT: true
+      LANDING_PAGE_LIMIT: 1
+
+  - code: DIGITAL_PERFORMANCE
+    name: "Performance"
+    kind: SUBSCRIPTION
+    family: support_plan
+    module: ACQUISITION
+    description: "Tout Growth, publicité, email marketing, automatisations, reporting avancé."
+    includes:
+      - "Tout Growth"
+      - "20 contenus par mois et stratégie éditoriale : 12 publications réseaux sociaux, 2 actualités Google Business, 4 vidéos courtes et 2 articles de blog SEO"
+      - "Landing pages et génération de prospects"
+      - "Email marketing et automatisations"
+      - "Gestion des campagnes publicitaires (budget publicitaire séparé)"
+      - "Optimisation de la conversion et reporting avancé"
+    prices:
+      - { currency: XOF, amount: 150000, period: MONTH }
+    entitlements:
+      MAINTENANCE: true
+      SUPPORT: true
+      CONTENT_MONTHLY_LIMIT: 20
+      GOOGLE_BUSINESS_MONITORING: true
+      GOOGLE_BUSINESS_MANAGEMENT: true
+      SOCIAL_MANAGEMENT: true
+      SEO: true
+      VISUAL_CREATION: true
+      LEAD_TRACKING: true
+      MONTHLY_REPORT: true
+      LANDING_PAGE_LIMIT: UNLIMITED
+      EDITORIAL_STRATEGY: true
+      EMAIL_MARKETING: true
+      AUTOMATION: true
+      ADS_MANAGEMENT: true
+      CONVERSION_OPTIMIZATION: true
+      ADVANCED_REPORTING: true
+
+  # Renouvellement annuel domaine + hébergement à partir de l'année 2 (payé par le client, Q1).
+  # Prix à fixer (Q15) : non vendable tant qu'aucun prix n'est défini.
+  - code: ANNUAL_RENEWAL
+    name: "Renouvellement annuel domaine et hébergement"
+    kind: SUBSCRIPTION
+    module: PRESENCE
+    public: false
+    description: "Renouvellement du nom de domaine et de l'hébergement, à partir de la 2e année."
+    prices: []

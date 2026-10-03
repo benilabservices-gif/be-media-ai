@@ -15,10 +15,10 @@ from digital360.modules.diagnostics.domain.seeds import load_catalog
 
 @pytest.fixture(scope="module")
 def catalog() -> Catalog:
-    return load_catalog(Path("config/seeds/catalog.v2.yaml"))
+    return load_catalog(Path("config/seeds/catalog.v3.yaml"))
 
 
-def test_should_load_v1_catalog_with_official_xof_prices(catalog: Catalog) -> None:
+def test_should_load_catalog_with_official_xof_prices(catalog: Catalog) -> None:
     prices = {
         product.code: price.amount
         for product in catalog.products
@@ -26,10 +26,10 @@ def test_should_load_v1_catalog_with_official_xof_prices(catalog: Catalog) -> No
     }
 
     assert prices == {
-        "DIGITAL_START": 89900,
-        "DIGITAL_ESSENTIAL": 25000,
-        "DIGITAL_GROWTH": 50000,
-        "DIGITAL_PERFORMANCE": 100000,
+        "DIGITAL_START": 109900,
+        "DIGITAL_ESSENTIAL": 45000,
+        "DIGITAL_GROWTH": 75000,
+        "DIGITAL_PERFORMANCE": 150000,
     }
 
 
@@ -40,12 +40,12 @@ def test_should_derive_eur_prices_from_fixed_parity_rounded_up(catalog: Catalog)
         if (price := catalog.price_for(product, Currency.EUR))
     }
 
-    # Centimes, arrondis à l'euro supérieur : 89 900 / 655,957 = 137,05 € → 138 €
+    # Centimes, arrondis à l'euro supérieur : 109 900 / 655,957 = 167,54 € → 168 €
     assert prices == {
-        "DIGITAL_START": 13800,
-        "DIGITAL_ESSENTIAL": 3900,
-        "DIGITAL_GROWTH": 7700,
-        "DIGITAL_PERFORMANCE": 15300,
+        "DIGITAL_START": 16800,
+        "DIGITAL_ESSENTIAL": 6900,
+        "DIGITAL_GROWTH": 11500,
+        "DIGITAL_PERFORMANCE": 22900,
     }
 
 
@@ -56,7 +56,7 @@ def test_should_copy_xof_amounts_for_xaf_and_keep_billing_period(catalog: Catalo
     price = catalog.price_for(growth, Currency.XAF)
 
     assert price is not None
-    assert (price.amount, price.period) == (50000, "MONTH")
+    assert (price.amount, price.period) == (75000, "MONTH")
 
 
 def test_should_prefer_explicit_price_over_derived_one(catalog: Catalog) -> None:
@@ -105,11 +105,11 @@ def test_should_grant_nothing_without_sources(catalog: Catalog) -> None:
 
 def test_should_take_union_of_booleans_and_max_of_limits(catalog: Catalog) -> None:
     essential = dict(catalog.product("DIGITAL_ESSENTIAL").entitlements)  # type: ignore[union-attr]
-    extra: dict[str, Any] = {"CONTENT_MONTHLY_LIMIT": 6, "EMAIL_MARKETING": True}
+    extra: dict[str, Any] = {"CONTENT_MONTHLY_LIMIT": 12, "EMAIL_MARKETING": True}
 
     resolved = resolve_entitlements(catalog, [essential, extra])
 
-    assert resolved["CONTENT_MONTHLY_LIMIT"] == 6
+    assert resolved["CONTENT_MONTHLY_LIMIT"] == 12
     assert resolved["EMAIL_MARKETING"] is True
     assert resolved["MAINTENANCE"] is True
     assert resolved["SOCIAL_MANAGEMENT"] is False
