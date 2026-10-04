@@ -43,6 +43,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /admin/purchase-requests` · `PATCH /admin/purchase-requests/{id}` | **Disponible** | ADMIN et MANAGER : traitement des demandes (§11) |
 | `GET /orgs/{id}/website-project` · `PUT …/brief` · `POST …/submit` · `…/revision` · `…/approve` | **Disponible** | Projet de site Digital Start, offre encadrée (§13) |
 | `GET /admin/website-projects` · `POST /admin/website-projects/{id}/transition` | **Disponible** | Équipe : suivi et étapes des projets (§13) |
+| `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne Cartflox : achat ou renouvellement (§14) |
 
 ## 2. Configuration
 
@@ -272,7 +273,7 @@ En attendant le paiement en ligne, le client demande une offre et l'équipe le r
 - Le chiffre d'affaires de `/admin/dashboard` est calculé sur les **montants réellement encaissés**.
 - **Abonnements payés hors ligne** : une vente Essential, Growth ou Performance couvre 31 jours (366 en annuel). `GET /admin/subscriptions?status=EXPIRING|EXPIRED|ACTIVE` renvoie, par entreprise et par offre, `covers_until` (échéance), `status` (`EXPIRING` = échéance dans moins de 5 jours), `days_left` et `last_payment`, de l'échéance la plus proche à la plus lointaine.
 - **Renouveler** : `POST /admin/organizations/{id}/renewals` avec `{ "product_code", "payment" }` (même `payment` que pour `WON`), qui renvoie 201 et le nouvel abonnement. Le mois payé s'ajoute à l'échéance (paiement en avance), ou repart d'aujourd'hui si l'abonnement a expiré. Un reçu part au client. 404 `NO_SUBSCRIPTION` si le client n'a jamais eu cet abonnement (enregistrer plutôt une vente).
-- **Espace client** : `GET /orgs/{id}/billing` (propriétaire de l'entreprise, `invoice:read`) renvoie `subscriptions` (même format que `/admin/subscriptions`) et `payments` (`receipt_number`, `product_name`, `amount`, `currency`, `method`, `reference`, `received_on`, `covers_until`), du plus récent au plus ancien.
+- **Espace client** : `GET /orgs/{id}/billing` (propriétaire de l'entreprise, `invoice:read`) renvoie `subscriptions` (même format que `/admin/subscriptions`) et `payments` (`receipt_number`, `product_name`, `amount`, `currency`, `method`, `reference`, `received_on`, `covers_until`), du plus récent au plus ancien. Il renvoie aussi `online_payment_available` (§14).
 - **Rappel automatique** : chaque jour à 7 h UTC, le client (propriétaires) et l'équipe (`SALES_ALERT_EMAILS`) reçoivent un e-mail pour chaque abonnement qui expire dans les 5 jours, une seule fois par période. `/admin/dashboard` → `sales.renewals_due` compte les abonnements à renouveler (échéance proche ou dépassée).
 - Transitions possibles : `NEW` → `CONTACTED`, `WON` ou `LOST`, et `CONTACTED` → `WON` ou `LOST`. `WON` et `LOST` sont définitifs : toute autre transition renvoie 409 `INVALID_TRANSITION`. Propose uniquement les boutons permis.
 - **Passer une demande à `WON` active automatiquement l'offre** : les droits du produit sont accordés à l'entreprise, sans date de fin pour une offre ponctuelle (Digital Start), ou pour 31 jours (366 pour un abonnement annuel), le temps de la période payée hors ligne. Ils apparaissent dans `GET /orgs/{id}/entitlements`, avec dans `sources` le motif « Offre … : demande d'achat … gagnée » et la date `expires_at`. Pour l'admin : affiche une confirmation avant « Gagnée » (« Le paiement a-t-il bien été reçu ? L'offre sera activée »).
@@ -311,6 +312,24 @@ En attendant le paiement en ligne, le client demande une offre et l'équipe le r
   Une condition non remplie renvoie 422 `TRANSITION_GUARD_FAILED`.
 
 **E-mails automatiques** : au client à l'activation, à la réception du brief (avec la date de livraison), quand la préversion est prête et à la mise en ligne. À l'équipe (`SALES_ALERT_EMAILS`) : « nouveau site à produire » et « corrections demandées ».
+
+## 14. Paiement en ligne (Cartflox)
+
+Le client paie seul (mobile money ou carte) sur la page Cartflox ; l'offre s'active dès que Cartflox confirme. Le paiement manuel (§11) reste disponible.
+
+**Afficher le bouton** « Payer en ligne » seulement si `GET /orgs/{id}/billing` renvoie **`online_payment_available: true`** (Cartflox configuré et entreprise facturée en XOF). Réservé, comme « Je veux démarrer », au propriétaire (`order:create`). Garde « Je veux démarrer » à côté, pour les clients qui préfèrent être rappelés.
+
+**`POST /orgs/{id}/checkouts`** avec `{ "product_code": "DIGITAL_START" }` (achat) ou un abonnement déjà souscrit (**renouvellement** : la période s'ajoute à l'échéance) :
+- **201** : `{ id, product_code, product_name, amount, currency, period, status: "PENDING", checkout_url, receipt_number: null, created_at }`. Redirige aussitôt : `window.location.href = checkout_url`. Un double clic dans les 30 minutes renvoie le même paiement et la même page.
+- Erreurs : 503 `ONLINE_PAYMENT_UNAVAILABLE` (paiement en ligne non activé), 422 `ONLINE_PAYMENT_UNAVAILABLE` (devise autre que XOF), 422 `PRODUCT_NOT_AVAILABLE`, 409 `ALREADY_PURCHASED` (Digital Start déjà payé), 502 `PAYMENT_PROVIDER_ERROR` (Cartflox ne répond pas : proposer de réessayer ou « Je veux démarrer »).
+
+**Retour de Cartflox** : le client revient sur `dashboard.html?paiement={id}` (ou `…&annule=1` s'il a annulé). Appelle alors **`GET /orgs/{id}/checkouts/{id}`** : le serveur interroge Cartflox et active l'offre si le paiement est confirmé. Selon `status` :
+- `PAID` : « Paiement confirmé, votre offre est active » (+ `receipt_number`), puis recharge les données (droits, abonnement, projet de site).
+- `PENDING` : « Paiement en cours de confirmation… ». Rappelle la route toutes les 5 secondes pendant une minute, puis affiche « Nous vous confirmons votre paiement par e-mail dès sa validation » (le serveur continue de vérifier pendant environ deux jours).
+- `FAILED` ou `CANCELLED` : « Paiement non abouti », avec un bouton pour réessayer. `EXPIRED` : paiement abandonné.
+- Retire ensuite `?paiement=` de l'adresse (`history.replaceState`).
+
+Un paiement confirmé suit le même chemin qu'un encaissement manuel : reçu par e-mail, client actif, projet de site créé pour Start, et une demande « Je veux démarrer » en cours pour la même offre passe à `WON`. Dans `payments`, `method` vaut **`CARTFLOX`** (« Paiement en ligne ») et `reference` la référence Cartflox (`CS-…`). Côté admin, ces paiements ont `payment.channel = "ONLINE"` ; l'équipe ne peut pas saisir `CARTFLOX` à la main (400).
 
 ## 8. Demander un changement
 

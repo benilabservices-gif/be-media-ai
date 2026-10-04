@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     sales_alert_emails: Annotated[list[str], NoDecode] = Field(default_factory=list)
     # Hébergement sans worker séparé (Render gratuit) : l'API traite elle-même la file
     run_worker_in_api: bool = False
+    # Paiement en ligne Cartflox (clé secrète af_live_sec_… de l'espace SchoolConnect) ;
+    # vide = paiement en ligne désactivé, seul le paiement manuel est proposé
+    cartflox_secret_key: SecretStr | None = None
 
     @model_validator(mode="after")
     def _require_brevo_key(self) -> "Settings":

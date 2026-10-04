@@ -8,6 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 from digital360.core.csrf import require_csrf
 from digital360.core.pagination import PageInfo, PageParams, page_params
 from digital360.core.permissions import Permission, Principal
+from digital360.modules.billing.application.online_payments import (
+    CheckoutView,
+    OnlinePaymentService,
+)
 from digital360.modules.billing.application.renewals import RenewalService
 from digital360.modules.billing.application.service import (
     PaymentInput,
@@ -32,6 +36,11 @@ admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
 def get_renewal_service(request: Request) -> RenewalService:
     service: RenewalService = request.app.state.renewal_service
+    return service
+
+
+def get_online_payment_service(request: Request) -> OnlinePaymentService:
+    service: OnlinePaymentService = request.app.state.online_payment_service
     return service
 
 
@@ -121,6 +130,8 @@ class PaymentIn(BaseModel):
 
     @model_validator(mode="after")
     def _reference_unless_cash(self) -> "PaymentIn":
+        if self.method is PaymentMethod.CARTFLOX:
+            raise ValueError("un paiement Cartflox est enregistré automatiquement")
         if self.method is not PaymentMethod.CASH and not self.reference:
             raise ValueError("référence de la transaction obligatoire (sauf espèces)")
         return self
@@ -301,6 +312,65 @@ async def admin_renew_subscription(
     return SubscriptionOut.model_validate(view)
 
 
+OnlinePayments = Annotated[OnlinePaymentService, Depends(get_online_payment_service)]
+
+
+class CheckoutCreate(BaseModel):
+    product_code: ProductCode
+
+
+class CheckoutOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    product_code: str
+    product_name: str
+    # Prix HT figé au lancement, en unité mineure
+    amount: int
+    currency: str
+    period: str | None
+    status: Literal["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]
+    # Page de paiement Cartflox vers laquelle rediriger le client (paiement en attente)
+    checkout_url: str | None
+    # Numéro du reçu, une fois payé
+    receipt_number: str | None
+    created_at: datetime
+
+
+def _checkout_out(view: CheckoutView) -> CheckoutOut:
+    return CheckoutOut.model_validate(view)
+
+
+@router.post(
+    "/orgs/{org_id}/checkouts",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CheckoutOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def start_checkout(
+    body: CheckoutCreate,
+    access: Annotated[OrganizationAccess, Depends(require_org_permission(Permission.ORDER_CREATE))],
+    service: OnlinePayments,
+) -> CheckoutOut:
+    """Lance un paiement en ligne (achat ou renouvellement) : rediriger vers `checkout_url`."""
+    view = await service.start(
+        access.tenant, access.principal.user_id, product_code=body.product_code
+    )
+    return _checkout_out(view)
+
+
+@router.get("/orgs/{org_id}/checkouts/{checkout_id}", response_model=CheckoutOut)
+async def get_checkout(
+    checkout_id: uuid.UUID,
+    access: Annotated[
+        OrganizationAccess, Depends(require_org_permission(Permission.ORGANIZATION_READ))
+    ],
+    service: OnlinePayments,
+) -> CheckoutOut:
+    """Retour de la page de paiement : vérifie auprès de Cartflox et active l'offre si payé."""
+    return _checkout_out(await service.refresh(access.tenant, checkout_id))
+
+
 class ClientPaymentOut(BaseModel):
     receipt_number: str
     product_code: str
@@ -316,16 +386,20 @@ class ClientPaymentOut(BaseModel):
 class ClientBillingOut(BaseModel):
     subscriptions: list[SubscriptionOut]
     payments: list[ClientPaymentOut]
+    # Bouton « Payer en ligne » à proposer (Cartflox configuré, client en FCFA XOF)
+    online_payment_available: bool
 
 
 @router.get("/orgs/{org_id}/billing", response_model=ClientBillingOut)
 async def get_client_billing(
     access: Annotated[OrganizationAccess, Depends(require_org_permission(Permission.INVOICE_READ))],
     service: Renewals,
+    online: OnlinePayments,
 ) -> ClientBillingOut:
     """Abonnements en cours (échéance) et historique des paiements, avec leur numéro de reçu."""
     billing = await service.client_billing(access.tenant)
     return ClientBillingOut(
         subscriptions=[SubscriptionOut.model_validate(view) for view in billing.subscriptions],
         payments=[ClientPaymentOut(**payment) for payment in billing.payments],
+        online_payment_available=await online.is_available(access.tenant),
     )

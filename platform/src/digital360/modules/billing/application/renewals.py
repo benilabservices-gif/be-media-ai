@@ -33,6 +33,7 @@ from digital360.modules.billing.application.service import (
 )
 from digital360.modules.billing.infrastructure.models import Payment, PaymentChannel
 from digital360.modules.catalog.application.service import current_catalog
+from digital360.modules.catalog.domain.models import Product
 from digital360.modules.organizations.infrastructure.models import Organization
 
 REMINDER_DAYS = 5
@@ -192,14 +193,7 @@ class RenewalService:
     ) -> SubscriptionView:
         now = datetime.now(UTC)
         async with staff_transaction(self._session_factory) as session:
-            previous = next(
-                (
-                    item
-                    for item in await _latest_payments(session, organization_id)
-                    if item.product_code == product_code
-                ),
-                None,
-            )
+            previous = await latest_subscription_payment(session, organization_id, product_code)
             if previous is None or previous.covers_until is None:
                 raise AppError(
                     "NO_SUBSCRIPTION",
@@ -217,57 +211,110 @@ class RenewalService:
                 raise AppError(
                     "VALIDATION_ERROR", "Cette offre n'est pas un abonnement.", status=422
                 )
-            # Paiement en avance : on prolonge depuis l'échéance ; en retard : depuis aujourd'hui
-            covers_until = max(previous.covers_until, now) + period
-            recorded = Payment(
-                organization_id=organization_id,
-                product_code=product_code,
-                amount=payment.amount if payment.amount is not None else price.amount,
-                currency=price.currency.value,
-                method=payment.method.value,
-                channel=PaymentChannel.MANUAL.value,
-                reference=payment.reference,
-                received_on=payment.received_on,
-                recorded_by=staff_user_id,
-                covers_until=covers_until,
-            )
-            session.add(recorded)
-            await session.flush()
-            await grant_product_entitlements(
-                session,
-                organization_id,
-                product,
-                expires_at=covers_until,
-                reason=f"Offre {product.name} : renouvellement jusqu'au "
-                f"{covers_until.strftime('%d/%m/%Y')}",
-                staff_user_id=staff_user_id,
-            )
-            await mark_organization_active(session, organization_id)
-            await record_audit(
-                session,
-                actor=Actor.user(staff_user_id),
-                action="subscription.renew",
-                entity_type="payment",
-                entity_id=recorded.id,
-                organization_id=organization_id,
-                old_value={"covers_until": previous.covers_until.isoformat()},
-                new_value={
-                    "product_code": product_code,
-                    "covers_until": covers_until.isoformat(),
-                    "amount": recorded.amount,
-                    "method": recorded.method,
-                    "reference": recorded.reference,
-                },
-            )
-            await publish(
+            recorded = await extend_subscription(
                 session,
                 self._registry,
-                PAYMENT_RECORDED_EVENT,
-                {"payment_id": str(recorded.id)},
-                organization_id=organization_id,
+                previous,
+                product,
+                amount=payment.amount if payment.amount is not None else price.amount,
+                currency=price.currency.value,
+                period=period,
+                payment=payment,
+                actor=Actor.user(staff_user_id),
+                granted_by=staff_user_id,
+                recorded_by=staff_user_id,
+                channel=PaymentChannel.MANUAL,
+                now=now,
             )
             [view] = await _views(session, [recorded], now)
             return view
+
+
+async def latest_subscription_payment(
+    session: AsyncSession, organization_id: uuid.UUID, product_code: str
+) -> Payment | None:
+    """Paiement qui fixe l'échéance actuelle de cet abonnement (None : jamais souscrit)."""
+    return next(
+        (
+            item
+            for item in await _latest_payments(session, organization_id)
+            if item.product_code == product_code
+        ),
+        None,
+    )
+
+
+async def extend_subscription(
+    session: AsyncSession,
+    registry: JobRegistry,
+    previous: Payment,
+    product: Product,
+    *,
+    amount: int,
+    currency: str,
+    period: timedelta,
+    payment: PaymentInput,
+    actor: Actor,
+    granted_by: uuid.UUID,
+    recorded_by: uuid.UUID | None,
+    channel: PaymentChannel,
+    now: datetime,
+) -> Payment:
+    """Renouvellement encaissé (par l'équipe ou en ligne) : prolonge les droits d'une période."""
+    if previous.covers_until is None:
+        raise AppError("NO_SUBSCRIPTION", "Cette offre n'est pas un abonnement.", status=422)
+    organization_id = previous.organization_id
+    # Paiement en avance : on prolonge depuis l'échéance ; en retard : depuis aujourd'hui
+    covers_until = max(previous.covers_until, now) + period
+    recorded = Payment(
+        organization_id=organization_id,
+        product_code=product.code,
+        amount=amount,
+        currency=currency,
+        method=payment.method.value,
+        channel=channel.value,
+        reference=payment.reference,
+        received_on=payment.received_on,
+        recorded_by=recorded_by,
+        covers_until=covers_until,
+    )
+    session.add(recorded)
+    await session.flush()
+    await grant_product_entitlements(
+        session,
+        organization_id,
+        product,
+        expires_at=covers_until,
+        reason=f"Offre {product.name} : renouvellement jusqu'au "
+        f"{covers_until.strftime('%d/%m/%Y')}",
+        staff_user_id=granted_by,
+    )
+    await mark_organization_active(session, organization_id)
+    await record_audit(
+        session,
+        actor=actor,
+        action="subscription.renew",
+        entity_type="payment",
+        entity_id=recorded.id,
+        organization_id=organization_id,
+        old_value={"covers_until": previous.covers_until.isoformat()},
+        new_value={
+            "product_code": product.code,
+            "covers_until": covers_until.isoformat(),
+            "amount": recorded.amount,
+            "method": recorded.method,
+            "channel": channel.value,
+            "reference": recorded.reference,
+        },
+    )
+    await publish(
+        session,
+        registry,
+        PAYMENT_RECORDED_EVENT,
+        {"payment_id": str(recorded.id)},
+        organization_id=organization_id,
+    )
+    return recorded
 
 
 # ── Contrôle quotidien ──

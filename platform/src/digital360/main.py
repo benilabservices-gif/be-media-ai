@@ -20,11 +20,16 @@ from digital360.core.logging import REQUEST_ID_HEADER, RequestContextMiddleware,
 from digital360.core.rate_limit import RateLimiter
 from digital360.jobs import build_registry
 from digital360.modules.billing.api import routes as billing_routes
+from digital360.modules.billing.application.online_payments import OnlinePaymentService
 from digital360.modules.billing.application.renewals import (
     RenewalService,
     schedule_daily_sweep,
 )
 from digital360.modules.billing.application.service import PurchaseRequestService
+from digital360.modules.billing.infrastructure.cartflox import (
+    PaymentGateway,
+    build_payment_gateway,
+)
 from digital360.modules.catalog.api import routes as catalog_routes
 from digital360.modules.catalog.application.service import CatalogService
 from digital360.modules.diagnostics.api import routes as diagnostic_routes
@@ -47,7 +52,10 @@ logger = logging.getLogger("digital360.app")
 
 
 def create_app(
-    settings: Settings | None = None, *, email_sender: EmailSender | None = None
+    settings: Settings | None = None,
+    *,
+    email_sender: EmailSender | None = None,
+    payment_gateway: PaymentGateway | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings.log_level)
@@ -61,7 +69,8 @@ def create_app(
         app.state.session_factory = session_factory
         # Composition : chaque service reçoit ses dépendances ici, et nulle part ailleurs
         hasher = Argon2PasswordHasher()
-        registry = build_registry(settings, email_sender or build_email_sender(settings))
+        gateway = payment_gateway or build_payment_gateway(settings)
+        registry = build_registry(settings, email_sender or build_email_sender(settings), gateway)
         app.state.job_registry = registry
         app.state.auth_service = AuthService(
             session_factory,
@@ -80,6 +89,9 @@ def create_app(
         app.state.purchase_request_service = PurchaseRequestService(session_factory, registry)
         app.state.project_service = ProjectService(session_factory, registry)
         app.state.renewal_service = RenewalService(session_factory, registry)
+        app.state.online_payment_service = OnlinePaymentService(
+            session_factory, registry, gateway, app_url=settings.app_url
+        )
         app.state.rate_limiter = RateLimiter()
 
         stop_worker = asyncio.Event()
@@ -101,6 +113,7 @@ def create_app(
                 "email_from": settings.email_from,
                 "sales_alert_recipients": len(settings.sales_alert_emails),
                 "worker_in_api": settings.run_worker_in_api,
+                "online_payment": gateway is not None,
             },
         )
         yield

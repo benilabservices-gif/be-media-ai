@@ -7,14 +7,17 @@ Construit une fois par processus (API ou worker) : l'API s'en sert pour publier 
 from digital360.core.config import Settings
 from digital360.core.email import EmailSender
 from digital360.core.jobs import JobRegistry
-from digital360.modules.billing.application import renewals
+from digital360.modules.billing.application import online_payments, renewals
 from digital360.modules.billing.application import service as billing
+from digital360.modules.billing.infrastructure.cartflox import PaymentGateway
 from digital360.modules.diagnostics.application import notifications as diagnostic_notifications
 from digital360.modules.identity.application import password_reset
 from digital360.modules.projects.application import notifications as project_notifications
 
 
-def build_registry(settings: Settings, email_sender: EmailSender) -> JobRegistry:
+def build_registry(
+    settings: Settings, email_sender: EmailSender, payment_gateway: PaymentGateway | None = None
+) -> JobRegistry:
     registry = JobRegistry()
     password_reset.register_jobs(registry, email_sender)
     diagnostic_notifications.register_jobs(
@@ -44,4 +47,5 @@ def build_registry(settings: Settings, email_sender: EmailSender) -> JobRegistry
         app_url=settings.app_url,
         admin_url=settings.admin_url,
     )
+    online_payments.register_jobs(registry, payment_gateway)
     return registry

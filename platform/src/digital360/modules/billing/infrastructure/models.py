@@ -89,6 +89,8 @@ class PaymentMethod(StrEnum):
     WAVE = "WAVE"
     BANK_TRANSFER = "BANK_TRANSFER"
     CASH = "CASH"
+    # Payé sur la page Cartflox (mobile money ou carte) : jamais saisi à la main
+    CARTFLOX = "CARTFLOX"
 
 
 class PaymentChannel(StrEnum):
@@ -105,7 +107,8 @@ class Payment(Base):
     __tablename__ = "payments"
     __table_args__ = (
         CheckConstraint(
-            "method IN ('ORANGE_MONEY', 'MTN_MOMO', 'MOOV_MONEY', 'WAVE', 'BANK_TRANSFER', 'CASH')",
+            "method IN ('ORANGE_MONEY', 'MTN_MOMO', 'MOOV_MONEY', 'WAVE', 'BANK_TRANSFER', 'CASH', "
+            "'CARTFLOX')",
             name="method_valid",
         ),
         CheckConstraint("channel IN ('MANUAL', 'ONLINE')", name="channel_valid"),
@@ -143,3 +146,53 @@ class Payment(Base):
     # Rappel « échéance proche » déjà envoyé pour cette période
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CheckoutStatus(StrEnum):
+    # Page de paiement ouverte, paiement pas encore confirmé par Cartflox
+    PENDING = "PENDING"
+    PAID = "PAID"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    # Jamais confirmé après les vérifications prévues (le client a abandonné)
+    EXPIRED = "EXPIRED"
+
+
+class OnlineCheckout(Base):
+    """Paiement en ligne lancé par le client. Le prix est figé au lancement ; le paiement
+    n'est enregistré (table payments) qu'une fois confirmé par Cartflox."""
+
+    __tablename__ = "online_checkouts"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED', 'EXPIRED')", name="status_valid"
+        ),
+        Index("ix_online_checkouts_organization_id", "organization_id"),
+        Index("uq_online_checkouts_provider_session_id", "provider_session_id", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    requested_by: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"))
+    product_code: Mapped[str] = mapped_column(String(50))
+    # Prix HT au lancement, en unité mineure
+    amount: Mapped[int] = mapped_column(Integer)
+    currency: Mapped[str] = mapped_column(String(3))
+    period: Mapped[str | None] = mapped_column(String(8))
+    status: Mapped[str] = mapped_column(String(16), server_default=CheckoutStatus.PENDING)
+    # Session Cartflox (vide tant que Cartflox n'a pas répondu)
+    provider_session_id: Mapped[str | None] = mapped_column(String(100))
+    provider_order_id: Mapped[str | None] = mapped_column(String(100))
+    checkout_url: Mapped[str | None] = mapped_column(Text)
+    # Opérateur et référence de la transaction chez lui, une fois payé
+    provider: Mapped[str | None] = mapped_column(String(50))
+    provider_reference: Mapped[str | None] = mapped_column(String(100))
+    payment_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("payments.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

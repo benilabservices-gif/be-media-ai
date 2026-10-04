@@ -226,6 +226,21 @@ async def _load_views(
     ]
 
 
+async def open_request(
+    session: AsyncSession, organization_id: uuid.UUID, product_code: str
+) -> PurchaseRequest | None:
+    """Demande « Je veux démarrer » encore en cours pour cette offre, s'il y en a une."""
+    return (
+        await session.execute(
+            select(PurchaseRequest).where(
+                PurchaseRequest.organization_id == organization_id,
+                PurchaseRequest.product_code == product_code,
+                PurchaseRequest.status.in_([status.value for status in OPEN_STATUSES]),
+            )
+        )
+    ).scalar_one_or_none()
+
+
 @dataclass(frozen=True)
 class PaymentInput:
     method: PaymentMethod
@@ -289,7 +304,7 @@ async def grant_product_entitlements(
 
 
 async def _activate_offer(
-    session: AsyncSession, request: PurchaseRequest, staff_user_id: uuid.UUID
+    session: AsyncSession, request: PurchaseRequest, *, actor: Actor, granted_by: uuid.UUID
 ) -> datetime | None:
     """Vente gagnée : accorde les droits de l'offre. Renvoie la fin de la période payée
     (abonnement), ou None pour une offre ponctuelle."""
@@ -305,11 +320,11 @@ async def _activate_offer(
         product,
         expires_at=expires_at,
         reason=f"Offre {product.name} : demande d'achat {request.id} gagnée",
-        staff_user_id=staff_user_id,
+        staff_user_id=granted_by,
     )
     await record_audit(
         session,
-        actor=Actor.user(staff_user_id),
+        actor=actor,
         action="purchase_request.activate_offer",
         entity_type="purchase_request",
         entity_id=request.id,
@@ -321,6 +336,82 @@ async def _activate_offer(
         },
     )
     return expires_at
+
+
+async def close_sale_as_won(
+    session: AsyncSession,
+    registry: JobRegistry,
+    request: PurchaseRequest,
+    payment: PaymentInput,
+    *,
+    actor: Actor,
+    granted_by: uuid.UUID,
+    recorded_by: uuid.UUID | None,
+    channel: PaymentChannel,
+) -> Payment:
+    """Vente gagnée : paiement enregistré, offre activée, client actif, livraison lancée.
+
+    Commun à l'encaissement manuel (l'équipe) et au paiement en ligne (confirmé par Cartflox).
+    """
+    await _move_plan_items(
+        session,
+        request.organization_id,
+        request.product_code,
+        from_statuses={PlanItemStatus.PROPOSED, PlanItemStatus.ACCEPTED},
+        to=PlanItemStatus.IN_PROGRESS,
+    )
+    recorded = Payment(
+        organization_id=request.organization_id,
+        purchase_request_id=request.id,
+        product_code=request.product_code,
+        amount=payment.amount if payment.amount is not None else (request.amount or 0),
+        currency=request.currency,
+        method=payment.method.value,
+        channel=channel.value,
+        reference=payment.reference,
+        received_on=payment.received_on,
+        recorded_by=recorded_by,
+    )
+    session.add(recorded)
+    await session.flush()
+    recorded.covers_until = await _activate_offer(
+        session, request, actor=actor, granted_by=granted_by
+    )
+    await mark_organization_active(session, request.organization_id)
+    await record_audit(
+        session,
+        actor=actor,
+        action="payment.record",
+        entity_type="payment",
+        entity_id=recorded.id,
+        organization_id=request.organization_id,
+        new_value={
+            "amount": recorded.amount,
+            "currency": request.currency,
+            "method": payment.method.value,
+            "channel": channel.value,
+            "reference": payment.reference,
+        },
+    )
+    await publish(
+        session,
+        registry,
+        PURCHASE_REQUEST_WON_EVENT,
+        {
+            "purchase_request_id": str(request.id),
+            "organization_id": str(request.organization_id),
+            "product_code": request.product_code,
+        },
+        organization_id=request.organization_id,
+    )
+    await publish(
+        session,
+        registry,
+        PAYMENT_RECORDED_EVENT,
+        {"payment_id": str(recorded.id)},
+        organization_id=request.organization_id,
+    )
+    return recorded
 
 
 class PurchaseRequestService:
@@ -626,76 +717,22 @@ class PurchaseRequestService:
         staff_user_id: uuid.UUID,
         payment: PaymentInput,
     ) -> None:
-        """Vente gagnée : paiement enregistré, offre activée, client actif, livraison lancée."""
-        await _move_plan_items(
+        await close_sale_as_won(
             session,
-            request.organization_id,
-            request.product_code,
-            from_statuses={PlanItemStatus.PROPOSED, PlanItemStatus.ACCEPTED},
-            to=PlanItemStatus.IN_PROGRESS,
-        )
-        recorded = Payment(
-            organization_id=request.organization_id,
-            purchase_request_id=request.id,
-            product_code=request.product_code,
-            amount=payment.amount if payment.amount is not None else (request.amount or 0),
-            currency=request.currency,
-            method=payment.method.value,
-            channel=PaymentChannel.MANUAL.value,
-            reference=payment.reference,
-            received_on=payment.received_on,
-            recorded_by=staff_user_id,
-        )
-        session.add(recorded)
-        await session.flush()
-        recorded.covers_until = await _activate_offer(session, request, staff_user_id)
-        await mark_organization_active(session, request.organization_id)
-        await record_audit(
-            session,
+            self._registry,
+            request,
+            payment,
             actor=Actor.user(staff_user_id),
-            action="payment.record",
-            entity_type="payment",
-            entity_id=recorded.id,
-            organization_id=request.organization_id,
-            new_value={
-                "amount": recorded.amount,
-                "currency": request.currency,
-                "method": payment.method.value,
-                "reference": payment.reference,
-            },
-        )
-        await publish(
-            session,
-            self._registry,
-            PURCHASE_REQUEST_WON_EVENT,
-            {
-                "purchase_request_id": str(request.id),
-                "organization_id": str(request.organization_id),
-                "product_code": request.product_code,
-            },
-            organization_id=request.organization_id,
-        )
-        await publish(
-            session,
-            self._registry,
-            PAYMENT_RECORDED_EVENT,
-            {"payment_id": str(recorded.id)},
-            organization_id=request.organization_id,
+            granted_by=staff_user_id,
+            recorded_by=staff_user_id,
+            channel=PaymentChannel.MANUAL,
         )
 
     @staticmethod
     async def _open_request(
         session: AsyncSession, organization_id: uuid.UUID, product_code: str
     ) -> PurchaseRequest | None:
-        return (
-            await session.execute(
-                select(PurchaseRequest).where(
-                    PurchaseRequest.organization_id == organization_id,
-                    PurchaseRequest.product_code == product_code,
-                    PurchaseRequest.status.in_([status.value for status in OPEN_STATUSES]),
-                )
-            )
-        ).scalar_one_or_none()
+        return await open_request(session, organization_id, product_code)
 
     @staticmethod
     async def _check_plan_item(
@@ -784,6 +821,7 @@ METHOD_LABELS = {
     "WAVE": "Wave",
     "BANK_TRANSFER": "Virement bancaire",
     "CASH": "Espèces",
+    "CARTFLOX": "Paiement en ligne (Cartflox)",
 }
 
 

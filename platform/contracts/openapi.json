@@ -423,6 +423,109 @@
         "title": "CategoryScoreOut",
         "type": "object"
       },
+      "CheckoutCreate": {
+        "properties": {
+          "product_code": {
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Product Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_code"
+        ],
+        "title": "CheckoutCreate",
+        "type": "object"
+      },
+      "CheckoutOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "checkout_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Url"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "product_code": {
+            "title": "Product Code",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "receipt_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Number"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "PAID",
+              "FAILED",
+              "CANCELLED",
+              "EXPIRED"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "product_code",
+          "product_name",
+          "amount",
+          "currency",
+          "period",
+          "status",
+          "checkout_url",
+          "receipt_number",
+          "created_at"
+        ],
+        "title": "CheckoutOut",
+        "type": "object"
+      },
       "ChoiceOut": {
         "properties": {
           "description": {
@@ -462,6 +565,10 @@
       },
       "ClientBillingOut": {
         "properties": {
+          "online_payment_available": {
+            "title": "Online Payment Available",
+            "type": "boolean"
+          },
           "payments": {
             "items": {
               "$ref": "#/components/schemas/ClientPaymentOut"
@@ -479,7 +586,8 @@
         },
         "required": [
           "subscriptions",
-          "payments"
+          "payments",
+          "online_payment_available"
         ],
         "title": "ClientBillingOut",
         "type": "object"
@@ -2464,7 +2572,8 @@
           "MOOV_MONEY",
           "WAVE",
           "BANK_TRANSFER",
-          "CASH"
+          "CASH",
+          "CARTFLOX"
         ],
         "title": "PaymentMethod",
         "type": "string"
@@ -5977,6 +6086,114 @@
           }
         },
         "summary": "Get Client Billing",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/checkouts": {
+      "post": {
+        "description": "Lance un paiement en ligne (achat ou renouvellement) : rediriger vers `checkout_url`.",
+        "operationId": "start_checkout_api_v1_orgs__org_id__checkouts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Checkout",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/checkouts/{checkout_id}": {
+      "get": {
+        "description": "Retour de la page de paiement : vérifie auprès de Cartflox et active l'offre si payé.",
+        "operationId": "get_checkout_api_v1_orgs__org_id__checkouts__checkout_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "checkout_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Checkout Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Checkout",
         "tags": [
           "billing"
         ]
