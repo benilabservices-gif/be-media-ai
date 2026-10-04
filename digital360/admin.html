@@ -89,6 +89,7 @@
                 <div class="admin-nav-item" data-page="demandes" id="navItemDemandes" style="display:none;" onclick="switchPage('demandes')"><span class="nav-icon">&#128200;</span> Demandes</div>
                 <div class="admin-nav-item" data-page="projets" id="navItemProjets" style="display:none;" onclick="switchPage('projets')"><span class="nav-icon">&#127760;</span> Projets de site</div>
                 <div class="admin-nav-item" data-page="abonnements" id="navItemAbonnements" style="display:none;" onclick="switchPage('abonnements')"><span class="nav-icon">&#128257;</span> Abonnements</div>
+                <div class="admin-nav-item" data-page="closers" id="navItemClosers" style="display:none;" onclick="switchPage('closers')"><span class="nav-icon">&#129309;</span> Closers 3.0</div>
                 <div class="admin-nav-section" id="navSectionTeam" style="display:none;">Organisation</div>
                 <div class="admin-nav-item" data-page="equipe" id="navItemEquipe" style="display:none;" onclick="switchPage('equipe')"><span class="nav-icon">&#128104;&#65039;</span> Équipe</div>
                 <div class="admin-nav-item" data-page="audit" id="navItemAudit" style="display:none;" onclick="switchPage('audit')"><span class="nav-icon">&#128196;</span> Journal d'audit</div>
@@ -164,6 +165,46 @@
                             <table class="admin-table">
                                 <thead><tr><th>Entreprise</th><th>Offre</th><th>Échéance</th><th>Statut</th><th>Dernier paiement</th><th></th></tr></thead>
                                 <tbody id="subscriptionTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLOSERS 3.0 -->
+                <div class="admin-page" id="admin-closers">
+                    <div class="page-header"><h1>Closers 3.0</h1><p>Apporteurs d'affaires : 20 % des paiements de leurs clients pendant 12 mois. Le relevé du mois écoulé est créé le 1er de chaque mois ; versez puis marquez-le comme versé.</p></div>
+                    <div class="kpi-grid" style="margin-bottom:1.5rem;">
+                        <div class="kpi-card"><div class="kpi-value" id="kpiClosersDue" style="color:var(--warning);">—</div><div class="kpi-label">À verser</div><div class="kpi-sub">Relevés non versés</div></div>
+                        <div class="kpi-card"><div class="kpi-value" id="kpiClosersCount">—</div><div class="kpi-label">Closers</div><div class="kpi-sub" id="kpiClosersActive"></div></div>
+                    </div>
+                    <h3 style="margin:1.5rem 0 0.75rem;">Relevés</h3>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="statementStatusFilter" onchange="loadStatements()">
+                            <option value="DUE">À verser</option>
+                            <option value="PAID">Versés</option>
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                    <div id="statementLoading" class="loading-row" style="display:none;">Chargement des relevés…</div>
+                    <div id="statementError" class="error-row" style="display:none;"></div>
+                    <div id="statementEmpty" class="empty-row" style="display:none;">Aucun relevé.</div>
+                    <div id="statementContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Mois</th><th>Closer</th><th>Montant</th><th>Verser sur</th><th>État</th><th></th></tr></thead>
+                                <tbody id="statementTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <h3 style="margin:2rem 0 0.75rem;">Closers</h3>
+                    <div id="closerLoading" class="loading-row" style="display:none;">Chargement des closers…</div>
+                    <div id="closerError" class="error-row" style="display:none;"></div>
+                    <div id="closerEmpty" class="empty-row" style="display:none;">Aucun closer pour le moment.</div>
+                    <div id="closerContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Closer</th><th>Code</th><th>Clients</th><th>Gagné</th><th>À verser</th><th>Versé</th><th>Compte</th><th>Statut</th></tr></thead>
+                                <tbody id="closerTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -444,6 +485,7 @@
         demandes: 'Demandes',
         projets: 'Projets de site',
         abonnements: 'Abonnements',
+        closers: 'Closers 3.0',
     };
 
     function switchPage(id) {
@@ -872,6 +914,7 @@
 
         container.appendChild(mainDiv);
         if ((_me?.staff_permissions || []).includes('order:create')) container.appendChild(directSaleCard(org));
+        if ((_me?.staff_permissions || []).includes('closer:manage')) container.appendChild(closerAttachCard(org));
     }
 
     // ── Diagnostics (Prospects) ──
@@ -1545,6 +1588,165 @@
         return tr;
     }
 
+    // ── Closers 3.0 : relevés, versements, suspension, rattachement ──
+    const PAYOUT_LABELS = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement bancaire' };
+    const canManageClosers = () => (_me?.staff_permissions || []).includes('closer:manage');
+    const sumLabel = items => items && items.length ? items.map(item => formatPriceAdmin(item)).join(' + ') : '—';
+    const monthLabel = period => new Date(period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+    function tableRow(values) {
+        const tr = document.createElement('tr');
+        values.forEach(value => {
+            const td = document.createElement('td');
+            if (value instanceof Node) td.appendChild(value); else td.textContent = value ?? '—';
+            tr.appendChild(td);
+        });
+        return tr;
+    }
+
+    async function loadClosers() {
+        setStatus('closerLoading', 'closerError', 'closerContent', 'closerEmpty', true, false, false);
+        try {
+            const data = await apiFetch('/admin/closers');
+            const rows = data.data || [];
+            document.getElementById('kpiClosersDue').textContent = sumLabel(data.due_total);
+            document.getElementById('kpiClosersCount').textContent = rows.length;
+            document.getElementById('kpiClosersActive').textContent = rows.filter(c => c.status === 'ACTIVE').length + ' actif(s)';
+            const tbody = document.getElementById('closerTableBody');
+            tbody.innerHTML = '';
+            rows.forEach(closer => {
+                const name = document.createElement('div');
+                name.className = 'client-name';
+                name.textContent = closer.full_name;
+                const email = document.createElement('div');
+                email.style.cssText = 'font-size:12px;color:var(--text-muted);';
+                email.textContent = closer.email;
+                const who = document.createElement('div');
+                who.append(name, email);
+                const status = document.createElement('div');
+                const badge = document.createElement('span');
+                badge.className = closer.status === 'ACTIVE' ? 'badge badge-success' : 'badge badge-error';
+                badge.textContent = closer.status === 'ACTIVE' ? 'Actif' : 'Suspendu';
+                status.appendChild(badge);
+                if (canManageClosers()) {
+                    const toggle = document.createElement('button');
+                    toggle.className = 'btn btn-ghost btn-sm';
+                    toggle.style.marginLeft = '0.5rem';
+                    const next = closer.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+                    toggle.textContent = next === 'SUSPENDED' ? 'Suspendre' : 'Réactiver';
+                    toggle.onclick = async () => {
+                        if (next === 'SUSPENDED' && !confirm('Suspendre ' + closer.full_name + ' ? Son code ne sera plus accepté et il ne gagnera plus de commission.')) return;
+                        try { await apiFetch('/admin/closers/' + closer.id, { method: 'PATCH', body: { status: next } }); loadClosers(); }
+                        catch (e) { alert('Erreur : ' + (e.detail || e.message)); }
+                    };
+                    status.appendChild(toggle);
+                }
+                tbody.appendChild(tableRow([
+                    who, closer.code, closer.referred_clients + ' (' + closer.paying_clients + ' payant)',
+                    sumLabel(closer.earned), sumLabel(closer.due), sumLabel(closer.paid),
+                    (PAYOUT_LABELS[closer.payout_method] || closer.payout_method) + ' · ' + closer.payout_account, status,
+                ]));
+            });
+            setStatus('closerLoading', 'closerError', 'closerContent', 'closerEmpty', false, false, !rows.length);
+        } catch (e) {
+            setStatus('closerLoading', 'closerError', 'closerContent', 'closerEmpty', false, true, false);
+            document.getElementById('closerError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    async function loadStatements() {
+        setStatus('statementLoading', 'statementError', 'statementContent', 'statementEmpty', true, false, false);
+        try {
+            const status = document.getElementById('statementStatusFilter').value;
+            const data = await apiFetch('/admin/commission-statements' + (status ? '?status=' + status : ''));
+            const tbody = document.getElementById('statementTableBody');
+            tbody.innerHTML = '';
+            (data.data || []).forEach(item => tbody.appendChild(statementRow(item)));
+            setStatus('statementLoading', 'statementError', 'statementContent', 'statementEmpty', false, false, !(data.data || []).length);
+        } catch (e) {
+            setStatus('statementLoading', 'statementError', 'statementContent', 'statementEmpty', false, true, false);
+            document.getElementById('statementError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function statementRow(item) {
+        const action = document.createElement('div');
+        if (item.status === 'DUE' && canManageClosers()) {
+            const method = document.createElement('select');
+            method.className = 'form-select';
+            method.style.cssText = 'max-width:160px;margin-bottom:4px;';
+            Object.entries(PAYOUT_LABELS).forEach(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value; option.textContent = label;
+                if (value === item.closer_payout_method) option.selected = true;
+                method.appendChild(option);
+            });
+            const reference = document.createElement('input');
+            reference.className = 'form-input';
+            reference.placeholder = 'Référence du transfert';
+            reference.maxLength = 100;
+            reference.style.cssText = 'max-width:180px;margin-bottom:4px;';
+            const pay = document.createElement('button');
+            pay.className = 'btn btn-primary btn-sm';
+            pay.textContent = 'Marquer versé';
+            pay.onclick = async () => {
+                if (!reference.value.trim()) { alert('Indiquez la référence du transfert.'); reference.focus(); return; }
+                if (!confirm('Confirmer le versement de ' + formatPriceAdmin({ amount: item.total_amount, currency: item.currency }) + ' à ' + item.closer_name + ' ?')) return;
+                try {
+                    await apiFetch('/admin/commission-statements/' + item.id + '/pay', { method: 'POST', body: { method: method.value, reference: reference.value.trim() } });
+                    loadStatements();
+                    loadClosers();
+                } catch (e) { alert('Erreur : ' + (e.detail || e.message)); }
+            };
+            action.append(method, reference, pay);
+        }
+        const state = item.status === 'PAID'
+            ? 'Versé le ' + formatDate(item.paid_on) + (item.payout_reference ? ' (réf. ' + item.payout_reference + ')' : '')
+            : 'À verser';
+        return tableRow([
+            monthLabel(item.period),
+            item.closer_name + ' · ' + item.closer_code,
+            formatPriceAdmin({ amount: item.total_amount, currency: item.currency }) + ' (' + item.commission_count + ' paiement(s))',
+            (PAYOUT_LABELS[item.closer_payout_method] || item.closer_payout_method) + ' · ' + item.closer_payout_account,
+            state, action,
+        ]);
+    }
+
+    function closerAttachCard(org) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginTop = '1.5rem';
+        const title = document.createElement('h3');
+        title.textContent = 'Closer 3.0';
+        const help = document.createElement('p');
+        help.style.cssText = 'font-size:13px;color:var(--text-muted);margin:0.5rem 0 1rem;';
+        help.textContent = 'Client amené par un closer sans passer par son lien ? Saisissez son code : les prochains paiements de ce client lui rapporteront 20 %. Laissez vide et validez pour détacher.';
+        const input = document.createElement('input');
+        input.className = 'form-input';
+        input.placeholder = 'Code du closer (ex. AB12CD)';
+        input.maxLength = 16;
+        input.style.cssText = 'max-width:220px;margin-right:0.5rem;';
+        const result = document.createElement('div');
+        result.style.cssText = 'font-size:13px;margin-top:0.5rem;';
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline btn-sm';
+        btn.textContent = 'Enregistrer';
+        btn.onclick = async () => {
+            const code = input.value.trim().toUpperCase() || null;
+            try {
+                const res = await apiFetch('/admin/organizations/' + org.id + '/closer', { method: 'PUT', body: { closer_code: code } });
+                result.style.color = 'var(--success)';
+                result.textContent = res.closer_code ? 'Client rattaché au closer ' + res.closer_code + '.' : 'Client détaché de son closer.';
+                loadClosers();
+            } catch (e) {
+                result.style.color = 'var(--error)';
+                result.textContent = e.detail || e.message;
+            }
+        };
+        card.append(title, help, input, btn, result);
+        return card;
+    }
+
     // ── Projets de site (Digital Start) ──
     let _projectCursor = null;
     const PROJECT_STATUS_LABELS = {
@@ -1786,6 +1988,11 @@
             if (perms.includes('order:create')) {
                 document.getElementById('navItemAbonnements').style.display = '';
                 loadSubscriptions();
+            }
+            if (perms.includes('invoice:read')) {
+                document.getElementById('navItemClosers').style.display = '';
+                loadClosers();
+                loadStatements();
             }
             if (perms.includes('website_project:read')) {
                 document.getElementById('navItemProjets').style.display = '';

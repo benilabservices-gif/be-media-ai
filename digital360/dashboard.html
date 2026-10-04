@@ -91,6 +91,10 @@
                 <div class="dash-nav-item" data-page="support" onclick="switchPage('support')">
                     <span class="nav-icon">💬</span> Support
                 </div>
+                <div class="dash-nav-section">Gagner avec BENILAB</div>
+                <div class="dash-nav-item" data-page="closer" onclick="switchPage('closer')">
+                    <span class="nav-icon">🤝</span> Closer 3.0
+                </div>
                 <div style="padding:12px;">
                     <a href="index.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Retour à l'accueil</a>
                     <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="handleLogout()">Déconnexion</button>
@@ -184,12 +188,6 @@
                      <div id="welcomeMessage" style="display:none;margin-top:2rem;padding:1.5rem;background:rgba(127,181,168,0.06);border:1px solid rgba(127,181,168,0.2);border-radius:var(--radius-lg);">
                          <p style="color:var(--accent);font-weight:600;margin-bottom:0.5rem;">✅ Votre espace est prêt</p>
                          <p style="color:var(--text-secondary);font-size:14px;">Votre diagnostic a été enregistré. Vous pouvez maintenant suivre votre transformation digitale.</p>
-                     </div>
-                 </div>
-                         <div class="chart-container">
-                             <h3>Activité récente</h3>
-                             <div id="dashRecentActivity"><div class="empty-state" style="padding:2rem;"><div class="empty-state-icon">📭</div><p>Aucune activité récente</p></div></div>
-                         </div>
                      </div>
                  </div>
 
@@ -292,6 +290,15 @@
                      </div>
                  </div>
 
+                <!-- ═══ CLOSER 3.0 ═══ -->
+                <div class="dash-page" id="page-closer">
+                    <div class="page-header reveal">
+                        <h1>Closer 3.0</h1>
+                        <p>Recommandez Digital360 et touchez 20 % sur les paiements des clients que vous apportez.</p>
+                    </div>
+                    <div class="reveal delay-1" id="closerRoot"></div>
+                </div>
+
                 <!-- ═══ SUPPORT ═══ -->
                 <div class="dash-page" id="page-support">
                     <div class="page-header reveal">
@@ -388,7 +395,8 @@
         conversion: 'Conversion Center',
         analytics: 'Analytics',
         abonnement: 'Mon abonnement',
-        support: 'Support'
+        support: 'Support',
+        closer: 'Closer 3.0'
     };
 
     function switchPage(pageId) {
@@ -687,6 +695,7 @@
                 await loadProject();
                 await loadBilling();
             }
+            await loadCloser();
             // Update UI with real data
             if (_user) {
                 const initial = _user.full_name?.charAt(0).toUpperCase() || 'A';
@@ -705,6 +714,10 @@
             renderCompany();
             renderSupport();
             Object.keys(SERVICE_PAGES).forEach(renderServicePage);
+            renderProject();
+            renderCloser();
+            // Lien des e-mails Closer 3.0 : dashboard.html#closer
+            if (window.location.hash === '#closer') switchPage('closer');
             handlePaymentReturn();
         } catch (e) {
             console.error('[D360] Dashboard init error:', e);
@@ -878,9 +891,23 @@
         ]));
     }
 
+    // Offre ponctuelle (Start) déjà payée : elle ne se rachète pas
+    function isPurchased(code) {
+        return (_billing?.payments || []).some(pay => pay.product_code === code)
+            || _purchaseRequests.some(pr => pr.product_code === code && pr.status === 'WON');
+    }
+    function followSiteButton(style) {
+        return h('button', { class: 'btn btn-sm btn-primary', style: style || '', text: 'Suivre mon site', onclick: () => switchPage('site') });
+    }
+
     // Mon abonnement : offres en cours, échéance, reçus, puis les offres disponibles
     function offerButton(p) {
         if (!_isOwner) return h('div', { style: 'font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;', text: 'Demandez au responsable' });
+        if ((p.price?.period || 'NONE') === 'NONE' && isPurchased(p.code)) {
+            return p.code === 'DIGITAL_START'
+                ? followSiteButton('margin-top:0.5rem;width:100%;')
+                : h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Déjà acquise' });
+        }
         const pr = _purchaseRequests.find(item => item.product_code === p.code && (item.status === 'NEW' || item.status === 'CONTACTED'));
         if (pr) return h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) });
         const price = p.price ? formatPrice(p.price, p.price.currency) : '';
@@ -1035,6 +1062,14 @@
         const root = document.getElementById('projectRoot');
         if (!root) return;
         root.textContent = '';
+        if (!_project && isPurchased('DIGITAL_START')) {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre projet de site est en cours de création' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;margin-bottom:1rem;', text: "Votre paiement est bien reçu. Votre espace projet s'ouvre dans un instant : vous pourrez y remplir le brief de votre site." }),
+                h('button', { class: 'btn btn-primary btn-sm', text: 'Actualiser', onclick: loadProject }),
+            ]));
+            return;
+        }
         if (!_project) {
             const card = h('div', { class: 'card' }, [
                 h('h3', { style: 'margin-bottom:0.5rem;', text: "Vous n'avez pas encore de site" }),
@@ -1391,6 +1426,7 @@
         showPurchaseModalForProduct(item.product_code, item.id, info.name, info.price);
     }
     function showPurchaseModalForProduct(productCode, planItemId, name, price) {
+        if (productCode === 'DIGITAL_START' && isPurchased(productCode)) { switchPage('site'); return; }
         _pendingPurchase = { product_code: productCode, plan_item_id: planItemId || null };
         const modal = document.getElementById('purchaseModal');
         if (!modal) return;
@@ -1486,6 +1522,165 @@
         } finally {
             hideD360Loading();
         }
+    }
+
+    // ── Closer 3.0 : apporteur d'affaires (calculs faits par le serveur) ──
+    let _closerSpace = null;
+    const PAYOUT_LABELS = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement bancaire' };
+    const CLOSER_TERMS = [
+        '20 % du montant HT de chaque paiement des clients que vous apportez, quelle que soit l\'offre.',
+        'Pendant les 12 premiers mois de chaque client (renouvellements compris).',
+        'Le 1er de chaque mois, vous recevez le relevé du mois écoulé ; nous vous versons le montant dans les jours qui suivent.',
+        'Un client est rattaché à vous s\'il crée son espace avec votre lien ou votre code. Pas d\'auto-parrainage.',
+    ];
+
+    async function loadCloser() {
+        _closerSpace = null;
+        try {
+            const res = await fetch(D360_API_BASE + '/me/closer', { credentials: 'include' });
+            if (res.ok) _closerSpace = await res.json();
+        } catch (_) {}
+    }
+
+    function closerMoney(items) {
+        return items && items.length ? items.map(item => formatPrice({ amount: item.amount ?? item.total_amount, currency: item.currency }, item.currency)).join(' + ') : '0 FCFA';
+    }
+
+    function payoutFields(method, account) {
+        const select = h('select', { class: 'form-input', id: 'closerPayoutMethod', style: 'max-width:260px;' },
+            Object.entries(PAYOUT_LABELS).map(([value, label]) => {
+                const option = h('option', { value, text: label });
+                if (value === method) option.selected = true;
+                return option;
+            }));
+        const input = h('input', { class: 'form-input', id: 'closerPayoutAccount', type: 'text', maxlength: '64', placeholder: '+22997000000 ou IBAN', style: 'max-width:260px;' });
+        input.value = account || '';
+        return h('div', { style: 'display:grid;gap:0.75rem;margin:1rem 0;' }, [
+            h('label', { class: 'form-label', for: 'closerPayoutMethod', text: 'Recevoir mes commissions par' }), select,
+            h('label', { class: 'form-label', for: 'closerPayoutAccount', text: 'Numéro mobile money ou coordonnées bancaires' }), input,
+        ]);
+    }
+
+    function readPayout() {
+        return {
+            payout_method: document.getElementById('closerPayoutMethod').value,
+            payout_account: document.getElementById('closerPayoutAccount').value.trim(),
+        };
+    }
+
+    async function submitCloser(method, body, errorEl) {
+        errorEl.textContent = '';
+        if ((body.payout_account || '').length < 6) { errorEl.textContent = 'Indiquez le numéro ou le compte où recevoir vos commissions.'; return; }
+        showD360Loading();
+        try {
+            _closerSpace = await sendJson(method, '/me/closer', body);
+            renderCloser();
+        } catch (e) {
+            errorEl.textContent = e.message || 'Une erreur est survenue. Réessayez.';
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    function closerStat(label, value) {
+        return h('div', { class: 'card', style: 'text-align:center;min-width:0;padding:1rem;' }, [
+            h('div', { class: 'label', style: 'margin-bottom:0.5rem;', text: label }),
+            h('div', { style: 'font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--accent);overflow-wrap:anywhere;', text: value }),
+        ]);
+    }
+
+    function closerTable(headers, rows) {
+        return h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+            h('table', { style: 'width:100%;font-size:13px;border-collapse:collapse;' }, [
+                h('thead', {}, h('tr', {}, headers.map(label => h('th', { style: 'text-align:left;padding:8px;color:var(--text-muted);', text: label })))),
+                h('tbody', {}, rows.map(cells => h('tr', { style: 'border-top:1px solid var(--border);' }, cells.map(value => h('td', { style: 'padding:8px;', text: value }))))),
+            ]),
+        ]);
+    }
+
+    function renderCloser() {
+        const root = document.getElementById('closerRoot');
+        if (!root) return;
+        root.textContent = '';
+        const space = _closerSpace;
+        const terms = h('ul', { style: 'margin:0.75rem 0 0 1.1rem;padding:0;font-size:14px;color:var(--text-secondary);line-height:1.7;' }, CLOSER_TERMS.map(text => h('li', { text })));
+        if (!space) {
+            root.appendChild(h('p', { style: 'color:var(--text-muted);', text: 'Programme momentanément indisponible. Réessayez plus tard.' }));
+            return;
+        }
+        if (!space.closer) {
+            const card = h('div', { class: 'card' }, [h('h3', { text: 'Devenez apporteur d\'affaires BENILAB' }), terms]);
+            if (!space.eligible) {
+                card.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-top:1.25rem;', text: 'Le programme Closer 3.0 est réservé aux clients qui ont déjà payé une offre Digital360. Il s\'ouvrira ici dès votre premier paiement.' }));
+                root.appendChild(card);
+                return;
+            }
+            const error = h('div', { style: 'color:var(--error);font-size:13px;min-height:18px;' });
+            const accept = h('input', { type: 'checkbox', id: 'closerAccept' });
+            card.appendChild(payoutFields('MTN_MOMO', ''));
+            card.appendChild(h('label', { style: 'display:flex;gap:0.5rem;align-items:flex-start;font-size:13px;margin-bottom:1rem;', for: 'closerAccept' }, [accept, h('span', { text: 'J\'accepte les conditions du programme Closer 3.0 ci-dessus.' })]));
+            card.appendChild(error);
+            card.appendChild(h('button', { class: 'btn btn-primary', text: 'Devenir Closer 3.0', onclick: () => {
+                if (!accept.checked) { error.textContent = 'Cochez la case pour accepter les conditions.'; return; }
+                submitCloser('POST', { ...readPayout(), accept_terms: true }, error);
+            } }));
+            root.appendChild(card);
+            return;
+        }
+
+        const closer = space.closer;
+        if (closer.status === 'SUSPENDED') {
+            root.appendChild(h('div', { class: 'alert alert-error', style: 'margin-bottom:1.5rem;', text: 'Votre compte Closer est suspendu : votre code n\'est plus accepté et vous ne gagnez plus de commission. Contactez l\'équipe BENILAB.' }));
+        }
+        const copied = h('span', { style: 'font-size:12px;color:var(--accent);margin-left:0.5rem;' });
+        const shareText = 'Je vous recommande Digital360 de BENILAB pour développer votre présence en ligne. Faites votre diagnostic gratuit : ' + closer.referral_link;
+        root.appendChild(h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('div', { class: 'label', style: 'margin-bottom:0.5rem;', text: 'Votre lien de parrainage' }),
+            h('div', { style: 'font-family:monospace;font-size:14px;word-break:break-all;margin-bottom:0.5rem;', text: closer.referral_link }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;' }, ['Ou votre code : ', h('strong', { text: closer.code })]),
+            h('div', { style: 'display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;' }, [
+                h('button', { class: 'btn btn-primary btn-sm', text: 'Copier le lien', onclick: async () => {
+                    try { await navigator.clipboard.writeText(closer.referral_link); copied.textContent = 'Lien copié'; } catch (_) { copied.textContent = 'Copiez le lien ci-dessus'; }
+                } }),
+                h('a', { class: 'btn btn-outline btn-sm', href: 'https://wa.me/?text=' + encodeURIComponent(shareText), target: '_blank', rel: 'noopener', text: 'Partager sur WhatsApp' }),
+                copied,
+            ]),
+        ]));
+
+        const paid = space.statements.filter(s => s.status === 'PAID');
+        const due = space.statements.filter(s => s.status === 'DUE');
+        root.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:0.75rem;margin-bottom:1.5rem;' }, [
+            closerStat('Clients apportés', String(space.referrals.length)),
+            closerStat('Gagné ce mois-ci', closerMoney(space.pending)),
+            closerStat('À recevoir', closerMoney(due)),
+            closerStat('Déjà reçu', closerMoney(paid)),
+        ]));
+
+        root.appendChild(sectionTitle('Mes clients apportés'));
+        root.appendChild(space.referrals.length
+            ? closerTable(['Client', 'Inscrit le', 'Commissions'], space.referrals.map(r => [
+                r.organization_name, new Date(r.joined_at).toLocaleDateString('fr-FR'), formatPrice({ amount: r.commissions_total, currency: 'XOF' }, 'XOF')]))
+            : h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Aucun client pour le moment : partagez votre lien pour commencer.' }));
+
+        root.appendChild(sectionTitle('Mes relevés mensuels'));
+        root.appendChild(space.statements.length
+            ? closerTable(['Mois', 'Paiements', 'Montant', 'État'], space.statements.map(s => [
+                new Date(s.period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+                String(s.commission_count),
+                formatPrice({ amount: s.total_amount, currency: s.currency }, s.currency),
+                s.status === 'PAID' ? 'Versé le ' + new Date(s.paid_on + 'T12:00:00').toLocaleDateString('fr-FR') + (s.payout_reference ? ' (réf. ' + s.payout_reference + ')' : '') : 'À verser',
+            ]))
+            : h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Votre premier relevé arrivera le 1er du mois qui suit vos premières commissions.' }));
+
+        root.appendChild(sectionTitle('Compte de versement'));
+        const error = h('div', { style: 'color:var(--error);font-size:13px;min-height:18px;' });
+        root.appendChild(h('div', { class: 'card' }, [
+            payoutFields(closer.payout_method, closer.payout_account),
+            error,
+            h('button', { class: 'btn btn-outline btn-sm', text: 'Enregistrer', onclick: () => submitCloser('PATCH', readPayout(), error) }),
+        ]));
+        root.appendChild(sectionTitle('Conditions du programme'));
+        root.appendChild(h('div', { class: 'card' }, [terms]));
     }
 
     // ── Paiement en ligne (Cartflox) ──

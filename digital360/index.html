@@ -376,6 +376,17 @@
         || (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8000/api/v1' : '/api/v1');
     const MOCK_MODE = window.D360_API_MODE === 'mock';
 
+    // ── Closer 3.0 : code du lien de parrainage (?ref=CODE), gardé jusqu'à la création de l'entreprise ──
+    (function keepReferralCode() {
+        try {
+            const ref = new URLSearchParams(location.search).get('ref');
+            if (ref && /^[A-Za-z0-9]{4,16}$/.test(ref)) localStorage.setItem('d360_ref', ref.toUpperCase());
+        } catch (_) {}
+    })();
+    function referralCode() {
+        try { return localStorage.getItem('d360_ref'); } catch (_) { return null; }
+    }
+
     // ── API client (inline) ──
     let _csrfToken = '';
     let _loadingShown = false;
@@ -444,7 +455,12 @@
         },
         logout() { return apiFetch('/auth/logout', { method: 'POST' }).catch(() => {}); },
         getMe() { return apiFetch('/me'); },
-         createOrg(body, diagToken) { return apiFetch('/orgs', { method: 'POST', body, headers: diagHeaders(diagToken) }); },
+         async createOrg(body, diagToken) {
+             const code = referralCode();
+             const org = await apiFetch('/orgs', { method: 'POST', body: code ? { ...body, referral_code: code } : body, headers: diagHeaders(diagToken) });
+             try { localStorage.removeItem('d360_ref'); } catch (_) {}
+             return org;
+         },
          claimDiagnostic(orgId, body, diagToken) { return apiFetch('/orgs/' + orgId + '/diagnostics/claim', { method: 'POST', body, headers: diagHeaders(diagToken) }); },
         getOrg(id) { return apiFetch('/orgs/' + id); },
         getQuestionnaire() { return apiFetch('/public/questionnaire'); },
