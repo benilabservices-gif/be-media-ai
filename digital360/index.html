@@ -72,6 +72,7 @@
          <a href="#services" onclick="toggleMobileMenu();scrollToSection('services');return false;">Services</a>
          <a href="#how" onclick="toggleMobileMenu();scrollToSection('how');return false;">Comment ça marche</a>
          <a href="#pricing" onclick="toggleMobileMenu();scrollToSection('pricing');return false;">Tarifs</a>
+          <a href="#" onclick="toggleMobileMenu();openAuthModal('login');return false;" id="mobileLoginBtn">Connexion</a>
           <a href="#" onclick="toggleMobileMenu();startDiagnostic();return false;" id="mobileDiagBtn">Diagnostic gratuit</a>
           <a href="dashboard.html" onclick="toggleMobileMenu();window.location.href='dashboard.html';return false;" id="mobileAuthBtn" style="display:none;">Mon espace</a>
           <a href="admin.html" onclick="toggleMobileMenu();window.location.href='admin.html';return false;" id="mobileAdminBtn" style="display:none;">Espace Admin</a>
@@ -1678,6 +1679,7 @@
           const loginBtn = document.getElementById('navLoginBtn');
           const diagBtn = document.getElementById('navDiagBtn');
           const mobileAuth = document.getElementById('mobileAuthBtn');
+          const mobileLogin = document.getElementById('mobileLoginBtn');
           const mobileDiag = document.getElementById('mobileDiagBtn');
           const mobileAdmin = document.getElementById('mobileAdminBtn');
           const mobileLogout = document.getElementById('mobileLogoutBtn');
@@ -1700,6 +1702,7 @@
               if (logoutLi) logoutLi.style.display = '';
               if (mobileAdmin) mobileAdmin.style.display = isStaff ? '' : 'none';
               if (mobileLogout) mobileLogout.style.display = '';
+              if (mobileLogin) mobileLogin.style.display = 'none';
               if (heroCta) { heroCta.textContent = 'Accéder à mon espace'; heroCta.setAttribute('onclick', "window.location.href='dashboard.html';return false;"); }
               if (ctaGroup) {
                   ctaGroup.innerHTML = '<a href="dashboard.html" class="btn btn-primary">Voir dans mon espace</a>';
@@ -1714,6 +1717,7 @@
               if (logoutLi) logoutLi.style.display = 'none';
               if (mobileAdmin) mobileAdmin.style.display = 'none';
               if (mobileLogout) mobileLogout.style.display = 'none';
+              if (mobileLogin) mobileLogin.style.display = '';
               if (heroCta) { heroCta.textContent = 'Faire mon diagnostic gratuit'; heroCta.setAttribute('onclick', "startDiagnostic();return false;"); }
               if (ctaGroup) {
                   ctaGroup.innerHTML = '<a href="#" onclick="openAuthModal(\'register\');return false;" class="btn btn-primary">Créer mon espace gratuit</a><a href="#" onclick="openAuthModal(\'login\');return false;" class="btn btn-ghost">J\'ai déjà un compte</a>';

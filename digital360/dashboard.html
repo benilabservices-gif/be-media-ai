@@ -93,6 +93,7 @@
                 </div>
                 <div style="padding:12px;">
                     <a href="index.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Retour à l'accueil</a>
+                    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="handleLogout()">Déconnexion</button>
                 </div>
             </nav>
         </aside>
@@ -732,7 +733,7 @@
 
     // ── Rubriques alimentées par les vraies données (aucune donnée de démonstration) ──
     // Contact de l'équipe, affiché dans Support (WhatsApp : à renseigner quand le numéro est connu)
-    const BENILAB_CONTACT = { email: 'clientele@bemedia-ai.online', whatsapp: '' };
+    const BENILAB_CONTACT = { email: 'clientele@bemedia-ai.online', whatsapp: '+2290140540876' };
     let _billing = null;
 
     async function loadBilling() {
@@ -860,7 +861,8 @@
         root.textContent = '';
         const contact = h('div', { class: 'card' }, [
             h('h3', { style: 'margin-bottom:1rem;', text: '💬 Nous contacter' }),
-            h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:1rem;' }, ['E-mail : ', h('a', { href: 'mailto:' + BENILAB_CONTACT.email, text: BENILAB_CONTACT.email })]),
+            h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:0.25rem;' }, ['E-mail : ', h('a', { href: 'mailto:' + BENILAB_CONTACT.email, text: BENILAB_CONTACT.email })]),
+            h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:1rem;', text: 'WhatsApp : +229 01 40 54 08 76' }),
         ]);
         if (BENILAB_CONTACT.whatsapp) {
             contact.appendChild(h('a', { class: 'btn btn-outline', href: 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, ''), target: '_blank', rel: 'noopener', text: 'Écrire sur WhatsApp' }));

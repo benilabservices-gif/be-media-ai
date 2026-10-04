@@ -49,6 +49,7 @@
         ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-primary)}::-webkit-scrollbar-thumb{background:rgba(127,181,168,0.2);border-radius:3px}
         @media(max-width:1024px){.admin-sidebar{transform:translateX(-100%)}.admin-sidebar.open{transform:translateX(0)}.admin-main{margin-left:0}.dash-hamburger{display:flex;align-items:center;justify-content:center}}
         @media(max-width:768px){.admin-content{padding:1.5rem}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:640px){.admin-topbar{padding:10px 1rem;gap:0.5rem}#adminUserName{display:none}.admin-topbar .btn{padding:6px 10px;font-size:12px}.admin-content{padding:1rem}.kpi-grid{grid-template-columns:1fr}}
         .loading-row{text-align:center;padding:2rem;color:var(--text-muted);font-size:13px}
         .error-row{text-align:center;padding:2rem;color:var(--error);font-size:13px}
         .empty-row{text-align:center;padding:2rem;color:var(--text-muted);font-size:13px}
@@ -93,6 +94,7 @@
                 <div class="admin-nav-item" data-page="audit" id="navItemAudit" style="display:none;" onclick="switchPage('audit')"><span class="nav-icon">&#128196;</span> Journal d'audit</div>
                 <div style="padding:12px;border-top:1px solid var(--border);margin-top:1rem;">
                     <a href="dashboard.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Espace Client</a>
+                    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="handleLogoutAdmin()">Déconnexion</button>
                 </div>
             </nav>
         </aside>

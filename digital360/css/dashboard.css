@@ -178,3 +178,18 @@
 .chart-container {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-lg); pad
+
+/* ── Mobile et tablette : menu replié derrière ☰, contenu en pleine largeur ── */
+@media (max-width: 1024px) {
+    .dash-sidebar { transform: translateX(-100%); }
+    .dash-sidebar.open { transform: translateX(0); }
+    .dash-main { margin-left: 0; }
+    .dash-hamburger { display: flex; align-items: center; justify-content: center; }
+}
+@media (max-width: 640px) {
+    .dash-topbar { padding: 10px 1rem; gap: 0.5rem; }
+    .dash-topbar-title { font-size: 1rem; }
+    .dash-topbar-actions { gap: 0.35rem; }
+    .dash-topbar-actions .btn { padding: 6px 10px; font-size: 12px; }
+    .dash-content { padding: 1rem; }
+}
