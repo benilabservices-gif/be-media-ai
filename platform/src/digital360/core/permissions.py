@@ -30,6 +30,8 @@ class Permission(StrEnum):
     STAFF_MANAGE = "staff:manage"
     AUDIT_READ = "audit:read"
     CONFIG_MANAGE = "config:manage"
+    # Closer 3.0 : verser les commissions, suspendre un closer, rattacher un client
+    CLOSER_MANAGE = "closer:manage"
 
 
 class ClientRole(StrEnum):
@@ -87,6 +89,7 @@ STAFF_ROLE_PERMISSIONS: Mapping[StaffRole, frozenset[Permission]] = {
         P.WEBSITE_PROJECT_TRANSITION,
         P.CHECKLIST_SUBMIT,
         P.TASK_MANAGE,
+        P.CLOSER_MANAGE,
     },
     StaffRole.CONTENT_MANAGER: _STAFF_BASE
     | {
@@ -112,6 +115,7 @@ STAFF_ROLE_PERMISSIONS: Mapping[StaffRole, frozenset[Permission]] = {
         P.INVOICE_READ,
         P.PAYMENT_REFUND,
         P.SUBSCRIPTION_MANAGE,
+        P.CLOSER_MANAGE,
     },
 }
 

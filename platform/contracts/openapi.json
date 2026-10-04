@@ -17,6 +17,256 @@
         "title": "ActionPlanOut",
         "type": "object"
       },
+      "AdminCloserList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCloserOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "due_total": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Due Total",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "due_total"
+        ],
+        "title": "AdminCloserList",
+        "type": "object"
+      },
+      "AdminCloserOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "due": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Due",
+            "type": "array"
+          },
+          "earned": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Earned",
+            "type": "array"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "paid": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Paid",
+            "type": "array"
+          },
+          "paying_clients": {
+            "title": "Paying Clients",
+            "type": "integer"
+          },
+          "payout_account": {
+            "title": "Payout Account",
+            "type": "string"
+          },
+          "payout_method": {
+            "$ref": "#/components/schemas/PayoutMethod"
+          },
+          "referral_link": {
+            "title": "Referral Link",
+            "type": "string"
+          },
+          "referred_clients": {
+            "title": "Referred Clients",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CloserStatus"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "referral_link",
+          "status",
+          "payout_method",
+          "payout_account",
+          "created_at",
+          "full_name",
+          "email",
+          "referred_clients",
+          "paying_clients",
+          "earned",
+          "due",
+          "paid"
+        ],
+        "title": "AdminCloserOut",
+        "type": "object"
+      },
+      "AdminStatementList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AdminStatementOut"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "AdminStatementList",
+        "type": "object"
+      },
+      "AdminStatementOut": {
+        "properties": {
+          "closer_code": {
+            "title": "Closer Code",
+            "type": "string"
+          },
+          "closer_email": {
+            "title": "Closer Email",
+            "type": "string"
+          },
+          "closer_id": {
+            "format": "uuid",
+            "title": "Closer Id",
+            "type": "string"
+          },
+          "closer_name": {
+            "title": "Closer Name",
+            "type": "string"
+          },
+          "closer_payout_account": {
+            "title": "Closer Payout Account",
+            "type": "string"
+          },
+          "closer_payout_method": {
+            "$ref": "#/components/schemas/PayoutMethod"
+          },
+          "commission_count": {
+            "title": "Commission Count",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "payout_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PayoutMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "payout_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payout Reference"
+          },
+          "period": {
+            "format": "date",
+            "title": "Period",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatementStatus"
+          },
+          "total_amount": {
+            "title": "Total Amount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "period",
+          "currency",
+          "total_amount",
+          "commission_count",
+          "status",
+          "payout_method",
+          "payout_reference",
+          "paid_on",
+          "closer_id",
+          "closer_name",
+          "closer_email",
+          "closer_code",
+          "closer_payout_method",
+          "closer_payout_account"
+        ],
+        "title": "AdminStatementOut",
+        "type": "object"
+      },
+      "Amount": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "title": "Amount",
+        "type": "object"
+      },
       "AuditLogOut": {
         "properties": {
           "action": {
@@ -817,6 +1067,117 @@
         "title": "ClientRole",
         "type": "string"
       },
+      "CloserOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "payout_account": {
+            "title": "Payout Account",
+            "type": "string"
+          },
+          "payout_method": {
+            "$ref": "#/components/schemas/PayoutMethod"
+          },
+          "referral_link": {
+            "title": "Referral Link",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CloserStatus"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "referral_link",
+          "status",
+          "payout_method",
+          "payout_account",
+          "created_at"
+        ],
+        "title": "CloserOut",
+        "type": "object"
+      },
+      "CloserSpaceOut": {
+        "properties": {
+          "closer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CloserOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "pending": {
+            "items": {
+              "$ref": "#/components/schemas/PendingOut"
+            },
+            "title": "Pending",
+            "type": "array"
+          },
+          "referrals": {
+            "items": {
+              "$ref": "#/components/schemas/ReferralOut"
+            },
+            "title": "Referrals",
+            "type": "array"
+          },
+          "statements": {
+            "items": {
+              "$ref": "#/components/schemas/StatementOut"
+            },
+            "title": "Statements",
+            "type": "array"
+          }
+        },
+        "required": [
+          "eligible",
+          "closer",
+          "referrals",
+          "pending",
+          "statements"
+        ],
+        "title": "CloserSpaceOut",
+        "type": "object"
+      },
+      "CloserStatus": {
+        "enum": [
+          "ACTIVE",
+          "SUSPENDED"
+        ],
+        "title": "CloserStatus",
+        "type": "string"
+      },
+      "CloserStatusIn": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CloserStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "CloserStatusIn",
+        "type": "object"
+      },
       "CompleteDiagnosticRequest": {
         "properties": {
           "consents": {
@@ -1389,6 +1750,31 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "JoinIn": {
+        "properties": {
+          "accept_terms": {
+            "const": true,
+            "title": "Accept Terms",
+            "type": "boolean"
+          },
+          "payout_account": {
+            "maxLength": 64,
+            "minLength": 6,
+            "title": "Payout Account",
+            "type": "string"
+          },
+          "payout_method": {
+            "$ref": "#/components/schemas/PayoutMethod"
+          }
+        },
+        "required": [
+          "payout_method",
+          "payout_account",
+          "accept_terms"
+        ],
+        "title": "JoinIn",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -1760,6 +2146,18 @@
               }
             ],
             "title": "Primary Color"
+          },
+          "referral_code": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Code"
           },
           "secondary_color": {
             "anyOf": [
@@ -2516,6 +2914,37 @@
         "title": "PasswordResetRequest",
         "type": "object"
       },
+      "PayStatementIn": {
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/PayoutMethod"
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "reference": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "reference"
+        ],
+        "title": "PayStatementIn",
+        "type": "object"
+      },
       "PaymentIn": {
         "description": "Encaissement reçu hors plateforme (mobile money, virement, espèces).",
         "properties": {
@@ -2623,6 +3052,59 @@
         "title": "PaymentOut",
         "type": "object"
       },
+      "PayoutIn": {
+        "properties": {
+          "payout_account": {
+            "maxLength": 64,
+            "minLength": 6,
+            "title": "Payout Account",
+            "type": "string"
+          },
+          "payout_method": {
+            "$ref": "#/components/schemas/PayoutMethod"
+          }
+        },
+        "required": [
+          "payout_method",
+          "payout_account"
+        ],
+        "title": "PayoutIn",
+        "type": "object"
+      },
+      "PayoutMethod": {
+        "enum": [
+          "ORANGE_MONEY",
+          "MTN_MOMO",
+          "MOOV_MONEY",
+          "WAVE",
+          "BANK_TRANSFER"
+        ],
+        "title": "PayoutMethod",
+        "type": "string"
+      },
+      "PendingOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "count"
+        ],
+        "title": "PendingOut",
+        "type": "object"
+      },
       "Permission": {
         "enum": [
           "organization:read",
@@ -2643,7 +3125,8 @@
           "task:manage",
           "staff:manage",
           "audit:read",
-          "config:manage"
+          "config:manage",
+          "closer:manage"
         ],
         "title": "Permission",
         "type": "string"
@@ -3334,6 +3817,71 @@
         "title": "QuestionnaireOut",
         "type": "object"
       },
+      "ReferralIn": {
+        "properties": {
+          "closer_code": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z0-9]{4,16}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closer Code"
+          }
+        },
+        "required": [
+          "closer_code"
+        ],
+        "title": "ReferralIn",
+        "type": "object"
+      },
+      "ReferralOut": {
+        "properties": {
+          "commissions_total": {
+            "title": "Commissions Total",
+            "type": "integer"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_name",
+          "joined_at",
+          "commissions_total"
+        ],
+        "title": "ReferralOut",
+        "type": "object"
+      },
+      "ReferralOutAdmin": {
+        "properties": {
+          "closer_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closer Code"
+          }
+        },
+        "required": [
+          "closer_code"
+        ],
+        "title": "ReferralOutAdmin",
+        "type": "object"
+      },
       "RegisterRequest": {
         "properties": {
           "email": {
@@ -3965,6 +4513,89 @@
         "title": "StartDiagnosticResponse",
         "type": "object"
       },
+      "StatementOut": {
+        "properties": {
+          "commission_count": {
+            "title": "Commission Count",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "payout_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PayoutMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "payout_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payout Reference"
+          },
+          "period": {
+            "format": "date",
+            "title": "Period",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatementStatus"
+          },
+          "total_amount": {
+            "title": "Total Amount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "period",
+          "currency",
+          "total_amount",
+          "commission_count",
+          "status",
+          "payout_method",
+          "payout_reference",
+          "paid_on"
+        ],
+        "title": "StatementOut",
+        "type": "object"
+      },
+      "StatementStatus": {
+        "enum": [
+          "DUE",
+          "PAID"
+        ],
+        "title": "StatementStatus",
+        "type": "string"
+      },
       "SubmitRequest": {
         "properties": {
           "accept_scope": {
@@ -4496,6 +5127,177 @@
         ]
       }
     },
+    "/api/v1/admin/closers": {
+      "get": {
+        "operationId": "admin_list_closers_api_v1_admin_closers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCloserList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Admin List Closers",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/closers/{closer_id}": {
+      "patch": {
+        "operationId": "admin_set_closer_status_api_v1_admin_closers__closer_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "closer_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Closer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloserStatusIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Set Closer Status",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/commission-statements": {
+      "get": {
+        "description": "Relevés mensuels des closers, du plus récent au plus ancien (filtre `status=DUE`).",
+        "operationId": "admin_list_statements_api_v1_admin_commission_statements_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StatementStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatementList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin List Statements",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/commission-statements/{statement_id}/pay": {
+      "post": {
+        "description": "Marque un relevé comme versé (le closer est prévenu par e-mail). 409 si déjà versé.",
+        "operationId": "admin_pay_statement_api_v1_admin_commission_statements__statement_id__pay_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayStatementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Pay Statement",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/admin/dashboard": {
       "get": {
         "operationId": "get_dashboard_api_v1_admin_dashboard_get",
@@ -4728,6 +5530,60 @@
           }
         },
         "summary": "Admin Get Organization",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organization_id}/closer": {
+      "put": {
+        "description": "Rattache un client à un closer (ou le détache). Vaut pour les paiements à venir.",
+        "operationId": "admin_set_referral_api_v1_admin_organizations__organization_id__closer_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOutAdmin"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Set Referral",
         "tags": [
           "admin"
         ]
@@ -5784,6 +6640,107 @@
         "summary": "Update Profile",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/me/closer": {
+      "get": {
+        "description": "Espace Closer 3.0 : code, lien, clients apportés, commissions et relevés.",
+        "operationId": "get_my_closer_space_api_v1_me_closer_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloserSpaceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get My Closer Space",
+        "tags": [
+          "closers"
+        ]
+      },
+      "patch": {
+        "operationId": "update_closer_payout_api_v1_me_closer_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayoutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloserSpaceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Closer Payout",
+        "tags": [
+          "closers"
+        ]
+      },
+      "post": {
+        "description": "Devenir Closer 3.0 (idempotent). 403 NOT_ELIGIBLE sans paiement préalable.",
+        "operationId": "join_closer_program_api_v1_me_closer_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloserSpaceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Join Closer Program",
+        "tags": [
+          "closers"
         ]
       }
     },

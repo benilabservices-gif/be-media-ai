@@ -13,6 +13,7 @@ from digital360.modules.billing.infrastructure.cartflox import PaymentGateway
 from digital360.modules.diagnostics.application import notifications as diagnostic_notifications
 from digital360.modules.identity.application import password_reset
 from digital360.modules.projects.application import notifications as project_notifications
+from digital360.modules.referrals.application import service as referrals
 
 
 def build_registry(
@@ -48,4 +49,5 @@ def build_registry(
         admin_url=settings.admin_url,
     )
     online_payments.register_jobs(registry, payment_gateway)
+    referrals.register_jobs(registry, email_sender, app_url=settings.app_url)
     return registry

@@ -15,6 +15,7 @@ from digital360.core.logging import configure_logging
 from digital360.jobs import build_registry
 from digital360.modules.billing.application.renewals import schedule_daily_sweep
 from digital360.modules.billing.infrastructure.cartflox import build_payment_gateway
+from digital360.modules.referrals.application.service import schedule_monthly_statements
 
 logger = logging.getLogger("digital360.worker")
 
@@ -37,6 +38,7 @@ async def main() -> None:
             loop.add_signal_handler(signum, stop.set)
 
     await schedule_daily_sweep(worker.session_factory)
+    await schedule_monthly_statements(worker.session_factory)
     logger.info("worker démarré", extra={"worker_id": worker_id})
     try:
         await worker.run_forever(stop)

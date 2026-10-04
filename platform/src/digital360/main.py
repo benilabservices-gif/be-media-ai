@@ -45,6 +45,11 @@ from digital360.modules.passport.api import routes as passport_routes
 from digital360.modules.passport.application.service import PassportService
 from digital360.modules.projects.api import routes as project_routes
 from digital360.modules.projects.application.service import ProjectService
+from digital360.modules.referrals.api import routes as referral_routes
+from digital360.modules.referrals.application.service import (
+    CloserService,
+    schedule_monthly_statements,
+)
 
 API_PREFIX = "/api/v1"
 
@@ -92,6 +97,7 @@ def create_app(
         app.state.online_payment_service = OnlinePaymentService(
             session_factory, registry, gateway, app_url=settings.app_url
         )
+        app.state.closer_service = CloserService(session_factory, app_url=settings.app_url)
         app.state.rate_limiter = RateLimiter()
 
         stop_worker = asyncio.Event()
@@ -103,6 +109,7 @@ def create_app(
             # Base indisponible au démarrage : l'API démarre quand même, sans rappels ce jour-là.
             try:
                 await schedule_daily_sweep(session_factory)
+                await schedule_monthly_statements(session_factory)
             except Exception:
                 logger.exception("contrôle quotidien des échéances non planifié")
         # Configuration réellement chargée, sans aucun secret : premier réflexe en cas de doute
@@ -161,6 +168,8 @@ def create_app(
     api_router.include_router(billing_routes.admin_router)
     api_router.include_router(project_routes.router)
     api_router.include_router(project_routes.admin_router)
+    api_router.include_router(referral_routes.router)
+    api_router.include_router(referral_routes.admin_router)
     api_router.include_router(admin.router)
     app.include_router(api_router)
 

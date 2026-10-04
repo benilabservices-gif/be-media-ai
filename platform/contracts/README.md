@@ -44,6 +44,8 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /orgs/{id}/website-project` · `PUT …/brief` · `POST …/submit` · `…/revision` · `…/approve` | **Disponible** | Projet de site Digital Start, offre encadrée (§13) |
 | `GET /admin/website-projects` · `POST /admin/website-projects/{id}/transition` | **Disponible** | Équipe : suivi et étapes des projets (§13) |
 | `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne Cartflox : achat ou renouvellement (§14) |
+| `GET·POST·PATCH /me/closer` | **Disponible** | Closer 3.0 : espace de l'apporteur d'affaires (§15) |
+| `GET /admin/closers` · `GET /admin/commission-statements` · `POST …/{id}/pay` · `PATCH /admin/closers/{id}` · `PUT /admin/organizations/{id}/closer` | **Disponible** | Équipe : closers, relevés et versements (§15) |
 
 ## 2. Configuration
 
@@ -330,6 +332,32 @@ Le client paie seul (mobile money ou carte) sur la page Cartflox ; l'offre s'act
 - Retire ensuite `?paiement=` de l'adresse (`history.replaceState`).
 
 Un paiement confirmé suit le même chemin qu'un encaissement manuel : reçu par e-mail, client actif, projet de site créé pour Start, et une demande « Je veux démarrer » en cours pour la même offre passe à `WON`. Dans `payments`, `method` vaut **`CARTFLOX`** (« Paiement en ligne ») et `reference` la référence Cartflox (`CS-…`). Côté admin, ces paiements ont `payment.channel = "ONLINE"` ; l'équipe ne peut pas saisir `CARTFLOX` à la main (400).
+
+## 15. Closer 3.0 (apporteurs d'affaires)
+
+Un client qui a **déjà payé une offre** peut devenir Closer 3.0. Il touche **20 % du montant HT** de chaque paiement des clients qu'il apporte, pendant les **12 premiers mois** de chaque client (365 jours après son premier paiement), quelle que soit l'offre. Le 1er de chaque mois, les commissions du mois écoulé forment un **relevé** ; l'équipe verse le montant puis marque le relevé comme versé. Tous les calculs sont faits par le serveur.
+
+**Capter le code de parrainage** : le lien du closer est `https://digital360.bemedia-ai.online/?ref=CODE`. Sur toute page, si l'adresse contient `ref`, garde-le en `localStorage` (`d360_ref`). À la création de l'entreprise, ajoute **`"referral_code": "<code>"`** au corps de `POST /orgs` (avec ou sans `diagnostic_id`). Un code inconnu, suspendu ou celui du client lui-même est ignoré sans erreur. Retire `d360_ref` après la création.
+
+**Espace client, rubrique « Closer 3.0 »** :
+- `GET /me/closer` renvoie `{ eligible, closer, referrals, pending, statements }`.
+  - `closer` vaut `null` tant que le client n'a pas rejoint le programme. Si `eligible` est faux : « Réservé aux clients qui ont déjà payé une offre ».
+  - Sinon : `{ id, code, referral_link, status, payout_method, payout_account, created_at }`.
+  - `referrals` : `[{ organization_name, joined_at, commissions_total }]`.
+  - `pending` : commissions du mois en cours, pas encore relevées, `[{ currency, amount, count }]`.
+  - `statements` : `[{ id, period, currency, total_amount, commission_count, status: "DUE"|"PAID", payout_method, payout_reference, paid_on }]`. `period` est le premier jour du mois couvert.
+- `POST /me/closer` avec `{ "payout_method": "MTN_MOMO", "payout_account": "+22997000000", "accept_terms": true }` pour rejoindre le programme ; l'appel est idempotent. `payout_method` vaut `ORANGE_MONEY`, `MTN_MOMO`, `MOOV_MONEY`, `WAVE` ou `BANK_TRANSFER`. Erreur 403 `NOT_ELIGIBLE` si le client n'a jamais payé ; 400 si `accept_terms` n'est pas `true`. Affiche les conditions avant la case à cocher : 20 % pendant 12 mois, versement chaque mois, pas d'auto-parrainage.
+- `PATCH /me/closer` avec `{ payout_method, payout_account }` pour changer le compte de versement.
+- Montre le lien avec un bouton « Copier » et un bouton « Partager sur WhatsApp » (`https://wa.me/?text=…`).
+
+**Admin, onglet « Closers »** (lecture : `invoice:read` ; actions : `closer:manage`, accordé à ADMIN, MANAGER et FINANCE) :
+- `GET /admin/closers` renvoie `{ data, due_total }`.
+  - Chaque closer : `full_name`, `email`, `code`, `status`, `payout_method`, `payout_account`, `referred_clients`, `paying_clients`, et les montants `earned` (gagné), `due` (à verser) et `paid` (versé), par devise.
+  - `due_total` : le total à verser, tous closers confondus.
+- `GET /admin/commission-statements?status=DUE` liste les relevés avec le nom du closer et son compte de versement.
+- `POST /admin/commission-statements/{id}/pay` avec `{ "method", "reference", "paid_on" }` (`paid_on` vaut aujourd'hui par défaut) marque le relevé comme versé, et le closer reçoit un e-mail. 409 `ALREADY_PAID` si c'est déjà fait.
+- `PATCH /admin/closers/{id}` avec `{ "status": "SUSPENDED" | "ACTIVE" }`. Un closer suspendu ne gagne plus de commission et son code n'est plus accepté.
+- `PUT /admin/organizations/{id}/closer` avec `{ "closer_code": "AB12CD" }`, ou `null` pour détacher, rattache un client à la main (client amené par téléphone). Le rattachement vaut pour les paiements à venir. 422 `SELF_REFERRAL` si le closer est membre de cette entreprise.
 
 ## 8. Demander un changement
 

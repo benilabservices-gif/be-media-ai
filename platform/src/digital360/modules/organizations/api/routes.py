@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Annotated
 
@@ -25,6 +26,8 @@ from digital360.modules.organizations.api.schemas import (
 from digital360.modules.organizations.application.service import OrganizationService
 from digital360.modules.organizations.infrastructure.models import OrganizationStatus
 
+logger = logging.getLogger("digital360.organizations")
+
 router = APIRouter(tags=["organizations"])
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -47,6 +50,7 @@ async def create_organization(
     body: OrganizationCreate,
     principal: CurrentPrincipal,
     service: Service,
+    request: Request,
     x_diagnostic_token: Annotated[str | None, Header(max_length=100)] = None,
 ) -> OrganizationOut:
     diagnostic = None
@@ -54,8 +58,16 @@ async def create_organization(
         if not x_diagnostic_token:
             raise AppError("NOT_FOUND", "Diagnostic introuvable.", status=404)
         diagnostic = (body.diagnostic_id, x_diagnostic_token)
-    values = body.model_dump(exclude={"diagnostic_id"})
+    values = body.model_dump(exclude={"diagnostic_id", "referral_code"})
     organization = await service.create(principal, values, diagnostic=diagnostic)
+    if body.referral_code:
+        # Parrainage Closer 3.0 : ne bloque jamais l'inscription
+        try:
+            await request.app.state.closer_service.attach_by_code(
+                organization.id, principal.user_id, body.referral_code
+            )
+        except Exception:
+            logger.exception("parrainage Closer 3.0 non enregistré")
     return OrganizationOut.model_validate(organization)
 
 

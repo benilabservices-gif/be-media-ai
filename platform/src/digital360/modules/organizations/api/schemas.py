@@ -64,6 +64,10 @@ class OrganizationCreate(_OrganizationFields):
     commercial_name: Text200 | None = None
     country: CountryCode | None = None
     diagnostic_id: uuid.UUID | None = None
+    # Code Closer 3.0 du lien de parrainage (?ref=) ; un code inconnu est ignoré
+    referral_code: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=16)] | None
+    ) = None
 
     @model_validator(mode="after")
     def _required_without_diagnostic(self) -> Self:
