@@ -193,4 +193,10 @@
     .dash-topbar-actions { gap: 0.35rem; }
     .dash-topbar-actions .btn { padding: 6px 10px; font-size: 12px; }
     .dash-content { padding: 1rem; }
+    /* Bandeau du score : anneau, texte et recommandations empilés au lieu de 3 colonnes */
+    .dash-score-banner { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.25rem; justify-items: center; text-align: center; }
+    .dash-score-banner > * { width: 100%; min-width: 0; }
+    /* Grilles à colonnes fixes écrites dans les pages : une seule colonne sur téléphone */
+    .dash-content [style*="grid-template-columns:1fr 1fr"],
+    .dash-content [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
 }
