@@ -299,3 +299,33 @@ async def admin_renew_subscription(
         payment=body.payment.to_input(),
     )
     return SubscriptionOut.model_validate(view)
+
+
+class ClientPaymentOut(BaseModel):
+    receipt_number: str
+    product_code: str
+    product_name: str
+    amount: int
+    currency: str
+    method: PaymentMethod
+    reference: str | None
+    received_on: date
+    covers_until: datetime | None
+
+
+class ClientBillingOut(BaseModel):
+    subscriptions: list[SubscriptionOut]
+    payments: list[ClientPaymentOut]
+
+
+@router.get("/orgs/{org_id}/billing", response_model=ClientBillingOut)
+async def get_client_billing(
+    access: Annotated[OrganizationAccess, Depends(require_org_permission(Permission.INVOICE_READ))],
+    service: Renewals,
+) -> ClientBillingOut:
+    """Abonnements en cours (échéance) et historique des paiements, avec leur numéro de reçu."""
+    billing = await service.client_billing(access.tenant)
+    return ClientBillingOut(
+        subscriptions=[SubscriptionOut.model_validate(view) for view in billing.subscriptions],
+        payments=[ClientPaymentOut(**payment) for payment in billing.payments],
+    )

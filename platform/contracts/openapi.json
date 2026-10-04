@@ -460,6 +460,98 @@
         "title": "ClaimDiagnosticRequest",
         "type": "object"
       },
+      "ClientBillingOut": {
+        "properties": {
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/ClientPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "subscriptions": {
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionOut"
+            },
+            "title": "Subscriptions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "subscriptions",
+          "payments"
+        ],
+        "title": "ClientBillingOut",
+        "type": "object"
+      },
+      "ClientPaymentOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "covers_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Covers Until"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "product_code": {
+            "title": "Product Code",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "receipt_number": {
+            "title": "Receipt Number",
+            "type": "string"
+          },
+          "received_on": {
+            "format": "date",
+            "title": "Received On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "receipt_number",
+          "product_code",
+          "product_name",
+          "amount",
+          "currency",
+          "method",
+          "reference",
+          "received_on",
+          "covers_until"
+        ],
+        "title": "ClientPaymentOut",
+        "type": "object"
+      },
       "ClientProjectOut": {
         "properties": {
           "available_actions": {
@@ -5843,6 +5935,50 @@
         "summary": "Update Action Plan Item",
         "tags": [
           "diagnostic"
+        ]
+      }
+    },
+    "/api/v1/orgs/{org_id}/billing": {
+      "get": {
+        "description": "Abonnements en cours (échéance) et historique des paiements, avec leur numéro de reçu.",
+        "operationId": "get_client_billing_api_v1_orgs__org_id__billing_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientBillingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Client Billing",
+        "tags": [
+          "billing"
         ]
       }
     },

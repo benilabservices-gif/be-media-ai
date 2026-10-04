@@ -773,6 +773,10 @@ def _alert_email(view: PurchaseRequestView, recipients: list[str], admin_url: st
     )
 
 
+def receipt_number(payment: Payment) -> str:
+    return "REC-" + payment.received_on.strftime("%Y%m") + "-" + payment.id.hex[-6:].upper()
+
+
 METHOD_LABELS = {
     "ORANGE_MONEY": "Orange Money",
     "MTN_MOMO": "MTN Mobile Money",
@@ -800,7 +804,7 @@ async def owner_emails(session: AsyncSession, organization_id: uuid.UUID) -> lis
 def _receipt_email(
     payment: Payment, organization: Organization, product_name: str, to: list[str]
 ) -> EmailMessage:
-    number = "REC-" + payment.received_on.strftime("%Y%m") + "-" + payment.id.hex[-6:].upper()
+    number = receipt_number(payment)
     amount = format_price(
         {"amount": payment.amount, "currency": payment.currency, "period": "NONE"}
     )

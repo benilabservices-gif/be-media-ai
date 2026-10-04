@@ -20,7 +20,7 @@ from digital360.core.audit import record_audit
 from digital360.core.email import EmailMessage, EmailSender
 from digital360.core.errors import AppError
 from digital360.core.jobs import JobRegistry, enqueue, publish
-from digital360.core.tenancy import staff_transaction
+from digital360.core.tenancy import TenantContext, staff_transaction, tenant_transaction
 from digital360.modules.billing.application.service import (
     PAYMENT_RECORDED_EVENT,
     SUBSCRIPTION_PERIOD,
@@ -29,6 +29,7 @@ from digital360.modules.billing.application.service import (
     grant_product_entitlements,
     mark_organization_active,
     owner_emails,
+    receipt_number,
 )
 from digital360.modules.billing.infrastructure.models import Payment, PaymentChannel
 from digital360.modules.catalog.application.service import current_catalog
@@ -123,6 +124,12 @@ async def _views(
     return sorted(views, key=lambda view: view.covers_until)
 
 
+@dataclass(frozen=True)
+class ClientBilling:
+    subscriptions: list[SubscriptionView]
+    payments: list[dict[str, Any]]
+
+
 class RenewalService:
     def __init__(
         self, session_factory: async_sessionmaker[AsyncSession], registry: JobRegistry
@@ -135,6 +142,41 @@ class RenewalService:
         async with staff_transaction(self._session_factory) as session:
             views = await _views(session, await _latest_payments(session), now)
         return [view for view in views if status is None or view.status == status]
+
+    async def client_billing(self, context: TenantContext) -> ClientBilling:
+        """Espace client : abonnements en cours et historique des paiements (reçus)."""
+        now = datetime.now(UTC)
+        async with tenant_transaction(self._session_factory, context) as session:
+            subscriptions = await _views(
+                session, await _latest_payments(session, context.organization_id), now
+            )
+            catalog = await current_catalog(session)
+            payments = (
+                await session.execute(
+                    select(Payment)
+                    .where(Payment.organization_id == context.organization_id)
+                    .order_by(Payment.received_on.desc(), Payment.id.desc())
+                )
+            ).scalars()
+            history = []
+            for payment in payments:
+                product = catalog.product(payment.product_code)
+                history.append(
+                    {
+                        "receipt_number": receipt_number(payment),
+                        "product_code": payment.product_code,
+                        "product_name": product.name if product else payment.product_code,
+                        "amount": payment.amount,
+                        "currency": payment.currency,
+                        "method": payment.method,
+                        "reference": payment.reference,
+                        "received_on": payment.received_on.isoformat(),
+                        "covers_until": (
+                            payment.covers_until.isoformat() if payment.covers_until else None
+                        ),
+                    }
+                )
+        return ClientBilling(subscriptions=subscriptions, payments=history)
 
     async def count_due(self) -> int:
         """Abonnements à renouveler : échéance proche ou dépassée."""

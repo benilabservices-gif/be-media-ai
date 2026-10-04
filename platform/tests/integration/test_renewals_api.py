@@ -272,3 +272,32 @@ def test_should_schedule_one_sweep_per_day_and_plan_the_next_one(
     assert keys.count("renewal-sweep:2031-03-14") == 1
     tomorrow = (datetime.now(UTC).date() + timedelta(days=1)).isoformat()
     assert f"renewal-sweep:{tomorrow}" in keys
+
+
+# ── Espace client : abonnement et paiements ──
+
+
+def test_should_show_subscription_and_receipts_to_client_owner(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _subscribed(api, second_api, test_database_url)
+
+    billing = api.get(f"/orgs/{org['id']}/billing").json()
+
+    [subscription] = billing["subscriptions"]
+    assert subscription["product_name"] == "Essential"
+    assert subscription["status"] == "ACTIVE"
+    [payment] = billing["payments"]
+    assert payment["receipt_number"].startswith("REC-")
+    assert payment["amount"] == 45000
+    assert payment["reference"] == "WV-RENEW-01"
+
+
+def test_should_hide_billing_from_other_clients(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _subscribed(api, second_api, test_database_url)
+    intruder = ApiClient(api.http)
+    intruder.register()
+
+    assert intruder.get(f"/orgs/{org['id']}/billing").status_code == 404
