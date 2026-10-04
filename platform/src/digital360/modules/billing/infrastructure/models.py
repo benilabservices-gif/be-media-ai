@@ -111,6 +111,7 @@ class Payment(Base):
         CheckConstraint("channel IN ('MANUAL', 'ONLINE')", name="channel_valid"),
         CheckConstraint("amount >= 0", name="amount_positive"),
         Index("ix_payments_organization_id", "organization_id"),
+        Index("ix_payments_covers_until", "covers_until"),
         # Une vente n'est encaissée qu'une fois
         Index(
             "uq_payments_purchase_request_id",
@@ -137,4 +138,8 @@ class Payment(Base):
     reference: Mapped[str | None] = mapped_column(String(100))
     received_on: Mapped[date] = mapped_column(Date)
     recorded_by: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    # Abonnement : fin de la période payée (vide pour une offre ponctuelle comme Start)
+    covers_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Rappel « échéance proche » déjà envoyé pour cette période
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

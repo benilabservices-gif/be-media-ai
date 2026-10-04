@@ -20,6 +20,10 @@ from digital360.core.logging import REQUEST_ID_HEADER, RequestContextMiddleware,
 from digital360.core.rate_limit import RateLimiter
 from digital360.jobs import build_registry
 from digital360.modules.billing.api import routes as billing_routes
+from digital360.modules.billing.application.renewals import (
+    RenewalService,
+    schedule_daily_sweep,
+)
 from digital360.modules.billing.application.service import PurchaseRequestService
 from digital360.modules.catalog.api import routes as catalog_routes
 from digital360.modules.catalog.application.service import CatalogService
@@ -75,6 +79,7 @@ def create_app(
         app.state.staff_service = StaffService(session_factory)
         app.state.purchase_request_service = PurchaseRequestService(session_factory, registry)
         app.state.project_service = ProjectService(session_factory, registry)
+        app.state.renewal_service = RenewalService(session_factory, registry)
         app.state.rate_limiter = RateLimiter()
 
         stop_worker = asyncio.Event()
@@ -82,6 +87,12 @@ def create_app(
         if settings.run_worker_in_api:
             worker = Worker(session_factory, registry, worker_id=f"api-{uuid.uuid4().hex[:8]}")
             worker_task = asyncio.create_task(worker.run_forever(stop_worker))
+            # Contrôle quotidien des échéances ; il se replanifie ensuite de lui-même.
+            # Base indisponible au démarrage : l'API démarre quand même, sans rappels ce jour-là.
+            try:
+                await schedule_daily_sweep(session_factory)
+            except Exception:
+                logger.exception("contrôle quotidien des échéances non planifié")
         # Configuration réellement chargée, sans aucun secret : premier réflexe en cas de doute
         logger.info(
             "configuration des emails",

@@ -13,6 +13,7 @@ from digital360.core.email import build_email_sender
 from digital360.core.jobs import Worker
 from digital360.core.logging import configure_logging
 from digital360.jobs import build_registry
+from digital360.modules.billing.application.renewals import schedule_daily_sweep
 
 logger = logging.getLogger("digital360.worker")
 
@@ -32,6 +33,7 @@ async def main() -> None:
         with contextlib.suppress(NotImplementedError):
             loop.add_signal_handler(signum, stop.set)
 
+    await schedule_daily_sweep(worker.session_factory)
     logger.info("worker démarré", extra={"worker_id": worker_id})
     try:
         await worker.run_forever(stop)

@@ -3173,6 +3173,25 @@
         "title": "RegisterRequest",
         "type": "object"
       },
+      "RenewalIn": {
+        "properties": {
+          "payment": {
+            "$ref": "#/components/schemas/PaymentIn"
+          },
+          "product_code": {
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Product Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_code",
+          "payment"
+        ],
+        "title": "RenewalIn",
+        "type": "object"
+      },
       "RevenueOut": {
         "properties": {
           "currency": {
@@ -3263,6 +3282,11 @@
           },
           "new": {
             "title": "New",
+            "type": "integer"
+          },
+          "renewals_due": {
+            "default": 0,
+            "title": "Renewals Due",
             "type": "integer"
           },
           "revenue": {
@@ -3751,6 +3775,78 @@
           "accept_scope"
         ],
         "title": "SubmitRequest",
+        "type": "object"
+      },
+      "SubscriptionList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionOut"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "SubscriptionList",
+        "type": "object"
+      },
+      "SubscriptionOut": {
+        "properties": {
+          "covers_until": {
+            "format": "date-time",
+            "title": "Covers Until",
+            "type": "string"
+          },
+          "days_left": {
+            "title": "Days Left",
+            "type": "integer"
+          },
+          "last_payment": {
+            "additionalProperties": true,
+            "title": "Last Payment",
+            "type": "object"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "product_code": {
+            "title": "Product Code",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "EXPIRING",
+              "EXPIRED"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id",
+          "organization_name",
+          "product_code",
+          "product_name",
+          "covers_until",
+          "status",
+          "days_left",
+          "last_payment"
+        ],
+        "title": "SubscriptionOut",
         "type": "object"
       },
       "TransitionRequest": {
@@ -4619,6 +4715,60 @@
         ]
       }
     },
+    "/api/v1/admin/organizations/{organization_id}/renewals": {
+      "post": {
+        "description": "Encaissement d'un renouvellement : la période repart de l'échéance (ou d'aujourd'hui).",
+        "operationId": "admin_renew_subscription_api_v1_admin_organizations__organization_id__renewals_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Renew Subscription",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/admin/organizations/{organization_id}/sales": {
       "post": {
         "description": "Vente encaissée hors plateforme pour un client qui n'a pas fait de demande.",
@@ -4903,6 +5053,61 @@
           }
         },
         "summary": "Revoke Staff Role",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/subscriptions": {
+      "get": {
+        "description": "Abonnements payés hors ligne, de l'échéance la plus proche à la plus lointaine.",
+        "operationId": "admin_list_subscriptions_api_v1_admin_subscriptions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ACTIVE",
+                    "EXPIRING",
+                    "EXPIRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin List Subscriptions",
         "tags": [
           "admin"
         ]

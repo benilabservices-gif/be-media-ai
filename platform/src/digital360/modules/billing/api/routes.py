@@ -1,13 +1,14 @@
 import uuid
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Request, Response, status
-from pydantic import BaseModel, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from digital360.core.csrf import require_csrf
 from digital360.core.pagination import PageInfo, PageParams, page_params
 from digital360.core.permissions import Permission, Principal
+from digital360.modules.billing.application.renewals import RenewalService
 from digital360.modules.billing.application.service import (
     PaymentInput,
     PurchaseRequestService,
@@ -27,6 +28,11 @@ from digital360.modules.identity.api.schemas import PhoneNumber
 
 router = APIRouter(tags=["billing"])
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def get_renewal_service(request: Request) -> RenewalService:
+    service: RenewalService = request.app.state.renewal_service
+    return service
 
 
 def get_purchase_request_service(request: Request) -> PurchaseRequestService:
@@ -144,6 +150,29 @@ class DirectSaleIn(BaseModel):
     note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = None
 
 
+class SubscriptionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    organization_id: uuid.UUID
+    organization_name: str
+    product_code: str
+    product_name: str
+    # Fin de la période payée ; au-delà, les droits de l'offre s'arrêtent d'eux-mêmes
+    covers_until: datetime
+    status: Literal["ACTIVE", "EXPIRING", "EXPIRED"]
+    days_left: int
+    last_payment: dict[str, Any]
+
+
+class SubscriptionList(BaseModel):
+    data: list[SubscriptionOut]
+
+
+class RenewalIn(BaseModel):
+    product_code: ProductCode
+    payment: PaymentIn
+
+
 def _client_out(view: PurchaseRequestView) -> PurchaseRequestOut:
     return PurchaseRequestOut.model_validate(view, from_attributes=True)
 
@@ -237,3 +266,36 @@ async def admin_direct_sale(
         note=body.note or None,
     )
     return _staff_out(view)
+
+
+Renewals = Annotated[RenewalService, Depends(get_renewal_service)]
+
+
+@admin_router.get("/subscriptions", response_model=SubscriptionList)
+async def admin_list_subscriptions(
+    _: StaffSales,
+    service: Renewals,
+    status: Literal["ACTIVE", "EXPIRING", "EXPIRED"] | None = None,
+) -> SubscriptionList:
+    """Abonnements payés hors ligne, de l'échéance la plus proche à la plus lointaine."""
+    views = await service.admin_list(status=status)
+    return SubscriptionList(data=[SubscriptionOut.model_validate(view) for view in views])
+
+
+@admin_router.post(
+    "/organizations/{organization_id}/renewals",
+    status_code=status.HTTP_201_CREATED,
+    response_model=SubscriptionOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_renew_subscription(
+    organization_id: uuid.UUID, body: RenewalIn, principal: StaffSales, service: Renewals
+) -> SubscriptionOut:
+    """Encaissement d'un renouvellement : la période repart de l'échéance (ou d'aujourd'hui)."""
+    view = await service.renew(
+        organization_id,
+        principal.user_id,
+        product_code=body.product_code,
+        payment=body.payment.to_input(),
+    )
+    return SubscriptionOut.model_validate(view)

@@ -7,6 +7,7 @@ Construit une fois par processus (API ou worker) : l'API s'en sert pour publier 
 from digital360.core.config import Settings
 from digital360.core.email import EmailSender
 from digital360.core.jobs import JobRegistry
+from digital360.modules.billing.application import renewals
 from digital360.modules.billing.application import service as billing
 from digital360.modules.diagnostics.application import notifications as diagnostic_notifications
 from digital360.modules.identity.application import password_reset
@@ -33,6 +34,13 @@ def build_registry(settings: Settings, email_sender: EmailSender) -> JobRegistry
         registry,
         email_sender,
         team_recipients=settings.sales_alert_emails,
+        app_url=settings.app_url,
+        admin_url=settings.admin_url,
+    )
+    renewals.register_jobs(
+        registry,
+        email_sender,
+        team=settings.sales_alert_emails,
         app_url=settings.app_url,
         admin_url=settings.admin_url,
     )

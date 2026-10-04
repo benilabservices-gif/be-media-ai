@@ -33,6 +33,7 @@ from digital360.modules.billing.infrastructure.models import (
     PurchaseRequestStatus,
 )
 from digital360.modules.catalog.application.service import current_catalog
+from digital360.modules.catalog.domain.models import Product
 from digital360.modules.catalog.infrastructure.models import EntitlementOverride
 from digital360.modules.diagnostics.infrastructure.models import ActionPlanItem, PlanItemStatus
 from digital360.modules.identity.infrastructure.models import Membership, MembershipStatus, User
@@ -252,7 +253,7 @@ def _product_not_available(detail: str) -> AppError:
 SUBSCRIPTION_PERIOD = {"MONTH": timedelta(days=31), "YEAR": timedelta(days=366)}
 
 
-async def _mark_organization_active(session: AsyncSession, organization_id: uuid.UUID) -> None:
+async def mark_organization_active(session: AsyncSession, organization_id: uuid.UUID) -> None:
     """Premier achat : le prospect (LEAD) devient client (ACTIVE). Les autres statuts ne bougent pas."""
     await session.execute(
         update(Organization)
@@ -264,21 +265,20 @@ async def _mark_organization_active(session: AsyncSession, organization_id: uuid
     )
 
 
-async def _activate_offer(
-    session: AsyncSession, request: PurchaseRequest, staff_user_id: uuid.UUID
+async def grant_product_entitlements(
+    session: AsyncSession,
+    organization_id: uuid.UUID,
+    product: Product,
+    *,
+    expires_at: datetime | None,
+    reason: str,
+    staff_user_id: uuid.UUID,
 ) -> None:
-    """Vente gagnée : accorde les droits de l'offre achetée, dans la même transaction."""
-    catalog = await current_catalog(session)
-    product = catalog.product(request.product_code)
-    if product is None or not product.entitlements:
-        return
-    period = SUBSCRIPTION_PERIOD.get(request.period or "")
-    expires_at = datetime.now(UTC) + period if period else None
-    reason = f"Offre {product.name} : demande d'achat {request.id} gagnée"
+    """Accorde les droits d'une offre (vente gagnée ou renouvellement), dans la transaction."""
     for key, value in product.entitlements.items():
         session.add(
             EntitlementOverride(
-                organization_id=request.organization_id,
+                organization_id=organization_id,
                 entitlement_key=key,
                 value=value,
                 reason=reason,
@@ -286,6 +286,27 @@ async def _activate_offer(
                 expires_at=expires_at,
             )
         )
+
+
+async def _activate_offer(
+    session: AsyncSession, request: PurchaseRequest, staff_user_id: uuid.UUID
+) -> datetime | None:
+    """Vente gagnée : accorde les droits de l'offre. Renvoie la fin de la période payée
+    (abonnement), ou None pour une offre ponctuelle."""
+    catalog = await current_catalog(session)
+    product = catalog.product(request.product_code)
+    period = SUBSCRIPTION_PERIOD.get(request.period or "")
+    expires_at = datetime.now(UTC) + period if period else None
+    if product is None or not product.entitlements:
+        return expires_at
+    await grant_product_entitlements(
+        session,
+        request.organization_id,
+        product,
+        expires_at=expires_at,
+        reason=f"Offre {product.name} : demande d'achat {request.id} gagnée",
+        staff_user_id=staff_user_id,
+    )
     await record_audit(
         session,
         actor=Actor.user(staff_user_id),
@@ -299,6 +320,7 @@ async def _activate_offer(
             "expires_at": expires_at.isoformat() if expires_at else None,
         },
     )
+    return expires_at
 
 
 class PurchaseRequestService:
@@ -626,8 +648,8 @@ class PurchaseRequestService:
         )
         session.add(recorded)
         await session.flush()
-        await _activate_offer(session, request, staff_user_id)
-        await _mark_organization_active(session, request.organization_id)
+        recorded.covers_until = await _activate_offer(session, request, staff_user_id)
+        await mark_organization_active(session, request.organization_id)
         await record_audit(
             session,
             actor=Actor.user(staff_user_id),
@@ -701,7 +723,7 @@ class PurchaseRequestService:
 # ── Alerte à l'équipe commerciale ──
 
 
-def _format_price(price: dict[str, Any] | None) -> str:
+def format_price(price: dict[str, Any] | None) -> str:
     if price is None:
         return "—"
     amount = price["amount"]
@@ -720,7 +742,7 @@ def _alert_email(view: PurchaseRequestView, recipients: list[str], admin_url: st
     lines = [
         ("Entreprise", view.organization_name),
         ("Offre", view.product_name),
-        ("Prix", _format_price(view.price)),
+        ("Prix", format_price(view.price)),
         ("Contact", view.requested_by_name),
         ("Email", view.requested_by_email),
         ("Téléphone", view.requested_by_phone or "—"),
@@ -761,7 +783,7 @@ METHOD_LABELS = {
 }
 
 
-async def _owner_emails(session: AsyncSession, organization_id: uuid.UUID) -> list[str]:
+async def owner_emails(session: AsyncSession, organization_id: uuid.UUID) -> list[str]:
     rows = await session.execute(
         select(User.email)
         .join(Membership, Membership.user_id == User.id)
@@ -779,7 +801,7 @@ def _receipt_email(
     payment: Payment, organization: Organization, product_name: str, to: list[str]
 ) -> EmailMessage:
     number = "REC-" + payment.received_on.strftime("%Y%m") + "-" + payment.id.hex[-6:].upper()
-    amount = _format_price(
+    amount = format_price(
         {"amount": payment.amount, "currency": payment.currency, "period": "NONE"}
     )
     lines = [
@@ -835,7 +857,7 @@ def register_jobs(
         if payment is None:
             return
         organization = await session.get(Organization, payment.organization_id)
-        owners = await _owner_emails(session, payment.organization_id)
+        owners = await owner_emails(session, payment.organization_id)
         if organization is None or not owners:
             return
         product = (await current_catalog(session)).product(payment.product_code)

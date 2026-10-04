@@ -17,7 +17,11 @@ from digital360.core.csrf import require_csrf
 from digital360.core.pagination import PageInfo, PageParams, build_page_info, page_params
 from digital360.core.permissions import Permission, Principal, StaffRole
 from digital360.core.tenancy import TenantContext, staff_transaction
-from digital360.modules.billing.api.routes import get_purchase_request_service
+from digital360.modules.billing.api.routes import (
+    get_purchase_request_service,
+    get_renewal_service,
+)
+from digital360.modules.billing.application.renewals import RenewalService
 from digital360.modules.billing.application.service import PurchaseRequestService
 from digital360.modules.catalog.api.routes import EntitlementOut, get_catalog_service
 from digital360.modules.catalog.application.service import CatalogService
@@ -44,6 +48,7 @@ Passports = Annotated[PassportService, Depends(get_passport_service)]
 Catalog = Annotated[CatalogService, Depends(get_catalog_service)]
 Staff = Annotated[StaffService, Depends(get_staff_service)]
 Sales = Annotated[PurchaseRequestService, Depends(get_purchase_request_service)]
+Renewals = Annotated[RenewalService, Depends(get_renewal_service)]
 
 
 def _staff(permission: Permission) -> Any:
@@ -87,6 +92,8 @@ class SalesKpis(BaseModel):
     win_rate: float | None
     # Chiffre d'affaires gagné, par devise
     revenue: list[RevenueOut]
+    # Abonnements dont l'échéance est proche ou dépassée
+    renewals_due: int = 0
 
 
 class DashboardOut(BaseModel):
@@ -103,12 +110,13 @@ async def get_dashboard(
     diagnostics: Diagnostics,
     staff: Staff,
     sales: Sales,
+    renewals: Renewals,
 ) -> DashboardOut:
     return DashboardOut(
         diagnostics=DiagnosticKpis(**await diagnostics.admin_stats()),
         organizations_by_status=await organizations.admin_stats(),
         users=UserKpis(**asdict(await staff.user_stats())),
-        sales=SalesKpis(**await sales.admin_stats()),
+        sales=SalesKpis(**await sales.admin_stats(), renewals_due=await renewals.count_due()),
     )
 
 
