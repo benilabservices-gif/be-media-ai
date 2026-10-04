@@ -87,6 +87,7 @@
                 <div class="admin-nav-item" data-page="prospects" onclick="switchPage('prospects')"><span class="nav-icon">&#128203;</span> Prospects</div>
                 <div class="admin-nav-item" data-page="demandes" id="navItemDemandes" style="display:none;" onclick="switchPage('demandes')"><span class="nav-icon">&#128200;</span> Demandes</div>
                 <div class="admin-nav-item" data-page="projets" id="navItemProjets" style="display:none;" onclick="switchPage('projets')"><span class="nav-icon">&#127760;</span> Projets de site</div>
+                <div class="admin-nav-item" data-page="abonnements" id="navItemAbonnements" style="display:none;" onclick="switchPage('abonnements')"><span class="nav-icon">&#128257;</span> Abonnements</div>
                 <div class="admin-nav-section" id="navSectionTeam" style="display:none;">Organisation</div>
                 <div class="admin-nav-item" data-page="equipe" id="navItemEquipe" style="display:none;" onclick="switchPage('equipe')"><span class="nav-icon">&#128104;&#65039;</span> Équipe</div>
                 <div class="admin-nav-item" data-page="audit" id="navItemAudit" style="display:none;" onclick="switchPage('audit')"><span class="nav-icon">&#128196;</span> Journal d'audit</div>
@@ -123,6 +124,7 @@
                             <div class="kpi-card"><div class="kpi-value" id="kpiSalesWon" style="color:var(--success);">—</div><div class="kpi-label">Ventes gagnées</div><div class="kpi-sub" id="kpiSalesWonSub"></div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiSalesWinRate">—</div><div class="kpi-label">Taux de transformation</div><div class="kpi-sub">Ventes gagnées / demandes closes</div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiRevenue30" style="font-size:1.4rem;">—</div><div class="kpi-label">Chiffre d'affaires, 30 jours</div><div class="kpi-sub" id="kpiRevenueTotal"></div></div>
+                            <div class="kpi-card" style="cursor:pointer;" onclick="switchPage('abonnements')"><div class="kpi-value" id="kpiRenewalsDue" style="color:var(--warning);">—</div><div class="kpi-label">Abonnements à renouveler</div><div class="kpi-sub">Échéance proche ou dépassée</div></div>
                         </div>
                         <h2 class="kpi-section-title">Acquisition</h2>
                         <div class="kpi-grid reveal delay-1">
@@ -137,6 +139,30 @@
                             <div class="kpi-card"><div class="kpi-value" id="kpiOrgsActive" style="color:var(--success);">—</div><div class="kpi-label">Clients actifs</div><div class="kpi-sub">Au moins une offre achetée</div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiOrgsLead">—</div><div class="kpi-label">Entreprises prospects</div><div class="kpi-sub">Inscrites, pas encore clientes</div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiUsersTotal">—</div><div class="kpi-label">Comptes</div><div class="kpi-sub" id="kpiUsersLast7"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABONNEMENTS -->
+                <div class="admin-page" id="admin-abonnements">
+                    <div class="page-header"><h1>Abonnements</h1><p>Abonnements payés hors ligne : échéances et renouvellements. Le client et l'équipe sont prévenus 5 jours avant l'échéance.</p></div>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="subscriptionStatusFilter" onchange="loadSubscriptions()">
+                            <option value="">Tous</option>
+                            <option value="EXPIRING">Échéance dans moins de 5 jours</option>
+                            <option value="EXPIRED">Expirés</option>
+                            <option value="ACTIVE">Actifs</option>
+                        </select>
+                    </div>
+                    <div id="subscriptionLoading" class="loading-row" style="display:none;">Chargement des abonnements…</div>
+                    <div id="subscriptionError" class="error-row" style="display:none;"></div>
+                    <div id="subscriptionEmpty" class="empty-row" style="display:none;">Aucun abonnement.</div>
+                    <div id="subscriptionContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Entreprise</th><th>Offre</th><th>Échéance</th><th>Statut</th><th>Dernier paiement</th><th></th></tr></thead>
+                                <tbody id="subscriptionTableBody"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -415,6 +441,7 @@
         audit: 'Journal d\'audit',
         demandes: 'Demandes',
         projets: 'Projets de site',
+        abonnements: 'Abonnements',
     };
 
     function switchPage(id) {
@@ -497,6 +524,7 @@
             el('kpiSalesWon', sales.won ?? '—');
             el('kpiSalesWonSub', sales.won_last_30_days != null ? sales.won_last_30_days + ' sur les 30 derniers jours' : '');
             el('kpiSalesWinRate', percent(sales.win_rate));
+            el('kpiRenewalsDue', sales.renewals_due ?? '—');
             el('kpiRevenue30', revenue('last_30_days'));
             el('kpiRevenueTotal', 'Depuis le début : ' + revenue('total'));
 
@@ -1452,6 +1480,69 @@
         return card;
     }
 
+    // ── Abonnements : échéances et renouvellement ──
+    async function loadSubscriptions() {
+        setStatus('subscriptionLoading', 'subscriptionError', 'subscriptionContent', 'subscriptionEmpty', true, false, false);
+        try {
+            const status = document.getElementById('subscriptionStatusFilter').value;
+            const data = await apiFetch('/admin/subscriptions' + (status ? '?status=' + status : ''));
+            const tbody = document.getElementById('subscriptionTableBody');
+            tbody.innerHTML = '';
+            (data.data || []).forEach(sub => tbody.appendChild(subscriptionRow(sub)));
+            setStatus('subscriptionLoading', 'subscriptionError', 'subscriptionContent', 'subscriptionEmpty', false, false, !(data.data || []).length);
+        } catch (e) {
+            setStatus('subscriptionLoading', 'subscriptionError', 'subscriptionContent', 'subscriptionEmpty', false, true, false);
+            document.getElementById('subscriptionError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function subscriptionRow(sub) {
+        const tr = document.createElement('tr');
+        const cell = text => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+        cell(sub.organization_name || '—').className = 'client-name';
+        cell(sub.product_name);
+        cell(formatDate(sub.covers_until));
+        const statusTd = document.createElement('td');
+        const badge = document.createElement('span');
+        const days = sub.days_left;
+        if (sub.status === 'EXPIRED') {
+            badge.className = 'badge badge-error';
+            badge.textContent = 'Expiré depuis ' + Math.abs(days) + ' j';
+        } else if (sub.status === 'EXPIRING') {
+            badge.className = 'badge badge-warning';
+            badge.textContent = days <= 0 ? "Expire aujourd'hui" : 'Expire dans ' + days + ' j';
+        } else {
+            badge.className = 'badge badge-success';
+            badge.textContent = 'Actif';
+        }
+        statusTd.appendChild(badge);
+        tr.appendChild(statusTd);
+        cell(paymentSummary(sub.last_payment)).style.cssText = 'font-size:12px;color:var(--text-muted);';
+        const actionTd = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.className = sub.status === 'ACTIVE' ? 'btn btn-ghost btn-sm' : 'btn btn-primary btn-sm';
+        btn.textContent = 'Renouveler';
+        btn.onclick = () => openPaymentDialog({
+            title: 'Renouveler ' + sub.product_name + ' : ' + (sub.organization_name || ''),
+            subtitle: sub.status === 'EXPIRED'
+                ? "L'abonnement repart d'aujourd'hui pour un mois."
+                : "Le mois payé s'ajoute à l'échéance actuelle (" + formatDate(sub.covers_until) + ') : aucun jour perdu.',
+            priceLabel: formatPriceAdmin({ amount: sub.last_payment.amount, currency: sub.last_payment.currency }),
+            currency: sub.last_payment.currency,
+            onConfirm: async payment => {
+                const renewed = await apiFetch('/admin/organizations/' + sub.organization_id + '/renewals', {
+                    method: 'POST', body: { product_code: sub.product_code, payment },
+                });
+                alert('Abonnement renouvelé jusqu\'au ' + formatDate(renewed.covers_until) + '. Un reçu a été envoyé au client.');
+                loadSubscriptions();
+                loadDashboard();
+            },
+        });
+        actionTd.appendChild(btn);
+        tr.appendChild(actionTd);
+        return tr;
+    }
+
     // ── Projets de site (Digital Start) ──
     let _projectCursor = null;
     const PROJECT_STATUS_LABELS = {
@@ -1690,6 +1781,10 @@
             if (perms.includes('staff:manage')) loadStaff();
             if (perms.includes('audit:read')) loadAuditLogs(false);
             if (perms.includes('order:create')) loadPurchaseRequests(false);
+            if (perms.includes('order:create')) {
+                document.getElementById('navItemAbonnements').style.display = '';
+                loadSubscriptions();
+            }
             if (perms.includes('website_project:read')) {
                 document.getElementById('navItemProjets').style.display = '';
                 loadProjects(false);
