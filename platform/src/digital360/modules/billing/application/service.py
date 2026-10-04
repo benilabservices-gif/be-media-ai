@@ -241,6 +241,38 @@ async def open_request(
     ).scalar_one_or_none()
 
 
+async def ensure_not_already_sold(
+    session: AsyncSession, organization_id: uuid.UUID, product_code: str, period: str | None
+) -> None:
+    """Empêche de faire payer deux fois : une offre ponctuelle (Start) ne se vend qu'une fois,
+    et un abonnement en cours se prolonge par un renouvellement, pas par une nouvelle vente."""
+    if period in (None, "NONE"):
+        paid = await session.scalar(
+            select(Payment.id)
+            .where(Payment.organization_id == organization_id, Payment.product_code == product_code)
+            .limit(1)
+        )
+        if paid is not None:
+            raise AppError(
+                "ALREADY_PURCHASED",
+                "Cette offre a déjà été payée pour cette entreprise.",
+                status=409,
+            )
+        return
+    covered_until = await session.scalar(
+        select(func.max(Payment.covers_until)).where(
+            Payment.organization_id == organization_id, Payment.product_code == product_code
+        )
+    )
+    if covered_until is not None and covered_until > datetime.now(UTC):
+        raise AppError(
+            "SUBSCRIPTION_ACTIVE",
+            f"Cet abonnement est déjà payé jusqu'au {covered_until.strftime('%d/%m/%Y')} : "
+            "il se prolonge par un renouvellement, pas par une nouvelle vente.",
+            status=409,
+        )
+
+
 @dataclass(frozen=True)
 class PaymentInput:
     method: PaymentMethod
@@ -454,6 +486,9 @@ class PurchaseRequestService:
                 raise _product_not_available(
                     "Cette offre n'est pas encore proposée dans votre devise."
                 )
+            await ensure_not_already_sold(
+                session, context.organization_id, product_code, price.period.value
+            )
 
             requester = (await session.execute(select(User).where(User.id == user_id))).scalar_one()
             number = _contact_number(channel, contact_number, organization, requester)
@@ -621,6 +656,10 @@ class PurchaseRequestService:
                     )
                 if status is S.WON and payment is None:
                     raise _payment_required()
+                if status is S.WON:
+                    await ensure_not_already_sold(
+                        session, request.organization_id, request.product_code, request.period
+                    )
                 request.status = status.value
                 request.handled_by = staff_user_id
                 if status is S.WON and payment is not None:
@@ -681,6 +720,9 @@ class PurchaseRequestService:
                 raise _product_not_available(
                     "Cette offre n'est pas proposée dans la devise du client."
                 )
+            await ensure_not_already_sold(
+                session, organization_id, product_code, price.period.value
+            )
             request = PurchaseRequest(
                 organization_id=organization_id,
                 requested_by=staff_user_id,

@@ -172,8 +172,10 @@ def test_should_let_sales_team_process_request_until_won(
     assert won.status_code == 200
     assert won.json()["status"] == "WON"
     assert _website_item(api, org["id"])["status"] == "IN_PROGRESS"
-    # Une fois la demande close, une nouvelle demande pour la même offre est possible
-    assert _request(api, org["id"]).status_code == 201
+    # Start est payé : une nouvelle demande pour la même offre est refusée (pas de double paiement)
+    again = _request(api, org["id"])
+    assert again.status_code == 409
+    assert again.json()["code"] == "ALREADY_PURCHASED"
 
 
 def test_should_put_recommendation_back_when_request_is_lost(

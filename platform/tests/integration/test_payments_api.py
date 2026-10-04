@@ -221,3 +221,66 @@ def test_should_record_offer_price_when_amount_is_left_empty(
 
     assert sale["payment"]["amount"] == 109900
     assert sale["payment"]["currency"] == "XOF"
+
+
+# ── Pas de double paiement ──
+
+
+def test_should_refuse_selling_start_twice_to_same_client(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    _staff_member(second_api, test_database_url, "MANAGER")
+    url = f"/admin/organizations/{org['id']}/sales"
+    first = second_api.post(url, {"product_code": "DIGITAL_START", "payment": ORANGE})
+
+    again = second_api.post(
+        url, {"product_code": "DIGITAL_START", "payment": {**ORANGE, "reference": "OM-2"}}
+    )
+    request = api.post(
+        f"/orgs/{org['id']}/purchase-requests",
+        {"product_code": "DIGITAL_START", "channel": "EMAIL"},
+    )
+
+    assert first.status_code == 201
+    assert again.status_code == 409
+    assert again.json()["code"] == "ALREADY_PURCHASED"
+    assert request.status_code == 409
+    assert len(api.get(f"/orgs/{org['id']}/billing").json()["payments"]) == 1
+
+
+def test_should_send_active_subscription_to_renewal_instead_of_new_sale(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    _staff_member(second_api, test_database_url, "MANAGER")
+    url = f"/admin/organizations/{org['id']}/sales"
+    second_api.post(url, {"product_code": "DIGITAL_ESSENTIAL", "payment": ORANGE})
+
+    again = second_api.post(
+        url, {"product_code": "DIGITAL_ESSENTIAL", "payment": {**ORANGE, "reference": "OM-3"}}
+    )
+
+    assert again.status_code == 409
+    assert again.json()["code"] == "SUBSCRIPTION_ACTIVE"
+
+
+def test_should_refuse_won_when_offer_was_paid_meanwhile(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org, request_id = _request_start(api)
+    _staff_member(second_api, test_database_url, "MANAGER")
+    # Payé entre-temps par une vente directe : la demande ouverte bloque la vente directe,
+    # on la perd puis on vend directement, et une nouvelle demande est refusée
+    second_api.patch(f"/admin/purchase-requests/{request_id}", {"status": "LOST"})
+    second_api.post(
+        f"/admin/organizations/{org['id']}/sales",
+        {"product_code": "DIGITAL_START", "payment": ORANGE},
+    )
+
+    retry = api.post(
+        f"/orgs/{org['id']}/purchase-requests",
+        {"product_code": "DIGITAL_START", "channel": "EMAIL"},
+    )
+
+    assert retry.status_code == 409
