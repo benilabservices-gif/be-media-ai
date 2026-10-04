@@ -705,6 +705,7 @@
             renderCompany();
             renderSupport();
             Object.keys(SERVICE_PAGES).forEach(renderServicePage);
+            handlePaymentReturn();
         } catch (e) {
             console.error('[D360] Dashboard init error:', e);
         }
@@ -902,11 +903,17 @@
                         h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: sub.status === 'EXPIRED' ? 'Expiré le' : "Payé jusqu'au" }),
                         h('div', { style: 'font-weight:600;', text: due }),
                         h('span', { class: 'badge ' + css, style: 'margin-top:0.5rem;', text: label }),
+                        sub.status !== 'ACTIVE' && _isOwner && _billing?.online_payment_available
+                            ? h('div', {}, h('button', { class: 'btn btn-primary btn-sm', style: 'margin-top:0.75rem;', text: 'Renouveler en ligne',
+                                onclick: () => startOnlinePayment(sub.product_code) }))
+                            : null,
                     ]),
                 ]));
             });
             if (subscriptions.some(s => s.status !== 'ACTIVE')) {
-                container.appendChild(h('div', { class: 'alert alert-accent', text: 'Pour renouveler, contactez votre conseiller : votre abonnement est prolongé dès réception du paiement.' }));
+                container.appendChild(h('div', { class: 'alert alert-accent', text: _billing?.online_payment_available
+                    ? 'Renouvelez en ligne en un clic (mobile money ou carte), ou contactez votre conseiller. Le mois payé s\'ajoute à votre échéance.'
+                    : 'Pour renouveler, contactez votre conseiller : votre abonnement est prolongé dès réception du paiement.' }));
             }
         } else if (!_isOwner && _orgId) {
             container.appendChild(h('p', { style: 'color:var(--text-muted);', text: "Seul le responsable de l'entreprise peut consulter l'abonnement et les paiements." }));
@@ -937,7 +944,7 @@
             container.appendChild(h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Aucun paiement pour le moment.' }));
             return;
         }
-        const methods = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement', CASH: 'Espèces' };
+        const methods = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement', CASH: 'Espèces', CARTFLOX: 'Paiement en ligne' };
         container.appendChild(h('div', { class: 'card', style: 'overflow-x:auto;' }, [
             h('table', { style: 'width:100%;font-size:13px;border-collapse:collapse;' }, [
                 h('thead', {}, h('tr', {}, ['Date', 'Reçu', 'Offre', 'Montant', 'Moyen', 'Référence'].map(label => h('th', { style: 'text-align:left;padding:8px;color:var(--text-muted);', text: label })))),
@@ -1392,6 +1399,7 @@
         document.getElementById('purchaseChannel').value = 'WHATSAPP';
         document.getElementById('purchaseError').textContent = '';
         document.getElementById('purchaseForm').style.display = '';
+        document.getElementById('purchaseOnline').style.display = _billing?.online_payment_available ? '' : 'none';
         document.getElementById('purchaseDone').style.display = 'none';
         onPurchaseChannelChange();
         modal.classList.add('open');
@@ -1466,6 +1474,7 @@
             const created = await res.json();
             await reloadPurchaseRequests();
             document.getElementById('purchaseForm').style.display = 'none';
+            document.getElementById('purchaseOnline').style.display = 'none';
             document.getElementById('purchaseDoneText').textContent = channel === 'EMAIL'
                 ? 'Demande envoyée. Un conseiller vous contacte sous 24 h par e-mail.'
                 : 'Demande envoyée. Un conseiller vous contacte sous 24 h au ' + (created.contact_number || body.contact_number) + '.';
@@ -1477,6 +1486,90 @@
         } finally {
             hideD360Loading();
         }
+    }
+
+    // ── Paiement en ligne (Cartflox) ──
+    async function startOnlinePayment(productCode) {
+        const code = productCode || _pendingPurchase?.product_code;
+        if (!code || !_orgId) return;
+        const modalOpen = document.getElementById('purchaseModal')?.classList.contains('open');
+        const errorEl = document.getElementById('purchaseError');
+        if (errorEl) errorEl.textContent = '';
+        showD360Loading();
+        try {
+            const checkout = await sendJson('POST', '/orgs/' + _orgId + '/checkouts', { product_code: code });
+            // Page de paiement Cartflox renvoyée par notre API ; jamais autre chose qu'une adresse https
+            if (!/^https:\/\//.test(checkout?.checkout_url || '')) throw new Error('Page de paiement indisponible. Réessayez.');
+            window.location.href = checkout.checkout_url;
+        } catch (e) {
+            hideD360Loading();
+            const message = e.message || 'Le paiement en ligne est indisponible. Réessayez dans un instant.';
+            if (modalOpen && errorEl) errorEl.textContent = message;
+            else showPaymentBanner('error', message);
+        }
+    }
+
+    function showPaymentBanner(kind, text, action) {
+        document.getElementById('paymentBanner')?.remove();
+        const content = document.querySelector('.dash-content');
+        if (!content) return;
+        content.prepend(h('div', { id: 'paymentBanner', class: 'alert alert-' + kind,
+            style: 'margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;' },
+            [h('span', { text }), action || null]));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function refreshAfterPayment() {
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
+            if (res.ok) entitlementsData = await res.json();
+        } catch (_) {}
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/action-plan', { credentials: 'include' });
+            if (res.ok) actionPlanData = await res.json();
+        } catch (_) {}
+        await reloadPurchaseRequests();
+        await loadProject();
+        await loadBilling();
+        renderDashboard();
+        renderSubscriptionPage();
+        Object.keys(SERVICE_PAGES).forEach(renderServicePage);
+    }
+
+    // Retour de Cartflox sur dashboard.html?paiement={id} : le serveur vérifie le paiement
+    // auprès de Cartflox et active l'offre ; on rappelle quelques fois si l'opérateur tarde
+    async function handlePaymentReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const checkoutId = params.get('paiement');
+        if (!checkoutId || !_orgId) return;
+        const cancelled = params.has('annule');
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+        showPaymentBanner('accent', 'Vérification de votre paiement…');
+        const retry = productCode => h('button', { class: 'btn btn-sm btn-primary', text: 'Réessayer le paiement', onclick: () => startOnlinePayment(productCode) });
+        for (let attempt = 0; attempt < 12; attempt++) {
+            let checkout = null;
+            try {
+                const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/checkouts/' + encodeURIComponent(checkoutId), { credentials: 'include' });
+                if (res.status === 404) { showPaymentBanner('error', 'Paiement introuvable.'); return; }
+                if (res.ok) checkout = await res.json();
+            } catch (_) {}
+            if (checkout?.status === 'PAID') {
+                showPaymentBanner('success', 'Paiement confirmé : votre offre ' + checkout.product_name + ' est active. Reçu n° '
+                    + checkout.receipt_number + ', envoyé aussi par e-mail.');
+                await refreshAfterPayment();
+                return;
+            }
+            if (checkout && checkout.status !== 'PENDING') {
+                showPaymentBanner('error', 'Le paiement de l\'offre ' + checkout.product_name + ' n\'a pas abouti : aucun montant n\'a été encaissé.', retry(checkout.product_code));
+                return;
+            }
+            if (checkout && cancelled) {
+                showPaymentBanner('accent', 'Paiement annulé. Vous pouvez le reprendre quand vous voulez.', retry(checkout.product_code));
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+        showPaymentBanner('accent', 'Votre paiement est en cours de confirmation par l\'opérateur. Votre offre s\'activera automatiquement et vous recevrez votre reçu par e-mail.');
     }
 
     // ── Logout ──
@@ -1528,6 +1621,11 @@
             <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.25rem;">Je veux démarrer</h2>
             <p id="purchaseProductName" style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;"></p>
             <div id="purchaseError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
+            <div id="purchaseOnline" style="display:none;margin-bottom:1.5rem;">
+                <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="startOnlinePayment()">Payer en ligne maintenant</button>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;text-align:center;">Mobile money ou carte, paiement sécurisé par Cartflox. Votre offre s'active dès la confirmation du paiement.</p>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:1.25rem;text-align:center;">— ou laissez-nous vos coordonnées, un conseiller vous rappelle —</p>
+            </div>
             <div id="purchaseForm">
                 <div class="form-group">
                     <label class="form-label" for="purchaseChannel">Comment souhaitez-vous être contacté ?</label>
