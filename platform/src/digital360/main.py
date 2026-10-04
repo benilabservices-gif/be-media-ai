@@ -121,6 +121,7 @@ def create_app(
                 "sales_alert_recipients": len(settings.sales_alert_emails),
                 "worker_in_api": settings.run_worker_in_api,
                 "online_payment": gateway is not None,
+                "app_url": settings.app_url,
             },
         )
         yield

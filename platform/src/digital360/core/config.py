@@ -43,11 +43,14 @@ class Settings(BaseSettings):
     brevo_api_key: SecretStr | None = None
     email_from: str = "no-reply@benilab360.com"
     email_from_name: str = "BENILAB Digital360"
-    # Pages du frontend vers lesquelles pointent les liens des emails
-    password_reset_url: str = "http://localhost:5500/digital360/reset-password.html"  # noqa: S105
-    admin_url: str = "http://localhost:5500/digital360/admin.html"
+    # Pages du frontend vers lesquelles pointent les liens des e-mails, du parrainage Closer et
+    # du retour de paiement. Par défaut, la plateforme en ligne : un oubli de variable sur
+    # l'hébergeur ne doit jamais envoyer un client vers « localhost » (en local, surcharger
+    # dans .env, par exemple APP_URL=http://localhost:5500/digital360/)
+    password_reset_url: str = "https://digital360.bemedia-ai.online/reset-password.html"  # noqa: S105
+    admin_url: str = "https://digital360.bemedia-ai.online/admin.html"
     # Page d'accueil de Digital360 (bouton « Créer mon espace » de l'e-mail au prospect)
-    app_url: str = "http://localhost:5500/digital360/"
+    app_url: str = "https://digital360.bemedia-ai.online/"
     # Destinataires des alertes « nouveau prospect » ; vide = pas d'alerte
     sales_alert_emails: Annotated[list[str], NoDecode] = Field(default_factory=list)
     # Hébergement sans worker séparé (Render gratuit) : l'API traite elle-même la file
