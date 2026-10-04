@@ -177,7 +177,8 @@
 /* ── Chart container ── */
 .chart-container {
     background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); pad
+    border-radius: var(--radius-lg); padding: 1.5rem;
+}
 
 /* ── Mobile et tablette : menu replié derrière ☰, contenu en pleine largeur ── */
 @media (max-width: 1024px) {
