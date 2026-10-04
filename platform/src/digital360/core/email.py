@@ -5,11 +5,12 @@ handlers de tâches. Changer de fournisseur (Resend, Postmark…) revient à ajo
 """
 
 import asyncio
+import base64
 import json
 import logging
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from digital360.core.config import EmailProvider, Settings
@@ -20,11 +21,18 @@ BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 @dataclass(frozen=True)
+class Attachment:
+    filename: str
+    content: bytes
+
+
+@dataclass(frozen=True)
 class EmailMessage:
     to: list[str]
     subject: str
     text: str
     html: str
+    attachments: tuple[Attachment, ...] = field(default=())
 
 
 class EmailSender(Protocol):
@@ -44,6 +52,8 @@ class ConsoleEmailSender:
 
     async def send(self, message: EmailMessage) -> None:
         extra: dict[str, object] = {"to": message.to, "subject": message.subject}
+        if message.attachments:
+            extra["attachments"] = [item.filename for item in message.attachments]
         if self._include_body:
             extra["body"] = message.text
         logger.info("email (console)", extra=extra)
@@ -65,6 +75,11 @@ class BrevoEmailSender:
             "textContent": message.text,
             "htmlContent": message.html,
         }
+        if message.attachments:
+            body["attachment"] = [
+                {"name": item.filename, "content": base64.b64encode(item.content).decode()}
+                for item in message.attachments
+            ]
         request = urllib.request.Request(
             BREVO_SEND_URL,
             data=json.dumps(body).encode(),

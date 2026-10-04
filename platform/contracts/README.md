@@ -314,7 +314,13 @@ En attendant le paiement en ligne, le client demande une offre et l'équipe le r
 
   Une condition non remplie renvoie 422 `TRANSITION_GUARD_FAILED`.
 
-**E-mails automatiques** : au client à l'activation, à la réception du brief (avec la date de livraison), quand la préversion est prête et à la mise en ligne. À l'équipe (`SALES_ALERT_EMAILS`) : « nouveau site à produire » et « corrections demandées ».
+**E-mails automatiques** : au client à l'activation, à la réception du brief (avec la date de livraison), quand la préversion est prête et à la mise en ligne. À l'équipe (`SALES_ALERT_EMAILS`) : « nouveau site à produire », avec le **prompt de conception en PDF joint**, et « corrections demandées ».
+
+**Prompt de conception** (onglet Projets de site) : à l'envoi du brief, le serveur rédige le prompt à donner à l'outil d'IA. Il reprend l'entreprise, les 5 pages, les services, le modèle et la palette, les coordonnées, le référencement et le cadre de l'offre à respecter, et liste les informations manquantes. L'équipe peut l'améliorer avant de lancer la conception.
+- `GET /admin/website-projects/{id}/design-prompt` (`website_project:read`) renvoie `{ project_id, organization_name, prompt, saved, edited_at, edited_by_name }`. `saved: false` : le brief n'est pas encore envoyé, et le texte est un aperçu rédigé depuis le brief actuel.
+- `PUT …/design-prompt` avec `{ "prompt" }` (20 à 30 000 caractères, `website_project:transition`) enregistre la version de l'équipe.
+- `POST …/design-prompt/regenerate` réécrit le prompt depuis le brief actuel ; les modifications de l'équipe sont remplacées.
+- `GET …/design-prompt.pdf` renvoie le PDF de la version actuelle (`Content-Disposition: attachment`). Le télécharger avec `fetch` (cookies inclus), puis créer un lien vers le `blob`.
 
 ## 14. Paiement en ligne (Cartflox)
 

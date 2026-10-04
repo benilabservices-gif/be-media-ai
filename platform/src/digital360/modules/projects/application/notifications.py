@@ -1,6 +1,7 @@
 """Création du projet à la vente gagnée, et e-mails à chaque étape (client et équipe)."""
 
 import html
+import logging
 import uuid
 from datetime import date
 from typing import Any
@@ -9,15 +10,22 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from digital360.core.email import EmailMessage, EmailSender
+from digital360.core.email import Attachment, EmailMessage, EmailSender
 from digital360.core.jobs import JobRegistry
 from digital360.core.permissions import ClientRole
 from digital360.modules.billing.application.service import PURCHASE_REQUEST_WON_EVENT
 from digital360.modules.identity.infrastructure.models import Membership, MembershipStatus, User
 from digital360.modules.organizations.infrastructure.models import Organization
-from digital360.modules.projects.application.service import prefilled_brief
+from digital360.modules.projects.application.service import (
+    design_prompt_filename,
+    design_prompt_pdf,
+    generate_design_prompt,
+    prefilled_brief,
+)
 from digital360.modules.projects.domain import offer
 from digital360.modules.projects.infrastructure.models import ProjectStatus, WebsiteProject
+
+logger = logging.getLogger("digital360.projects")
 
 CREATE_PROJECT_JOB = "projects.create_on_won_sale"
 NOTIFY_STATUS_JOB = "projects.notify_status_change"
@@ -33,7 +41,11 @@ def _french_date(day: date) -> str:
 
 
 def _message(
-    to: list[str], subject: str, paragraphs: list[str], link: tuple[str, str] | None
+    to: list[str],
+    subject: str,
+    paragraphs: list[str],
+    link: tuple[str, str] | None,
+    attachments: tuple[Attachment, ...] = (),
 ) -> EmailMessage:
     """Texte et HTML à partir des mêmes paragraphes ; tout est échappé dans la version HTML."""
     text = "\n\n".join(paragraphs)
@@ -44,7 +56,7 @@ def _message(
         body += f'<p><a href="{html.escape(url, quote=True)}">{html.escape(label)}</a></p>'
     text += "\n\nL'équipe BENILAB Digital360"
     body += "<p>L'équipe BENILAB Digital360</p>"
-    return EmailMessage(to=to, subject=subject, text=text, html=body)
+    return EmailMessage(to=to, subject=subject, text=text, html=body, attachments=attachments)
 
 
 async def _owner_emails(session: AsyncSession, organization_id: uuid.UUID) -> list[str]:
@@ -141,6 +153,18 @@ def register_jobs(
                 )
             )
             if team_recipients:
+                prompt = project.design_prompt or await generate_design_prompt(session, project)
+                attachments: tuple[Attachment, ...] = ()
+                try:
+                    attachments = (
+                        Attachment(
+                            design_prompt_filename(name or "site"),
+                            design_prompt_pdf(project, name or "", prompt),
+                        ),
+                    )
+                except Exception:
+                    # Le PDF reste téléchargeable depuis l'admin : les e-mails partent quand même
+                    logger.exception("PDF du prompt de conception non généré")
                 messages.append(
                     _message(
                         team_recipients,
@@ -150,8 +174,11 @@ def register_jobs(
                             f"Modèle : {project.brief.get('template')} · "
                             f"Palette : {project.brief.get('palette')} · "
                             f"Domaine souhaité : {project.brief.get('desired_domain') or 'à définir'}",
+                            "Le prompt de conception est joint en PDF. Vous pouvez l'améliorer "
+                            "depuis l'admin (onglet Projets de site) avant de lancer la conception.",
                         ],
                         ("Ouvrir les projets", admin_url),
+                        attachments,
                     )
                 )
         elif target == ProjectStatus.CLIENT_REVIEW and project.preview_url:

@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from digital360.core.actor import Actor
+from digital360.core.audit import record_audit
 from digital360.core.errors import AppError
 from digital360.core.jobs import JobRegistry
 from digital360.core.pagination import PageInfo, PageParams, build_page_info
@@ -28,10 +29,13 @@ from digital360.core.permissions import Permission, Principal
 from digital360.core.state_machine import StateMachine, TransitionContext, transition
 from digital360.core.tenancy import TenantContext, staff_transaction, tenant_transaction
 from digital360.core.workflow import apply_transition
+from digital360.modules.identity.infrastructure.models import User
 from digital360.modules.organizations.infrastructure.models import Organization
 from digital360.modules.projects.domain import offer
+from digital360.modules.projects.domain.design_prompt import PromptContext, build_design_prompt
 from digital360.modules.projects.domain.offer import Brief
 from digital360.modules.projects.infrastructure.models import ProjectStatus, WebsiteProject
+from digital360.modules.projects.infrastructure.pdf import render_prompt_pdf
 
 P = ProjectStatus
 CLIENT = Permission.WEBSITE_PROJECT_CLIENT_REVIEW.value
@@ -184,6 +188,45 @@ def _not_found() -> AppError:
     return AppError("NOT_FOUND", "Aucun projet de site pour cette entreprise.", status=404)
 
 
+async def generate_design_prompt(session: AsyncSession, project: WebsiteProject) -> str:
+    """Prompt rédigé à partir du brief actuel et de la fiche entreprise."""
+    organization = await session.get(Organization, project.organization_id)
+    context = PromptContext(
+        sector=" / ".join(part for part in (organization.sector, organization.sub_sector) if part)
+        if organization
+        else None,
+        country=organization.country if organization else None,
+        due_on=project.due_on,
+    )
+    return build_design_prompt(Brief.model_validate(project.brief), context)
+
+
+def design_prompt_pdf(project: WebsiteProject, organization_name: str, prompt: str) -> bytes:
+    subtitle = f"Projet {project.id} · {organization_name}"
+    if project.due_on:
+        subtitle += f" · livraison promise le {project.due_on:%d/%m/%Y}"
+    return render_prompt_pdf(
+        title=f"Prompt de conception : {organization_name}", subtitle=subtitle, prompt=prompt
+    )
+
+
+def design_prompt_filename(organization_name: str) -> str:
+    slug = "".join(char if char.isalnum() else "-" for char in organization_name.lower())
+    slug = "-".join(part for part in slug.split("-") if part)[:50] or "site"
+    return f"prompt-conception-{slug}.pdf"
+
+
+@dataclass(frozen=True)
+class DesignPromptView:
+    project_id: uuid.UUID
+    organization_name: str
+    prompt: str
+    # False : pas encore enregistré (aperçu rédigé à la volée depuis le brief actuel)
+    saved: bool
+    edited_at: datetime | None
+    edited_by_name: str | None
+
+
 class ProjectService:
     def __init__(
         self, session_factory: async_sessionmaker[AsyncSession], registry: JobRegistry
@@ -243,6 +286,8 @@ class ProjectService:
             )
             project.brief_submitted_at = now
             project.due_on = offer.add_business_days(now.date(), offer.DELIVERY_BUSINESS_DAYS)
+            # Rédigé avant l'e-mail à l'équipe (tâche lancée par la transition), qui le joint en PDF
+            project.design_prompt = await generate_design_prompt(session, project)
             await session.flush()
             return await self._to_view(session, project, transition_context)
 
@@ -342,6 +387,93 @@ class ProjectService:
             )
             await session.flush()
             return await self._to_view(session, project, context)
+
+    async def design_prompt(self, project_id: uuid.UUID) -> DesignPromptView:
+        async with staff_transaction(self._session_factory) as session:
+            project = await self._staff_project(session, project_id)
+            return await self._prompt_view(session, project)
+
+    async def save_design_prompt(
+        self, project_id: uuid.UUID, principal: Principal, prompt: str
+    ) -> DesignPromptView:
+        async with staff_transaction(self._session_factory) as session:
+            project = await self._staff_project(session, project_id, lock=True)
+            await self._store_prompt(session, project, principal, prompt, action="edit")
+            return await self._prompt_view(session, project)
+
+    async def regenerate_design_prompt(
+        self, project_id: uuid.UUID, principal: Principal
+    ) -> DesignPromptView:
+        """Repart du brief actuel (les modifications de l'équipe sont remplacées)."""
+        async with staff_transaction(self._session_factory) as session:
+            project = await self._staff_project(session, project_id, lock=True)
+            prompt = await generate_design_prompt(session, project)
+            await self._store_prompt(session, project, principal, prompt, action="regenerate")
+            return await self._prompt_view(session, project)
+
+    async def design_prompt_document(self, project_id: uuid.UUID) -> tuple[str, bytes]:
+        """PDF du prompt actuel (enregistré, sinon rédigé depuis le brief) : (nom, contenu)."""
+        view = await self.design_prompt(project_id)
+        async with staff_transaction(self._session_factory) as session:
+            project = await self._staff_project(session, project_id)
+            content = design_prompt_pdf(project, view.organization_name, view.prompt)
+        return design_prompt_filename(view.organization_name), content
+
+    @staticmethod
+    async def _store_prompt(
+        session: AsyncSession,
+        project: WebsiteProject,
+        principal: Principal,
+        prompt: str,
+        *,
+        action: str,
+    ) -> None:
+        project.design_prompt = prompt
+        project.design_prompt_edited_at = datetime.now(UTC)
+        project.design_prompt_edited_by = principal.user_id
+        await record_audit(
+            session,
+            actor=Actor.user(principal.user_id),
+            action=f"website_project.design_prompt_{action}",
+            entity_type="website_project",
+            entity_id=project.id,
+            organization_id=project.organization_id,
+            new_value={"length": len(prompt)},
+        )
+        await session.flush()
+
+    @staticmethod
+    async def _staff_project(
+        session: AsyncSession, project_id: uuid.UUID, *, lock: bool = False
+    ) -> WebsiteProject:
+        statement = select(WebsiteProject).where(WebsiteProject.id == project_id)
+        if lock:
+            statement = statement.with_for_update()
+        project = (await session.execute(statement)).scalar_one_or_none()
+        if project is None:
+            raise AppError("NOT_FOUND", "Projet introuvable.", status=404)
+        return project
+
+    @staticmethod
+    async def _prompt_view(session: AsyncSession, project: WebsiteProject) -> DesignPromptView:
+        name = await session.scalar(
+            select(Organization.commercial_name).where(Organization.id == project.organization_id)
+        )
+        editor = (
+            await session.scalar(
+                select(User.full_name).where(User.id == project.design_prompt_edited_by)
+            )
+            if project.design_prompt_edited_by
+            else None
+        )
+        return DesignPromptView(
+            project_id=project.id,
+            organization_name=name or "",
+            prompt=project.design_prompt or await generate_design_prompt(session, project),
+            saved=project.design_prompt is not None,
+            edited_at=project.design_prompt_edited_at,
+            edited_by_name=editor,
+        )
 
     # ── Interne ──
 

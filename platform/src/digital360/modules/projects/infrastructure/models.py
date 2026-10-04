@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     Uuid,
     func,
     text,
@@ -71,6 +72,11 @@ class WebsiteProject(Base):
     revision_requests: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, server_default=text("'[]'::jsonb")
     )
+    # Prompt de conception remis à l'outil d'IA : rédigé à l'envoi du brief, amélioré par
+    # l'équipe (dernière modification tracée)
+    design_prompt: Mapped[str | None] = mapped_column(Text)
+    design_prompt_edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    design_prompt_edited_by: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

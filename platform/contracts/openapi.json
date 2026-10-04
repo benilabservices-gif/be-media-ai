@@ -1272,6 +1272,75 @@
         "title": "DashboardOut",
         "type": "object"
       },
+      "DesignPromptIn": {
+        "properties": {
+          "prompt": {
+            "maxLength": 30000,
+            "minLength": 20,
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "DesignPromptIn",
+        "type": "object"
+      },
+      "DesignPromptOut": {
+        "properties": {
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "edited_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited By Name"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "organization_name",
+          "prompt",
+          "saved",
+          "edited_at",
+          "edited_by_name"
+        ],
+        "title": "DesignPromptOut",
+        "type": "object"
+      },
       "DiagnosticHistory": {
         "properties": {
           "data": {
@@ -6286,6 +6355,184 @@
           }
         },
         "summary": "Admin Get",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/website-projects/{project_id}/design-prompt": {
+      "get": {
+        "description": "Prompt de conception du site (texte à améliorer avant de lancer l'outil d'IA).",
+        "operationId": "admin_get_design_prompt_api_v1_admin_website_projects__project_id__design_prompt_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignPromptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Get Design Prompt",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "admin_save_design_prompt_api_v1_admin_website_projects__project_id__design_prompt_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignPromptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignPromptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Save Design Prompt",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/website-projects/{project_id}/design-prompt.pdf": {
+      "get": {
+        "operationId": "admin_design_prompt_pdf_api_v1_admin_website_projects__project_id__design_prompt_pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Design Prompt Pdf",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/website-projects/{project_id}/design-prompt/regenerate": {
+      "post": {
+        "description": "Réécrit le prompt depuis le brief actuel (remplace les modifications de l'équipe).",
+        "operationId": "admin_regenerate_design_prompt_api_v1_admin_website_projects__project_id__design_prompt_regenerate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignPromptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Regenerate Design Prompt",
         "tags": [
           "admin"
         ]

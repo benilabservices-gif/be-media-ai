@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
 from digital360.core.csrf import require_csrf
@@ -13,7 +13,11 @@ from digital360.modules.identity.api.dependencies import (
     require_org_permission,
     require_staff_permission,
 )
-from digital360.modules.projects.application.service import ProjectService, ProjectView
+from digital360.modules.projects.application.service import (
+    DesignPromptView,
+    ProjectService,
+    ProjectView,
+)
 from digital360.modules.projects.domain import offer
 from digital360.modules.projects.domain.offer import Brief, RevisionCategory
 from digital360.modules.projects.infrastructure.models import ProjectStatus
@@ -207,6 +211,75 @@ async def admin_list(
 @admin_router.get("/website-projects/{project_id}", response_model=ProjectOut)
 async def admin_get(project_id: uuid.UUID, principal: TeamReader, service: Service) -> ProjectOut:
     return ProjectOut.model_validate(await service.admin_get(project_id, principal))
+
+
+class DesignPromptOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    project_id: uuid.UUID
+    organization_name: str
+    prompt: str
+    # False : pas encore enregistré, aperçu rédigé à la volée depuis le brief actuel
+    saved: bool
+    edited_at: datetime | None
+    edited_by_name: str | None
+
+
+class DesignPromptIn(BaseModel):
+    prompt: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=20, max_length=30000)
+    ]
+
+
+def _prompt_out(view: DesignPromptView) -> DesignPromptOut:
+    return DesignPromptOut.model_validate(view)
+
+
+@admin_router.get("/website-projects/{project_id}/design-prompt", response_model=DesignPromptOut)
+async def admin_get_design_prompt(
+    project_id: uuid.UUID, _: TeamReader, service: Service
+) -> DesignPromptOut:
+    """Prompt de conception du site (texte à améliorer avant de lancer l'outil d'IA)."""
+    return _prompt_out(await service.design_prompt(project_id))
+
+
+@admin_router.put(
+    "/website-projects/{project_id}/design-prompt",
+    response_model=DesignPromptOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_save_design_prompt(
+    project_id: uuid.UUID, body: DesignPromptIn, principal: TeamWriter, service: Service
+) -> DesignPromptOut:
+    return _prompt_out(await service.save_design_prompt(project_id, principal, body.prompt))
+
+
+@admin_router.post(
+    "/website-projects/{project_id}/design-prompt/regenerate",
+    response_model=DesignPromptOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_regenerate_design_prompt(
+    project_id: uuid.UUID, principal: TeamWriter, service: Service
+) -> DesignPromptOut:
+    """Réécrit le prompt depuis le brief actuel (remplace les modifications de l'équipe)."""
+    return _prompt_out(await service.regenerate_design_prompt(project_id, principal))
+
+
+@admin_router.get(
+    "/website-projects/{project_id}/design-prompt.pdf",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def admin_design_prompt_pdf(
+    project_id: uuid.UUID, _: TeamReader, service: Service
+) -> Response:
+    filename, content = await service.design_prompt_document(project_id)
+    return Response(
+        content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @admin_router.post(

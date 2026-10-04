@@ -1813,6 +1813,79 @@
         document.getElementById('projectTableBody').appendChild(tr);
     }
 
+    // ── Prompt de conception : rédigé depuis le brief, amélioré par l'équipe, exporté en PDF ──
+    function designPromptBlock(project) {
+        const box = document.createElement('div');
+        box.style.cssText = 'margin-top:1.5rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius-md);';
+        const title = document.createElement('h4');
+        title.style.cssText = 'font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;';
+        title.textContent = 'Prompt de conception';
+        const status = document.createElement('p');
+        status.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;';
+        status.textContent = 'Chargement du prompt…';
+        const area = document.createElement('textarea');
+        area.className = 'form-input';
+        area.rows = 18;
+        area.maxLength = 30000;
+        area.style.cssText = 'width:100%;font-family:monospace;font-size:12px;line-height:1.5;resize:vertical;';
+        const message = document.createElement('div');
+        message.style.cssText = 'font-size:12px;min-height:16px;margin-top:0.5rem;';
+        const buttons = document.createElement('div');
+        buttons.style.cssText = 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem;';
+        const canEdit = (_me?.staff_permissions || []).includes('website_project:transition');
+        const url = '/admin/website-projects/' + project.id + '/design-prompt';
+        const button = (label, primary, onclick) => {
+            const b = document.createElement('button');
+            b.className = primary ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+            b.textContent = label;
+            b.onclick = onclick;
+            buttons.appendChild(b);
+            return b;
+        };
+        const say = (text, ok) => { message.style.color = ok ? 'var(--success)' : 'var(--error)'; message.textContent = text; };
+        const show = data => {
+            area.value = data.prompt;
+            status.textContent = !data.saved
+                ? "Aperçu : le client n'a pas encore envoyé son brief. Le prompt sera rédigé automatiquement à l'envoi."
+                : data.edited_at
+                    ? 'Modifié par ' + (data.edited_by_name || "l'équipe") + ' le ' + formatDateTime(data.edited_at) + '.'
+                    : "Rédigé automatiquement à partir du brief. Améliorez-le puis enregistrez avant de lancer la conception.";
+        };
+        area.readOnly = !canEdit;
+        if (canEdit) {
+            button('Enregistrer', true, async () => {
+                try { show(await apiFetch(url, { method: 'PUT', body: { prompt: area.value } })); say('Prompt enregistré.', true); }
+                catch (e) { say(e.detail || e.message); }
+            });
+            button('Regénérer depuis le brief', false, async () => {
+                if (!confirm('Réécrire le prompt à partir du brief actuel ? Vos modifications seront remplacées.')) return;
+                try { show(await apiFetch(url + '/regenerate', { method: 'POST' })); say('Prompt réécrit depuis le brief.', true); }
+                catch (e) { say(e.detail || e.message); }
+            });
+        }
+        button('Télécharger le PDF', false, async () => {
+            try {
+                const res = await fetch(D360_API_BASE + url + '.pdf', { credentials: 'include' });
+                if (!res.ok) throw new Error('Téléchargement impossible (HTTP ' + res.status + ').');
+                const disposition = res.headers.get('content-disposition') || '';
+                const name = (disposition.match(/filename="([^"]+)"/) || [])[1] || 'prompt-conception.pdf';
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(await res.blob());
+                link.download = name;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => { URL.revokeObjectURL(link.href); link.remove(); }, 1000);
+            } catch (e) { say(e.message); }
+        });
+        button('Copier', false, async () => {
+            try { await navigator.clipboard.writeText(area.value); say('Prompt copié.', true); }
+            catch (_) { area.select(); say('Sélectionné : copiez avec Ctrl+C.', true); }
+        });
+        box.append(title, status, area, buttons, message);
+        apiFetch(url).then(show).catch(e => { status.textContent = 'Prompt indisponible : ' + (e.detail || e.message); });
+        return box;
+    }
+
     function showProject(project) {
         const panel = document.getElementById('projectDetail');
         panel.innerHTML = '';
@@ -1859,6 +1932,7 @@
         });
         if (project.preview_url) add('p', 'Préversion : ' + project.preview_url, 'font-size:12px;color:var(--text-muted);margin-top:1rem;');
         if (project.live_url) add('p', 'Site en ligne : ' + project.live_url, 'font-size:12px;color:var(--text-muted);');
+        if (project.status !== 'CANCELLED') panel.appendChild(designPromptBlock(project));
 
         const actions = add('div', '', 'display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;max-width:520px;');
         const message = add('div', '', 'font-size:13px;color:var(--error);min-height:18px;');
