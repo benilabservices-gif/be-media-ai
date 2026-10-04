@@ -198,36 +198,9 @@
                         <h1>Mon entreprise</h1>
                         <p>Votre Digital Passport — informations centrales de votre activité.</p>
                     </div>
-                    <div class="passport-grid reveal delay-1">
-                        <div class="passport-section">
-                            <h3>Identité</h3>
-                            <div class="passport-field"><div class="passport-field-label">Nom</div><div class="passport-field-value">Restaurant Le Délice</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Secteur</div><div class="passport-field-value">Restaurant / Hospitality</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Ville</div><div class="passport-field-value">Abidjan, Cocody</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Description</div><div class="passport-field-value" style="font-size:14px;color:var(--text-secondary);">Cuisine ivoirienne et internationale dans un cadre moderne. Ouvert midi et soir.</div></div>
-                        </div>
-                        <div class="passport-section">
-                            <h3>Coordonnées</h3>
-                            <div class="passport-field"><div class="passport-field-label">Téléphone</div><div class="passport-field-value">+225 07 08 09 10</div></div>
-                            <div class="passport-field"><div class="passport-field-label">WhatsApp</div><div class="passport-field-value">+225 07 08 09 10</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Email</div><div class="passport-field-value">contact@letedelice.ci</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Adresse</div><div class="passport-field-value">Bd Latrille, Cocody Abidjan</div></div>
-                        </div>
-                        <div class="passport-section">
-                            <h3>Présence digitale</h3>
-                            <div class="passport-field"><div class="passport-field-label">Site web</div><div class="passport-field-value">www.letedelice.ci ✓</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Domaine</div><div class="passport-field-value">letedelice.ci — valide jusqu'en 2027</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Email pro</div><div class="passport-field-value">contact@letedelice.ci ✓</div></div>
-                        </div>
-                        <div class="passport-section">
-                            <h3>Google & Réseaux</h3>
-                            <div class="passport-field"><div class="passport-field-label">Google Business</div><div class="passport-field-value"><span class="badge badge-warning">À optimiser</span></div></div>
-                            <div class="passport-field"><div class="passport-field-label">Avis Google</div><div class="passport-field-value">7 avis — note 4.2/5</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Facebook</div><div class="passport-field-value">@letedelice.ci — 340 abonnés</div></div>
-                            <div class="passport-field"><div class="passport-field-label">Instagram</div><div class="passport-field-value">@letedelice_ci — 180 abonnés</div></div>
-                        </div>
-                    </div>
+                    <div id="companyRoot"></div>
                 </div>
+
 
                 <!-- ═══ SITE WEB ═══ -->
                 <div class="dash-page" id="page-site">
@@ -243,29 +216,9 @@
                         <h1>Google Business</h1>
                         <p>Gérez votre fiche Google pour être trouvé localement.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div class="card" style="margin-bottom:1.5rem;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-                                <div>
-                                    <div style="font-size:1.2rem;font-weight:600;">Restaurant Le Délice</div>
-                                    <div style="font-size:13px;color:var(--text-muted);">Restaurant · Abidjan</div>
-                                </div>
-                                <span class="badge badge-warning">Score: 62/100</span>
-                            </div>
-                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;">
-                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Avis</div><div style="font-size:1.5rem;font-weight:700;">7 <span style="font-size:0.8rem;color:var(--warning);">★</span> 4.2</div></div>
-                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Vues fiche</div><div style="font-size:1.5rem;font-weight:700;color:var(--accent);">234</div></div>
-                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Appels</div><div style="font-size:1.5rem;font-weight:700;">12</div></div>
-                                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Itinéraires</div><div style="font-size:1.5rem;font-weight:700;">38</div></div>
-                            </div>
-                        </div>
-                        <div class="alert alert-warning">
-                            <span>⚠️</span>
-                            <div><strong>Optimisation en cours :</strong> Votre fiche peut être améliorée — ajoutez plus de photos, répondre aux avis et complétez vos horaires.</div>
-                        </div>
-                        <button class="btn btn-primary" style="margin-top:1rem;">Demander l'optimisation complète</button>
-                    </div>
+                    <div data-service-root="google"></div>
                 </div>
+
 
                 <!-- ═══ RÉSEAUX SOCIAUX ═══ -->
                 <div class="dash-page" id="page-reseaux">
@@ -273,52 +226,9 @@
                         <h1>Réseaux sociaux</h1>
                         <p>Calendrier éditorial et performances de vos réseaux.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;">
-                            <div class="card" style="text-align:center;">
-                                <div style="font-size:2rem;margin-bottom:0.5rem;">📘</div>
-                                <div style="font-weight:600;">Facebook</div>
-                                <div style="font-size:13px;color:var(--text-muted);">340 abonnés</div>
-                                <div style="font-size:12px;color:var(--success);margin-top:0.5rem;">✓ Connecté</div>
-                            </div>
-                            <div class="card" style="text-align:center;">
-                                <div style="font-size:2rem;margin-bottom:0.5rem;">📸</div>
-                                <div style="font-weight:600;">Instagram</div>
-                                <div style="font-size:13px;color:var(--text-muted);">180 abonnés</div>
-                                <div style="font-size:12px;color:var(--success);margin-top:0.5rem;">✓ Connecté</div>
-                            </div>
-                            <div class="card" style="text-align:center;opacity:0.5;">
-                                <div style="font-size:2rem;margin-bottom:0.5rem;">🎵</div>
-                                <div style="font-weight:600;">TikTok</div>
-                                <div style="font-size:13px;color:var(--text-muted);">Non connecté</div>
-                                <div style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;">— Pas connecté</div>
-                            </div>
-                        </div>
-
-                        <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Calendrier éditorial — Septembre 2025</h3>
-                        <div class="calendar-grid">
-                            <div class="calendar-day-header">Lun</div><div class="calendar-day-header">Mar</div><div class="calendar-day-header">Mer</div><div class="calendar-day-header">Jeu</div><div class="calendar-day-header">Ven</div><div class="calendar-day-header">Sam</div><div class="calendar-day-header">Dim</div>
-                            <div class="calendar-day" style="opacity:0.3;"><div class="day-num">1</div></div>
-                            <div class="calendar-day"><div class="day-num">2</div></div>
-                            <div class="calendar-day"><div class="day-num">3</div><div class="calendar-event post">Post Facebook</div></div>
-                            <div class="calendar-day"><div class="day-num">4</div></div>
-                            <div class="calendar-day"><div class="day-num">5</div><div class="calendar-event post">Post Instagram</div></div>
-                            <div class="calendar-day"><div class="day-num">6</div></div>
-                            <div class="calendar-day"><div class="day-num">7</div></div>
-                            <div class="calendar-day"><div class="day-num">8</div><div class="calendar-event post">Reels Instagram</div></div>
-                            <div class="calendar-day today"><div class="day-num">9</div><div class="calendar-event pending">En validation</div></div>
-                            <div class="calendar-day"><div class="day-num">10</div><div class="calendar-event post">Post Facebook</div></div>
-                            <div class="calendar-day"><div class="day-num">11</div></div>
-                            <div class="calendar-day"><div class="day-num">12</div><div class="calendar-event post">Story WhatsApp</div></div>
-                            <div class="calendar-day"><div class="day-num">13</div></div>
-                            <div class="calendar-day"><div class="day-num">14</div><div class="calendar-event pending">En validation</div></div>
-                        </div>
-                        <div style="margin-top:1rem;display:flex;gap:1rem;font-size:12px;color:var(--text-muted);">
-                            <span><span class="badge badge-accent" style="margin-right:4px;">●</span> Publié</span>
-                            <span><span class="badge badge-warning" style="margin-right:4px;">●</span> En validation</span>
-                        </div>
-                    </div>
+                    <div data-service-root="reseaux"></div>
                 </div>
+
 
                 <!-- ═══ CONTENUS ═══ -->
                 <div class="dash-page" id="page-contenus">
@@ -326,47 +236,9 @@
                         <h1>Content Studio</h1>
                         <p>Gérez vos contenus de A à Z.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div class="tab-group">
-                            <button class="tab-btn active" onclick="switchTab(this,'cont-all')">Tous</button>
-                            <button class="tab-btn" onclick="switchTab(this,'cont-published')">Publiés</button>
-                            <button class="tab-btn" onclick="switchTab(this,'cont-validating')">En validation</button>
-                            <button class="tab-btn" onclick="switchTab(this,'cont-draft')">Brouillons</button>
-                        </div>
-                        <div class="card" id="cont-all">
-                            <div style="display:flex;flex-direction:column;gap:1rem;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
-                                    <div>
-                                        <div style="font-weight:500;">Post Facebook — Spécial weekend</div>
-                                        <div style="font-size:12px;color:var(--text-muted);">📘 Facebook · 5 sept · 245 vues</div>
-                                    </div>
-                                    <span class="badge badge-success">Publié</span>
-                                </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
-                                    <div>
-                                        <div style="font-weight:500;">Reels Instagram — detrás du chef</div>
-                                        <div style="font-size:12px;color:var(--text-muted);">📸 Instagram · 8 sept · En attente</div>
-                                    </div>
-                                    <span class="badge badge-warning">En validation</span>
-                                </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
-                                    <div>
-                                        <div style="font-weight:500;">Carrousel — Nos 5 plats signature</div>
-                                        <div style="font-size:12px;color:var(--text-muted);">📸 Instagram · 12 sept</div>
-                                    </div>
-                                    <span class="badge badge-muted">Brouillon</span>
-                                </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
-                                    <div>
-                                        <div style="font-weight:500;">Story WhatsApp — Offer du jour</div>
-                                        <div style="font-size:12px;color:var(--text-muted);">💬 WhatsApp · 14 sept</div>
-                                    </div>
-                                    <span class="badge badge-warning">En validation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div data-service-root="contenus"></div>
                 </div>
+
 
                 <!-- ═══ PROSPECTS ═══ -->
                 <div class="dash-page" id="page-prospects">
@@ -374,50 +246,9 @@
                         <h1>Prospects</h1>
                         <p>Suivez vos prospects et convertissez-les en clients.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div style="display:flex;gap:1rem;margin-bottom:1.5rem;">
-                            <button class="btn btn-primary btn-sm" onclick="alert('Formulaire d\'ajout de prospect')">+ Ajouter un prospect</button>
-                            <button class="btn btn-outline btn-sm" onclick="toggleKanbanView()">Vue Kanban</button>
-                        </div>
-                        <div id="kanbanView" style="display:none;">
-                            <div class="kanban">
-                                <div class="kanban-col">
-                                    <div class="kanban-col-header"><span>Nouveaux</span><span class="kanban-col-count">3</span></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Marie K.</div><div class="kanban-card-meta">Facebook · Il y a 2j · Budget: Event privé</div></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Jean M.</div><div class="kanban-card-meta">Site web · Il y a 3j · Déjeuner entreprise</div></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Sophie B.</div><div class="kanban-card-meta">WhatsApp · Il y a 5j · Birthday</div></div>
-                                </div>
-                                <div class="kanban-col">
-                                    <div class="kanban-col-header"><span>Contactés</span><span class="kanban-col-count">4</span></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Patrick T.</div><div class="kanban-card-meta">Google · 10 sept · Repas famille</div></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Aminata D.</div><div class="kanban-card-meta">Instagram · 8 sept · Corporate lunch</div></div>
-                                </div>
-                                <div class="kanban-col">
-                                    <div class="kanban-col-header"><span>Qualifiés</span><span class="kanban-col-count">2</span></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Hotel Ivoire</div><div class="kanban-card-meta">Site web · 5 sept · Traiteur événement</div></div>
-                                </div>
-                                <div class="kanban-col">
-                                    <div class="kanban-col-header"><span>Gagnés</span><span class="kanban-col-count">3</span></div>
-                                    <div class="kanban-card"><div class="kanban-card-title">Event Corporate ABC</div><div class="kanban-card-meta">Facebook · Gagné · 250 000 FCFA</div></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="tableView">
-                            <div class="table-wrap">
-                                <table>
-                                    <thead><tr><th>Prospect</th><th>Source</th><th>Statut</th><th>Date</th><th>Valeur</th><th>Action</th></tr></thead>
-                                    <tbody>
-                                        <tr><td style="font-weight:500;">Marie K.</td><td>Facebook</td><td><span class="badge badge-muted">Nouveau</span></td><td>7 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
-                                        <tr><td style="font-weight:500;">Jean M.</td><td>Site web</td><td><span class="badge badge-muted">Nouveau</span></td><td>6 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
-                                        <tr><td style="font-weight:500;">Patrick T.</td><td>Google</td><td><span class="badge badge-info">Contacté</span></td><td>3 sept</td><td>—</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
-                                        <tr><td style="font-weight:500;">Hotel Ivoire</td><td>Site web</td><td><span class="badge badge-warning">Qualifié</span></td><td>5 sept</td><td>250 000 FCFA HT</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
-                                        <tr><td style="font-weight:500;">Event ABC</td><td>Facebook</td><td><span class="badge badge-success">Gagné</span></td><td>28 août</td><td>250 000 FCFA HT</td><td><button class="btn btn-ghost btn-sm">Voir</button></td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                    <div data-service-root="prospects"></div>
                 </div>
+
 
                 <!-- ═══ PUBLICITÉ ═══ -->
                 <div class="dash-page" id="page-publicite">
@@ -425,43 +256,9 @@
                         <h1>Ads Center</h1>
                         <p>Campagnes publicitaires et performances.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
-                            <span>ℹ️</span>
-                            <div><strong>Module en construction.</strong> La gestion publicitaire sera disponible prochainement. Contactez-nous pour en discuter.</div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
-                            <div class="card metric-card">
-                                <div class="metric-value">1</div>
-                                <div class="metric-label">Campagne active</div>
-                            </div>
-                            <div class="card metric-card">
-                                <div class="metric-value">45K</div>
-                                <div class="metric-label">Budget média (FCFA)</div>
-                            </div>
-                            <div class="card metric-card">
-                                <div class="metric-value">12K</div>
-                                <div class="metric-label">Coût par lead (FCFA)</div>
-                            </div>
-                        </div>
-                        <div class="card" style="margin-top:1.5rem;">
-                            <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Répartition budget</h3>
-                            <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;">
-                                <div style="text-align:center;">
-                                    <div style="font-size:2rem;font-weight:700;color:var(--accent);">30 000</div>
-                                    <div style="font-size:12px;color:var(--text-muted);">Frais BENILAB</div>
-                                </div>
-                                <div style="text-align:center;">
-                                    <div style="font-size:2rem;font-weight:700;color:var(--warning);">15 000</div>
-                                    <div style="font-size:12px;color:var(--text-muted);">Budget média (client)</div>
-                                </div>
-                            </div>
-                            <div class="alert alert-info" style="margin-top:1rem;">
-                                <span>💡</span> Le budget publicitaire est déterminé ensemble selon vos objectifs et votre capacité. Les frais BENILAB couvrent la gestion et l'optimisation.
-                            </div>
-                        </div>
-                    </div>
+                    <div data-service-root="publicite"></div>
                 </div>
+
 
                 <!-- ═══ CONVERSION ═══ -->
                 <div class="dash-page" id="page-conversion">
@@ -469,35 +266,9 @@
                         <h1>Conversion Center</h1>
                         <p>Landing pages, formulaires, WhatsApp et tunnels de conversion.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
-                            <span>🚧</span>
-                            <div><strong>Module en développement.</strong> Le Conversion Center et Virtuoso Funnel seront intégrés prochainement.</div>
-                        </div>
-                        <div class="modules-grid">
-                            <div class="module-card">
-                                <div class="module-icon">💬</div>
-                                <div class="module-name">WhatsApp Business</div>
-                                <div class="module-status badge badge-success">Configuré</div>
-                            </div>
-                            <div class="module-card">
-                                <div class="module-icon">📝</div>
-                                <div class="module-name">Formulaire contact</div>
-                                <div class="module-status badge badge-success">Actif</div>
-                            </div>
-                            <div class="module-card">
-                                <div class="module-icon">🎯</div>
-                                <div class="module-name">Landing page</div>
-                                <div class="module-status badge badge-muted">Non activé</div>
-                            </div>
-                            <div class="module-card">
-                                <div class="module-icon">🛒</div>
-                                <div class="module-name">Paiement en ligne</div>
-                                <div class="module-status badge badge-muted">Module V2</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div data-service-root="conversion"></div>
                 </div>
+
 
                 <!-- ═══ ANALYTICS ═══ -->
                 <div class="dash-page" id="page-analytics">
@@ -505,37 +276,9 @@
                         <h1>Analytics</h1>
                         <p>Trafic, sources, conversions et performances.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div class="dash-stats">
-                            <div class="dash-stat"><div class="dash-stat-value">129</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change up">↑ 18%</div></div>
-                            <div class="dash-stat"><div class="dash-stat-value">3</div><div class="dash-stat-label">Leads</div><div class="dash-stat-change up">↑ 1</div></div>
-                            <div class="dash-stat"><div class="dash-stat-value">2</div><div class="dash-stat-label">Conversions</div><div class="dash-stat-change">—</div></div>
-                            <div class="dash-stat"><div class="dash-stat-value">4.2%</div><div class="dash-stat-label">Taux conversion</div><div class="dash-stat-change up">↑ 0.8%</div></div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-                            <div class="chart-container">
-                                <h3>Sources de trafic</h3>
-                                <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">
-                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Google</span><span style="color:var(--accent);font-weight:600;">45%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:45%;background:var(--accent);"></div></div></div>
-                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Facebook</span><span style="color:var(--accent-warm);font-weight:600;">30%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:30%;background:var(--accent-warm);"></div></div></div>
-                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>WhatsApp</span><span style="color:var(--success);font-weight:600;">15%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:15%;background:var(--success);"></div></div></div>
-                                    <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Direct</span><span style="color:var(--text-muted);font-weight:600;">10%</span></div><div class="cat-score-track"><div class="cat-score-fill" style="width:10%;background:var(--text-muted);"></div></div></div>
-                                </div>
-                            </div>
-                            <div class="chart-container">
-                                <h3>Évolution trafic</h3>
-                                <div class="bar-chart">
-                                    <div class="bar-col"><div class="bar-value">12</div><div class="bar" style="height:50px;background:var(--accent);"></div><div class="bar-label">Avr</div></div>
-                                    <div class="bar-col"><div class="bar-value">18</div><div class="bar" style="height:75px;background:var(--accent);"></div><div class="bar-label">Mai</div></div>
-                                    <div class="bar-col"><div class="bar-value">15</div><div class="bar" style="height:65px;background:var(--accent);"></div><div class="bar-label">Jun</div></div>
-                                    <div class="bar-col"><div class="bar-value">22</div><div class="bar" style="height:95px;background:var(--accent);"></div><div class="bar-label">Juil</div></div>
-                                    <div class="bar-col"><div class="bar-value">28</div><div class="bar" style="height:120px;background:var(--accent);"></div><div class="bar-label">Aoû</div></div>
-                                    <div class="bar-col"><div class="bar-value">34</div><div class="bar" style="height:140px;background:var(--accent-light);"></div><div class="bar-label">Sep</div></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div data-service-root="analytics"></div>
                 </div>
+
 
                  <!-- ═══ ABONNEMENT ═══ -->
                  <div class="dash-page" id="page-abonnement">
@@ -554,30 +297,7 @@
                         <h1>Support</h1>
                         <p>Besoin d'aide ? Nous sommes là pour vous.</p>
                     </div>
-                    <div class="reveal delay-1">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-                            <div class="card">
-                                <h3 style="margin-bottom:1rem;">📅 Prendre rendez-vous</h3>
-                                <p style="font-size:14px;color:var(--text-muted);margin-bottom:1.5rem;">Réservez un créneau de consultation gratuit avec notre équipe.</p>
-                                <a href="https://calendly.com/benilabservices/45min" target="_blank" class="btn btn-primary">Voir les créneaux</a>
-                            </div>
-                            <div class="card">
-                                <h3 style="margin-bottom:1rem;">💬 Nous contacter</h3>
-                                <p style="font-size:14px;color:var(--text-muted);margin-bottom:1rem;">
-                                    Email: contact@benilab.ci<br>
-                                    WhatsApp: +225 07 00 00 00
-                                </p>
-                                <button class="btn btn-outline">Ouvrir WhatsApp</button>
-                            </div>
-                        </div>
-                        <div class="card" style="margin-top:1.5rem;">
-                            <h3 style="margin-bottom:1rem;">📋 Tickets existants</h3>
-                            <div class="empty-state" style="padding:2rem;">
-                                <div class="empty-state-icon">📭</div>
-                                <p>Vous n'avez aucun ticket ouvert.</p>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="supportRoot"></div>
                 </div>
 
             </div>
@@ -964,6 +684,7 @@
                 // Load catalog for subscription page
                 await loadCatalogForDashboard();
                 await loadProject();
+                await loadBilling();
             }
             // Update UI with real data
             if (_user) {
@@ -980,6 +701,9 @@
             }
             renderDashboard();
             renderSubscriptionPage();
+            renderCompany();
+            renderSupport();
+            Object.keys(SERVICE_PAGES).forEach(renderServicePage);
         } catch (e) {
             console.error('[D360] Dashboard init error:', e);
         }
@@ -1006,134 +730,224 @@
         } catch (_) {}
     }
 
+    // ── Rubriques alimentées par les vraies données (aucune donnée de démonstration) ──
+    // Contact de l'équipe, affiché dans Support (WhatsApp : à renseigner quand le numéro est connu)
+    const BENILAB_CONTACT = { email: 'clientele@bemedia-ai.online', whatsapp: '' };
+    let _billing = null;
+
+    async function loadBilling() {
+        _billing = null;
+        if (!_orgId || !_isOwner) return;
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/billing', { credentials: 'include' });
+            if (res.ok) _billing = await res.json();
+        } catch (_) {}
+    }
+
+    function sectionTitle(text) {
+        return h('h3', { style: 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;', text });
+    }
+
+    // Mon entreprise : fiche et Passport réels
+    const PASSPORT_LABELS = {
+        WEBSITE: 'Site web', DOMAIN: 'Nom de domaine', HOSTING: 'Hébergement', EMAIL: 'E-mail professionnel',
+        GOOGLE_BUSINESS: 'Google Business', FACEBOOK: 'Facebook', INSTAGRAM: 'Instagram', TIKTOK: 'TikTok',
+        LINKEDIN: 'LinkedIn', WHATSAPP: 'WhatsApp Business', SEO: 'Référencement', ADS: 'Publicité',
+        EMAILING: 'E-mailing', CRM: 'Suivi des prospects', CONVERSION: 'Conversion', ANALYTICS: "Mesure d'audience",
+    };
+    const PASSPORT_STATUS = {
+        ACTIVE: ['Actif', 'badge-success'], IN_PROGRESS: ['En cours', 'badge-warning'], NOT_CONFIGURED: ['À mettre en place', 'badge-muted'],
+        PAUSED: ['En pause', 'badge-muted'], ERROR: ['Problème', 'badge-error'], EXPIRED: ['Expiré', 'badge-error'],
+    };
+    function renderCompany() {
+        const root = document.getElementById('companyRoot');
+        if (!root) return;
+        root.textContent = '';
+        if (!_orgData) {
+            root.appendChild(h('div', { class: 'card', text: "Faites votre diagnostic pour créer la fiche de votre entreprise." }));
+            return;
+        }
+        const o = _orgData;
+        const rows = [
+            ['Nom commercial', o.commercial_name], ['Raison sociale', o.legal_name], ['Secteur', o.sector],
+            ['Activité', o.description], ['Ville', o.city], ['Adresse', o.address], ['Téléphone', o.phone],
+            ['WhatsApp', o.whatsapp], ['E-mail', o.email], ['Site web', o.website],
+        ];
+        root.appendChild(h('div', { class: 'card' }, [
+            h('h3', { style: 'margin-bottom:0.75rem;', text: 'Fiche entreprise' }),
+            ...rows.map(([label, value]) => h('div', { class: 'passport-field' }, [
+                h('div', { class: 'passport-field-label', text: label }),
+                h('div', { class: 'passport-field-value', text: value || '—' }),
+            ])),
+        ]));
+        root.appendChild(sectionTitle('Mon Passport digital'));
+        const items = passportData?.items || [];
+        if (!items.length) {
+            root.appendChild(h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Votre Passport sera rempli à partir de votre diagnostic.' }));
+            return;
+        }
+        root.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;' },
+            items.map(item => {
+                const [label, css] = PASSPORT_STATUS[item.status] || [item.status, 'badge-muted'];
+                return h('div', { class: 'card', style: 'padding:0.9rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;' }, [
+                    h('span', { style: 'font-size:14px;', text: PASSPORT_LABELS[item.key] || item.key }),
+                    h('span', { class: 'badge ' + css, text: label }),
+                ]);
+            })));
+    }
+
+    // Services : état réel selon l'offre du client (le serveur reste seul juge des droits)
+    const SERVICE_PAGES = {
+        google: { title: 'Google Business', keys: ['GOOGLE_BUSINESS_MANAGEMENT', 'GOOGLE_BUSINESS_MONITORING'], offer: 'DIGITAL_ESSENTIAL',
+            what: 'Votre fiche Google tenue à jour : horaires, photos, actualités et réponses aux avis.' },
+        reseaux: { title: 'Réseaux sociaux', keys: ['SOCIAL_MANAGEMENT'], offer: 'DIGITAL_GROWTH',
+            what: 'Vos pages Facebook et Instagram animées chaque semaine par notre équipe.' },
+        contenus: { title: 'Contenus', keys: ['CONTENT_MONTHLY_LIMIT'], offer: 'DIGITAL_ESSENTIAL',
+            what: 'Des publications, visuels et vidéos courtes créés pour vous chaque mois.' },
+        prospects: { title: 'Prospects', keys: ['LEAD_TRACKING'], offer: 'DIGITAL_GROWTH',
+            what: 'Les demandes de vos clients (site, WhatsApp, réseaux) réunies et suivies au même endroit.' },
+        publicite: { title: 'Publicité', keys: ['ADS_MANAGEMENT'], offer: 'DIGITAL_PERFORMANCE',
+            what: 'Vos campagnes Facebook, Instagram et Google pilotées pour attirer de nouveaux clients (budget publicitaire séparé).' },
+        conversion: { title: 'Conversion', keys: ['CONVERSION_OPTIMIZATION'], offer: 'DIGITAL_PERFORMANCE',
+            what: 'Pages de destination, formulaires et e-mails pour transformer les visiteurs en clients.' },
+        analytics: { title: 'Statistiques', keys: ['ADVANCED_REPORTING', 'MONTHLY_REPORT'], offer: 'DIGITAL_GROWTH',
+            what: 'Un rapport clair chaque mois : visites, demandes reçues et résultats de vos actions.' },
+    };
+    function entitlementValue(key) {
+        return (entitlementsData?.entitlements || []).find(item => item.key === key)?.value;
+    }
+    function isGranted(value) {
+        return value === true || value === 'UNLIMITED' || (typeof value === 'number' && value > 0);
+    }
+    function renderServicePage(pageKey) {
+        const root = document.querySelector('[data-service-root="' + pageKey + '"]');
+        const config = SERVICE_PAGES[pageKey];
+        if (!root || !config) return;
+        root.textContent = '';
+        const grantedKey = config.keys.find(key => isGranted(entitlementValue(key)));
+        if (grantedKey) {
+            const monthly = entitlementValue('CONTENT_MONTHLY_LIMIT');
+            root.appendChild(h('div', { class: 'card' }, [
+                h('span', { class: 'badge badge-success', style: 'margin-bottom:0.75rem;', text: 'Inclus dans votre offre' }),
+                h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0.75rem 0;', text: config.what }),
+                pageKey === 'contenus' && typeof monthly === 'number'
+                    ? h('p', { style: 'font-size:14px;font-weight:600;', text: monthly + ' contenus par mois sont prévus dans votre offre.' }) : null,
+                h('p', { style: 'font-size:13px;color:var(--text-muted);',
+                    text: 'Votre conseiller BENILAB met ce service en place avec vous. Les résultats s\'afficheront ici au fur et à mesure.' }),
+            ]));
+            return;
+        }
+        const info = productInfo(config.offer);
+        const card = h('div', { class: 'card' }, [
+            h('span', { class: 'badge badge-muted', style: 'margin-bottom:0.75rem;', text: 'Non inclus dans votre offre' }),
+            h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0.75rem 0;', text: config.what }),
+            h('p', { style: 'font-size:14px;', text: 'Disponible à partir de l\'offre ' + info.name + (info.price ? ' (' + info.price + ')' : '') + '.' }),
+        ]);
+        if (_isOwner && _orgId) {
+            const pending = _purchaseRequests.find(p => p.product_code === config.offer && (p.status === 'NEW' || p.status === 'CONTACTED'));
+            card.appendChild(pending
+                ? h('p', { style: 'font-size:13px;color:var(--accent);margin-top:0.75rem;', text: 'Votre demande ' + info.name + ' est en cours : un conseiller vous contacte.' })
+                : h('button', { class: 'btn btn-primary btn-sm', style: 'margin-top:0.75rem;', text: 'Je veux démarrer',
+                    onclick: () => showPurchaseModalForProduct(config.offer, null, info.name, info.price) }));
+        }
+        root.appendChild(card);
+    }
+
+    // Support : vrais moyens de contact
+    function renderSupport() {
+        const root = document.getElementById('supportRoot');
+        if (!root) return;
+        root.textContent = '';
+        const contact = h('div', { class: 'card' }, [
+            h('h3', { style: 'margin-bottom:1rem;', text: '💬 Nous contacter' }),
+            h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:1rem;' }, ['E-mail : ', h('a', { href: 'mailto:' + BENILAB_CONTACT.email, text: BENILAB_CONTACT.email })]),
+        ]);
+        if (BENILAB_CONTACT.whatsapp) {
+            contact.appendChild(h('a', { class: 'btn btn-outline', href: 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, ''), target: '_blank', rel: 'noopener', text: 'Écrire sur WhatsApp' }));
+        }
+        root.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;' }, [
+            h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:1rem;', text: '📅 Prendre rendez-vous' }),
+                h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:1.5rem;', text: 'Réservez un créneau avec notre équipe.' }),
+                h('a', { class: 'btn btn-primary', href: 'https://calendly.com/benilabservices/45min', target: '_blank', rel: 'noopener', text: 'Voir les créneaux' }),
+            ]),
+            contact,
+        ]));
+    }
+
+    // Mon abonnement : offres en cours, échéance, reçus, puis les offres disponibles
+    function offerButton(p) {
+        if (!_isOwner) return h('div', { style: 'font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;', text: 'Demandez au responsable' });
+        const pr = _purchaseRequests.find(item => item.product_code === p.code && (item.status === 'NEW' || item.status === 'CONTACTED'));
+        if (pr) return h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) });
+        const price = p.price ? formatPrice(p.price, p.price.currency) : '';
+        return h('button', { class: 'btn btn-sm btn-primary', style: 'margin-top:0.5rem;width:100%;', text: 'Je veux démarrer',
+            onclick: () => showPurchaseModalForProduct(p.code, null, p.name || p.code, price) });
+    }
     function renderSubscriptionPage() {
         const container = document.getElementById('subscriptionContent');
         if (!container) return;
-
-        // Check if user has an active subscription
-        const subscription = _orgData?.subscription;
-        const hasSubscription = subscription && subscription.plan_code;
-
-        let html = '';
-
-        if (hasSubscription) {
-            const planCode = subscription.plan_code;
-            const product = _catalogData?.products?.find(p => p.code === planCode);
-            const productName = product?.name || planCode;
-            const priceText = product?.price ? formatPrice(product.price, subscription.currency) : '—';
-            const nextBilling = subscription.next_billing_date
-                ? new Date(subscription.next_billing_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-                : '—';
-
-            html = `
-                <div class="card" style="margin-bottom:2rem;border-color:var(--border-strong);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-                        <div>
-                            <div class="label" style="margin-bottom:0.5rem;">Offre actuelle</div>
-                            <div style="font-size:1.5rem;font-weight:700;">${productName}</div>
-                            <div style="font-size:14px;color:var(--text-muted);">${priceText}${subscription.period ? ' / ' + subscription.period.toLowerCase() : ''}</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div class="label" style="margin-bottom:0.5rem;">Prochaine échéance</div>
-                            <div style="font-size:1.1rem;font-weight:600;">${nextBilling}</div>
-                            <span class="badge badge-success" style="margin-top:0.5rem;">Actif</span>
-                        </div>
-                    </div>
-                </div>
-                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Offres disponibles</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
-                    ${(_catalogData?.products || []).map(p => {
-                        const isCurrent = p.code === planCode;
-                        const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
-                        const pr = _purchaseRequests.find(pr2 => pr2.product_code === p.code && pr2.status !== 'LOST');
-                        let btnHtml = '';
-                        if (!_isOwner) {
-                            btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
-                        } else if (pr) {
-                            if (pr.status === 'WON') {
-                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Offre en cours d\'activation</button>';
-                            } else if (pr.status === 'CONTACTED' || pr.status === 'NEW') {
-                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
-                            } else {
-                                btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
-                            }
-                        } else {
-                            btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
-                        }
-                        return `
-                        <div class="card" style="text-align:center;${isCurrent ? 'border-color:var(--accent);' : 'opacity:0.7;'}">
-                            <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
-                            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;${isCurrent ? 'color:var(--accent);' : ''}">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
-                            ${isCurrent ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">← Vous êtes ici</div>' : ''}
-                            ${!isCurrent ? btnHtml : ''}
-                        </div>`;
-                    }).join('')}
-                </div>
-                <div class="alert alert-info">
-                    <span>ℹ️</span>
-                    <div>La facturation et le changement d'offre seront disponibles prochainement. Contactez-nous pour en discuter.</div>
-                </div>
-            `;
+        container.textContent = '';
+        const subscriptions = _billing?.subscriptions || [];
+        const activeCodes = subscriptions.filter(s => s.status !== 'EXPIRED').map(s => s.product_code);
+        if (subscriptions.length) {
+            subscriptions.forEach(sub => {
+                const due = new Date(sub.covers_until).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                const [label, css] = sub.status === 'EXPIRED' ? ['Expiré', 'badge-error'] : sub.status === 'EXPIRING' ? ['Échéance proche', 'badge-warning'] : ['Actif', 'badge-success'];
+                container.appendChild(h('div', { class: 'card', style: 'margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;' }, [
+                    h('div', {}, [h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: 'Votre offre' }), h('div', { style: 'font-size:1.4rem;font-weight:700;', text: sub.product_name })]),
+                    h('div', { style: 'text-align:right;' }, [
+                        h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: sub.status === 'EXPIRED' ? 'Expiré le' : "Payé jusqu'au" }),
+                        h('div', { style: 'font-weight:600;', text: due }),
+                        h('span', { class: 'badge ' + css, style: 'margin-top:0.5rem;', text: label }),
+                    ]),
+                ]));
+            });
+            if (subscriptions.some(s => s.status !== 'ACTIVE')) {
+                container.appendChild(h('div', { class: 'alert alert-accent', text: 'Pour renouveler, contactez votre conseiller : votre abonnement est prolongé dès réception du paiement.' }));
+            }
+        } else if (!_isOwner && _orgId) {
+            container.appendChild(h('p', { style: 'color:var(--text-muted);', text: "Seul le responsable de l'entreprise peut consulter l'abonnement et les paiements." }));
         } else {
-            html = `
-                <div class="empty-state" style="padding:3rem;">
-                    <div class="empty-state-icon">💳</div>
-                    <h3>Aucun abonnement actif</h3>
-                    <p>Vous n'avez pas encore souscrit à un accompagnement mensuel.</p>
-                </div>
-                <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Nos offres</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-                    ${(_catalogData?.products || []).map(p => {
-                        const period = p.price?.period === 'MONTH' ? ' / mois' : p.price?.period === 'YEAR' ? ' / an' : '';
-                        const pr = _purchaseRequests.find(pr2 => pr2.product_code === p.code && pr2.status !== 'LOST');
-                        let btnHtml = '';
-                        if (!_isOwner) {
-                            btnHtml = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">Demandez au responsable</div>';
-                        } else if (pr) {
-                            if (pr.status === 'WON') {
-                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Offre en cours d\'activation</button>';
-                            } else if (pr.status === 'CONTACTED' || pr.status === 'NEW') {
-                                btnHtml = '<button class="btn btn-sm" disabled style="opacity:0.6;margin-top:0.5rem;width:100%;">Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + '</button>';
-                            } else {
-                                btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
-                            }
-                        } else {
-                            btnHtml = '<button class="btn btn-sm btn-primary" onclick="showPurchaseModalForProduct(\'' + p.code + '\',null,\'' + (p.name || p.code) + '\',\'' + formatPrice(p.price, p.price?.currency) + '\')" style="margin-top:0.5rem;width:100%;">Je veux démarrer</button>';
-                        }
-                        return `
-                        <div class="card" style="text-align:center;">
-                            <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${p.name}</div>
-                            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--accent);">${p.price ? formatPrice(p.price, p.price.currency) : '—'}</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${period || 'Paiement unique'}</div>
-                            ${btnHtml}
-                        </div>`;
-                    }).join('')}
-                </div>
-                <div style="margin-top:2rem;">
-                    <a href="index.html#diagnostic" class="btn btn-primary">Faire mon diagnostic</a>
-                </div>
-            `;
+            container.appendChild(h('div', { class: 'empty-state', style: 'padding:2rem;' }, [
+                h('div', { class: 'empty-state-icon', text: '💳' }),
+                h('h3', { text: 'Aucun abonnement en cours' }),
+                h('p', { text: 'Choisissez un accompagnement mensuel ci-dessous.' }),
+            ]));
         }
 
-        // Invoices section (placeholder)
-        html += `
-            <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;">Historique des factures</h3>
-            <div class="empty-state" style="padding:2rem;">
-                <div class="empty-state-icon">🧾</div>
-                <p>La facturation sera disponible avec l'étape M5.</p>
-            </div>
-        `;
+        container.appendChild(sectionTitle('Nos offres'));
+        container.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;' },
+            (_catalogData?.products || []).map(p => {
+                const current = activeCodes.includes(p.code);
+                const period = p.price?.period === 'MONTH' ? '/ mois' : p.price?.period === 'YEAR' ? '/ an' : 'Paiement unique';
+                return h('div', { class: 'card', style: 'text-align:center;' + (current ? 'border-color:var(--accent);' : '') }, [
+                    h('div', { style: 'font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;', text: p.name }),
+                    h('div', { style: 'font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--accent);', text: p.price ? formatPrice(p.price, p.price.currency) : '—' }),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);margin-top:4px;', text: period }),
+                    current ? h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Votre offre actuelle' }) : offerButton(p),
+                ]);
+            })));
 
-        container.innerHTML = html;
+        container.appendChild(sectionTitle('Mes paiements'));
+        const payments = _billing?.payments || [];
+        if (!payments.length) {
+            container.appendChild(h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Aucun paiement pour le moment.' }));
+            return;
+        }
+        const methods = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement', CASH: 'Espèces' };
+        container.appendChild(h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+            h('table', { style: 'width:100%;font-size:13px;border-collapse:collapse;' }, [
+                h('thead', {}, h('tr', {}, ['Date', 'Reçu', 'Offre', 'Montant', 'Moyen', 'Référence'].map(label => h('th', { style: 'text-align:left;padding:8px;color:var(--text-muted);', text: label })))),
+                h('tbody', {}, payments.map(pay => h('tr', { style: 'border-top:1px solid var(--border);' }, [
+                    new Date(pay.received_on + 'T12:00:00').toLocaleDateString('fr-FR'), pay.receipt_number, pay.product_name,
+                    formatPrice({ amount: pay.amount, currency: pay.currency }, pay.currency), methods[pay.method] || pay.method, pay.reference || '—',
+                ].map(value => h('td', { style: 'padding:8px;', text: value }))))),
+            ]),
+        ]));
+        container.appendChild(h('p', { style: 'font-size:12px;color:var(--text-muted);margin-top:0.5rem;', text: 'Chaque reçu vous a aussi été envoyé par e-mail.' }));
     }
 
-    // ── Purchase request modal ──
-    let _pendingPurchase = null;
-    // ── Mon site web : projet Digital Start (offre encadrée) ──
-    let _project = null;
-
-    // Petit constructeur d'éléments : tout le texte passe par textContent (jamais d'HTML injecté)
     function h(tag, props = {}, children = []) {
         const el = document.createElement(tag);
         Object.entries(props).forEach(([key, value]) => {
