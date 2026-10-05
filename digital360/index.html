@@ -1722,7 +1722,37 @@
       }
 
     // ── Auth modal ──
+    // Œil sur les champs mot de passe de la fenêtre de connexion : afficher / masquer
+    function addPasswordToggles() {
+        document.querySelectorAll('#authModal input[type="password"]').forEach(input => {
+            if (input.dataset.toggle) return;
+            input.dataset.toggle = '1';
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:relative;';
+            input.parentNode.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
+            input.style.paddingRight = '44px';
+            const eye = document.createElement('button');
+            eye.type = 'button';
+            eye.setAttribute('aria-label', 'Afficher le mot de passe');
+            eye.style.cssText = 'position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:6px;color:var(--text-muted);display:flex;align-items:center;';
+            const icon = shown => shown
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>'
+                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            eye.innerHTML = icon(false);
+            eye.onclick = () => {
+                const shown = input.type === 'password';
+                input.type = shown ? 'text' : 'password';
+                eye.innerHTML = icon(shown);
+                eye.setAttribute('aria-label', shown ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+                input.focus();
+            };
+            wrapper.appendChild(eye);
+        });
+    }
+
     function openAuthModal(mode) {
+        addPasswordToggles();
         document.getElementById('authModalMode').value = mode || 'login';
         document.getElementById('authError').textContent = '';
         document.getElementById('authLoginForm').style.display = mode === 'register' ? 'none' : 'block';
@@ -1731,6 +1761,8 @@
         document.body.style.overflow = 'hidden';
     }
     function closeAuthModal() {
+        // Le mot de passe ne reste jamais affiché d'une ouverture à l'autre
+        document.querySelectorAll('#authModal input[data-toggle]').forEach(input => { input.type = 'password'; });
         document.getElementById('authModal').classList.remove('open');
         document.body.style.overflow = '';
     }

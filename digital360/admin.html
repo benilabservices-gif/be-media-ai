@@ -678,6 +678,14 @@
         btn.textContent = 'Voir';
         btn.onclick = (e) => { e.stopPropagation(); openOrgDetail(org.id); };
         tdAction.appendChild(btn);
+        if ((_me?.staff_permissions || []).includes('organization:delete')) {
+            const del = document.createElement('button');
+            del.className = 'btn btn-ghost btn-sm';
+            del.style.cssText = 'color:var(--error);margin-left:0.25rem;';
+            del.textContent = 'Supprimer';
+            del.onclick = (e) => { e.stopPropagation(); openDeleteOrgDialog(org, tr); };
+            tdAction.appendChild(del);
+        }
         tr.appendChild(tdAction);
 
         tbody.appendChild(tr);
@@ -1587,6 +1595,77 @@
         actionTd.appendChild(btn);
         tr.appendChild(actionTd);
         return tr;
+    }
+
+    // ── Suppression définitive d'une entreprise (ADMIN), confirmée en retapant son nom ──
+    async function openDeleteOrgDialog(org, row) {
+        const overlay = el('div', { class: 'modal-overlay open', style: 'z-index:1000;' });
+        const box = el('div', { class: 'modal-box', style: 'max-width:480px;' });
+        const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+        overlay.onclick = e => { if (e.target === overlay) close(); };
+        const msg = el('div', { style: 'font-size:13px;color:var(--error);min-height:18px;margin-top:0.5rem;' });
+        box.append(
+            el('h2', { style: 'font-size:1.25rem;margin-bottom:0.5rem;color:var(--error);', text: 'Supprimer définitivement cette entreprise ?' }),
+            el('p', { style: 'font-weight:600;margin-bottom:1rem;', text: org.commercial_name }),
+        );
+        const details = el('div', { style: 'font-size:13px;color:var(--text-secondary);margin-bottom:1rem;', text: 'Chargement de ce qui sera supprimé…' });
+        box.appendChild(details);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        let preview;
+        try {
+            preview = await apiFetch('/admin/organizations/' + org.id + '/deletion-preview');
+        } catch (e) {
+            details.textContent = 'Impossible de préparer la suppression : ' + (e.detail || e.message);
+            box.appendChild(el('button', { class: 'btn btn-ghost btn-sm', text: 'Fermer', onclick: close }));
+            return;
+        }
+        details.textContent = '';
+        details.append(
+            el('p', { style: 'margin-bottom:0.5rem;', text: 'Cette action est irréversible. Seront supprimés avec l\'entreprise :' }),
+            el('ul', { style: 'margin:0 0 0.75rem 1.2rem;line-height:1.7;' }, [
+                preview.diagnostics + ' diagnostic(s), le Passport et le plan d\'action',
+                preview.purchase_requests + ' demande(s) d\'achat et ' + preview.website_projects + ' projet(s) de site',
+                preview.payments + ' paiement(s) et reçu(s)',
+                'les suivis Google et site web, les invitations et le rattachement Closer',
+            ].map(text => el('li', { text }))),
+            el('p', { text: preview.members + ' membre(s) perdront l\'accès à cette entreprise ; leurs comptes sont conservés.' }),
+        );
+        const name = el('input', { class: 'form-input', placeholder: preview.commercial_name, autocomplete: 'off', style: 'width:100%;' });
+        box.append(el('label', { style: 'display:block;font-size:13px;margin-bottom:4px;', text: 'Pour confirmer, tapez le nom de l\'entreprise :' }), name);
+        let payments = null;
+        if (preview.payments > 0) {
+            payments = el('input', { type: 'checkbox', id: 'deleteOrgPayments' });
+            box.appendChild(el('label', { style: 'display:flex;gap:0.5rem;align-items:flex-start;font-size:13px;margin-top:0.75rem;color:var(--warning);', for: 'deleteOrgPayments' }, [
+                payments, el('span', { text: 'Je confirme la suppression de ' + preview.payments + ' paiement(s) : ils disparaîtront aussi du chiffre d\'affaires.' }),
+            ]));
+        }
+        const confirmBtn = el('button', { class: 'btn btn-sm', style: 'background:var(--error);color:#fff;border-color:var(--error);', text: 'Supprimer définitivement' });
+        const ready = () => name.value.trim().toLowerCase() === preview.commercial_name.trim().toLowerCase() && (!payments || payments.checked);
+        const refresh = () => { confirmBtn.disabled = !ready(); confirmBtn.style.opacity = ready() ? '1' : '0.4'; };
+        name.oninput = refresh;
+        if (payments) payments.onchange = refresh;
+        refresh();
+        confirmBtn.onclick = async () => {
+            if (!ready()) return;
+            confirmBtn.disabled = true;
+            try {
+                await apiFetch('/admin/organizations/' + org.id + '/delete', { method: 'POST', body: { confirm_name: name.value.trim(), delete_payments: !!(payments && payments.checked) } });
+                close();
+                if (row) row.remove();
+                loadDashboard();
+                alert('« ' + preview.commercial_name + ' » a été supprimée définitivement.');
+            } catch (e) {
+                msg.textContent = e.detail || e.message;
+                refresh();
+            }
+        };
+        box.append(msg, el('div', { style: 'display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1rem;' }, [
+            el('button', { class: 'btn btn-ghost btn-sm', text: 'Annuler', onclick: close }), confirmBtn,
+        ]));
+        name.focus();
     }
 
     // ── Suivi Google Business et site web : mise en place et rapports mensuels ──
