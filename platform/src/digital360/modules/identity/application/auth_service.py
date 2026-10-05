@@ -236,6 +236,51 @@ class AuthService:
             await session.refresh(user)
         return user
 
+    async def change_password(
+        self,
+        user_id: uuid.UUID,
+        *,
+        current_password: str,
+        new_password: str,
+        current_token: str | None,
+        client: ClientInfo,
+    ) -> None:
+        """Change le mot de passe (l'actuel est exigé) et ferme les autres sessions du compte."""
+        async with self._session_factory() as session, session.begin():
+            user = (
+                await session.execute(select(User).where(User.id == user_id).with_for_update())
+            ).scalar_one()
+            if not self._hasher.verify(user.password_hash, current_password):
+                raise AppError(
+                    "INVALID_CURRENT_PASSWORD",
+                    "Le mot de passe actuel est incorrect.",
+                    errors=[{"field": "current_password", "reason": "invalid"}],
+                )
+            problems = password_problems(new_password, email=user.email)
+            if problems:
+                raise AppError(
+                    "WEAK_PASSWORD",
+                    "Le mot de passe ne respecte pas les règles de sécurité.",
+                    errors=[{"field": "new_password", "reason": problem} for problem in problems],
+                )
+            user.password_hash = self._hasher.hash(new_password)
+            # Un autre appareil connecté avec l'ancien mot de passe est déconnecté ; pas celui-ci
+            others = update(UserSession).where(
+                UserSession.user_id == user_id, UserSession.revoked_at.is_(None)
+            )
+            if current_token:
+                others = others.where(UserSession.id != hash_token(current_token))
+            await session.execute(others.values(revoked_at=func.now()))
+            await record_audit(
+                session,
+                actor=Actor.user(user_id),
+                action="user.password_change",
+                entity_type="user",
+                entity_id=user_id,
+                ip=client.ip,
+                user_agent=client.user_agent,
+            )
+
     async def _create_session(
         self, session: AsyncSession, user_id: uuid.UUID, client: ClientInfo
     ) -> IssuedSession:

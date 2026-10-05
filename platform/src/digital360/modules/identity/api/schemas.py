@@ -38,6 +38,11 @@ class PasswordResetRequest(BaseModel):
     password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
 
 
+class PasswordChangeRequest(BaseModel):
+    current_password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
+    new_password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

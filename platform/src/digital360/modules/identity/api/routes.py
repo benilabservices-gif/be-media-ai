@@ -15,6 +15,7 @@ from digital360.modules.identity.api.dependencies import (
 from digital360.modules.identity.api.schemas import (
     CsrfResponse,
     LoginRequest,
+    PasswordChangeRequest,
     PasswordForgotRequest,
     PasswordResetRequest,
     ProfileUpdate,
@@ -37,6 +38,8 @@ REGISTER_PER_IP = Limit(max_hits=10, window_seconds=60 * 60)
 FORGOT_PER_IP = Limit(max_hits=10, window_seconds=60 * 60)
 FORGOT_PER_EMAIL = Limit(max_hits=3, window_seconds=60 * 60)
 RESET_PER_IP = Limit(max_hits=20, window_seconds=60 * 60)
+# Un mot de passe actuel deviné à répétition depuis une session volée : limité par compte
+PASSWORD_CHANGE_PER_USER = Limit(max_hits=5, window_seconds=15 * 60)
 
 router = APIRouter(tags=["auth"])
 
@@ -188,3 +191,26 @@ async def update_profile(
         authenticated.user.id, full_name=body.full_name, phone=body.phone, client=client
     )
     return UserOut.model_validate(user)
+
+
+@router.post(
+    "/me/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_csrf)],
+)
+async def change_password(
+    body: PasswordChangeRequest,
+    request: Request,
+    auth: Auth,
+    client: Client,
+    authenticated: Annotated[AuthenticatedUser, Depends(get_authenticated_user)],
+) -> None:
+    """Change le mot de passe ; les autres appareils connectés au compte sont déconnectés."""
+    _limiter(request).hit(f"password-change:{authenticated.user.id}", PASSWORD_CHANGE_PER_USER)
+    await auth.change_password(
+        authenticated.user.id,
+        current_password=body.current_password,
+        new_password=body.new_password,
+        current_token=request.cookies.get(SESSION_COOKIE_NAME),
+        client=client,
+    )

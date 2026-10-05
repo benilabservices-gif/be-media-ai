@@ -12,6 +12,7 @@ from digital360.modules.billing.application import service as billing
 from digital360.modules.billing.infrastructure.cartflox import PaymentGateway
 from digital360.modules.diagnostics.application import notifications as diagnostic_notifications
 from digital360.modules.identity.application import password_reset
+from digital360.modules.organizations.application import team
 from digital360.modules.projects.application import notifications as project_notifications
 from digital360.modules.referrals.application import service as referrals
 
@@ -21,6 +22,7 @@ def build_registry(
 ) -> JobRegistry:
     registry = JobRegistry()
     password_reset.register_jobs(registry, email_sender)
+    team.register_jobs(registry, email_sender, app_url=settings.app_url)
     diagnostic_notifications.register_jobs(
         registry,
         email_sender,

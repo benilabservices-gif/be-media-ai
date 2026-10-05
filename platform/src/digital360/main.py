@@ -41,6 +41,7 @@ from digital360.modules.identity.application.staff_service import StaffService
 from digital360.modules.identity.infrastructure.password_hasher import Argon2PasswordHasher
 from digital360.modules.organizations.api import routes as organization_routes
 from digital360.modules.organizations.application.service import OrganizationService
+from digital360.modules.organizations.application.team import TeamService
 from digital360.modules.passport.api import routes as passport_routes
 from digital360.modules.passport.application.service import PassportService
 from digital360.modules.projects.api import routes as project_routes
@@ -87,6 +88,7 @@ def create_app(
             session_factory, hasher, reset_url=settings.password_reset_url
         )
         app.state.organization_service = OrganizationService(session_factory)
+        app.state.team_service = TeamService(session_factory)
         app.state.diagnostic_service = DiagnosticService(session_factory, registry)
         app.state.passport_service = PassportService(session_factory)
         app.state.catalog_service = CatalogService(session_factory)

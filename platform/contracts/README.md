@@ -45,6 +45,8 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /admin/website-projects` · `POST /admin/website-projects/{id}/transition` | **Disponible** | Équipe : suivi et étapes des projets (§13) |
 | `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne Cartflox : achat ou renouvellement (§14) |
 | `GET·POST·PATCH /me/closer` | **Disponible** | Closer 3.0 : espace de l'apporteur d'affaires (§15) |
+| `POST /me/password` | **Disponible** | Changer son mot de passe (§16) |
+| `POST·GET /orgs/{id}/invitations` · `DELETE …/{invitation_id}` · `DELETE /orgs/{id}/members/{user_id}` · `POST /invitations/accept` | **Disponible** | Équipe d'un projet (§16) |
 | `GET /admin/closers` · `GET /admin/commission-statements` · `POST …/{id}/pay` · `PATCH /admin/closers/{id}` · `PUT /admin/organizations/{id}/closer` | **Disponible** | Équipe : closers, relevés et versements (§15) |
 
 ## 2. Configuration
@@ -365,6 +367,25 @@ Un client qui a **déjà payé une offre** peut devenir Closer 3.0. Il touche **
 - `POST /admin/commission-statements/{id}/pay` avec `{ "method", "reference", "paid_on" }` (`paid_on` vaut aujourd'hui par défaut) marque le relevé comme versé, et le closer reçoit un e-mail. 409 `ALREADY_PAID` si c'est déjà fait.
 - `PATCH /admin/closers/{id}` avec `{ "status": "SUSPENDED" | "ACTIVE" }`. Un closer suspendu ne gagne plus de commission et son code n'est plus accepté.
 - `PUT /admin/organizations/{id}/closer` avec `{ "closer_code": "AB12CD" }`, ou `null` pour détacher, rattache un client à la main (client amené par téléphone). Le rattachement vaut pour les paiements à venir. 422 `SELF_REFERRAL` si le closer est membre de cette entreprise.
+
+## 16. Mon compte, équipe et projets
+
+**Un compte, plusieurs projets.** Chaque entreprise est un projet distinct, avec son diagnostic, son plan d'action, ses offres et ses paiements. `GET /me` → `memberships` liste les projets de l'utilisateur.
+- Le projet affiché est mémorisé dans `localStorage` (`d360_org`). Changer de projet recharge l'espace, pour qu'aucune donnée de l'ancien projet ne reste affichée.
+- Un diagnostic terminé par un utilisateur connecté n'est **jamais** rattaché au hasard :
+  - lancé depuis « + Nouveau projet » (`d360_diag_target = "new"`) : `POST /orgs` avec `diagnostic_id` ;
+  - lancé depuis un projet (`d360_diag_target = <id>`) : `POST /orgs/{id}/diagnostics/claim` ;
+  - sinon, le client choisit le projet dans une fenêtre, ou crée un nouveau projet.
+
+**Profil** : `PATCH /me` avec `{ full_name, phone }` (§1).
+
+**Mot de passe** : `POST /me/password` avec `{ current_password, new_password }` → 204. Les autres appareils connectés sont déconnectés ; celui-ci reste connecté. Erreurs : 400 `INVALID_CURRENT_PASSWORD`, 400 `WEAK_PASSWORD` (mêmes règles qu'à l'inscription), 429 après 5 essais en 15 minutes.
+
+**Équipe** (réservé au responsable, `membership:manage`) :
+- `POST /orgs/{id}/invitations` avec `{ email, role }`, où `role` vaut `CLIENT_MEMBER` (consulte l'espace) ou `CLIENT_OWNER` (peut acheter et tout gérer) → 201. La personne reçoit un e-mail avec un lien `…/#invitation=<jeton>`, valable 7 jours. Réinviter la même adresse renvoie un nouveau lien. Erreurs : 409 `ALREADY_MEMBER`, 422 `TOO_MANY_INVITATIONS` (20 en attente au maximum).
+- `GET /orgs/{id}/invitations` liste les invitations en attente. `DELETE /orgs/{id}/invitations/{invitation_id}` en annule une (le lien ne marche plus).
+- `GET /orgs/{id}/members` liste les membres. `DELETE /orgs/{id}/members/{user_id}` retire un membre, qui perd l'accès aussitôt. 409 `LAST_OWNER` : le projet garde au moins un responsable.
+- **Accepter** : `POST /invitations/accept` avec `{ token }`, une fois connecté **avec l'adresse invitée** (après inscription si besoin). Renvoie `{ organization_id, organization_name, role }`. Erreurs : 400 `INVALID_INVITATION` (expirée, annulée ou déjà utilisée), 403 `INVITATION_EMAIL_MISMATCH` (autre compte connecté : se reconnecter avec la bonne adresse).
 
 ## 8. Demander un changement
 
