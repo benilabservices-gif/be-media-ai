@@ -681,9 +681,9 @@
                     .then(r => (r.ok ? r.json() : null))
                     .catch(() => null);
                 const base = '/orgs/' + _orgId;
-                const [org, passport, plan, diagnostics, entitlements, requests] = await Promise.all([
+                const [org, passport, plan, diagnostics, entitlements, requests, performance] = await Promise.all([
                     get(base), get(base + '/passport'), get(base + '/action-plan'), get(base + '/diagnostics'),
-                    get(base + '/entitlements'), get(base + '/purchase-requests'),
+                    get(base + '/entitlements'), get(base + '/purchase-requests'), get(base + '/performance'),
                     loadCatalogForDashboard(), loadProject(), loadBilling(), loadCloser(),
                 ]);
                 _orgData = org;
@@ -692,6 +692,7 @@
                 diagnosticsData = diagnostics;
                 entitlementsData = entitlements;
                 _purchaseRequests = requests?.data || [];
+                _performance = performance;
             } else {
                 await loadCloser();
             }
@@ -721,7 +722,8 @@
                 showPaymentBanner('success', 'Bienvenue dans l\'équipe de ' + membership.organization_name + '.');
             }
             // Lien des e-mails Closer 3.0 : dashboard.html#closer
-            if (window.location.hash === '#closer') switchPage('closer');
+            const hashPage = window.location.hash.slice(1);
+            if (['closer', 'google', 'analytics', 'compte'].includes(hashPage)) switchPage(hashPage);
             handlePaymentReturn();
         } catch (e) {
             console.error('[D360] Dashboard init error:', e);
@@ -890,6 +892,106 @@
         return value === true || value === 'UNLIMITED' || (typeof value === 'number' && value > 0);
     }
     function renderServicePage(pageKey) {
+        renderServiceOffer(pageKey);
+        appendTracking(pageKey);
+    }
+
+    // ── Suivi des résultats : mise en place Google Business et rapports mensuels ──
+    let _performance = null;
+    const TRACKED_CHANNELS = { google: 'GOOGLE_BUSINESS', analytics: 'WEBSITE' };
+    const monthName = period => new Date(period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    function metricValue(definition, value) {
+        if (value === undefined || value === null) return '—';
+        return definition.kind === 'rating'
+            ? value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' / 5'
+            : new Intl.NumberFormat('fr-FR').format(value);
+    }
+    function changeBadge(change) {
+        if (!change) return null;
+        const text = change.points !== null && change.points !== undefined
+            ? (change.points > 0 ? '+' : '') + change.points.toLocaleString('fr-FR') + ' pt'
+            : (change.percent > 0 ? '+' : '') + change.percent + ' %';
+        const color = change.good === true ? 'var(--success)' : change.good === false ? 'var(--error)' : 'var(--text-muted)';
+        return h('div', { style: 'font-size:12px;font-weight:600;color:' + color + ';margin-top:2px;', text: text + ' vs mois précédent' });
+    }
+
+    function googleSetupCard(setup, managerEmail) {
+        const steps = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:0.5rem;margin:1rem 0;' },
+            setup.steps.map((step, index) => h('div', {
+                style: 'padding:0.75rem;border-radius:var(--radius-md);border:1px solid ' + (step.done ? 'var(--accent)' : 'var(--border)') + ';font-size:13px;',
+            }, [
+                h('div', { style: 'font-weight:700;color:' + (step.done ? 'var(--accent)' : 'var(--text-muted)') + ';', text: (step.done ? '✓ ' : (index + 1) + '. ') }),
+                h('div', { text: step.label }),
+            ])));
+        const card = h('div', { class: 'card', style: 'margin-top:1.5rem;' }, [h('h3', { text: 'Mise en place de votre fiche Google' }), steps]);
+        if (setup.note) card.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-bottom:1rem;', text: setup.note }));
+        if (['NOT_STARTED', 'PROFILE_CREATED'].includes(setup.status)) {
+            card.appendChild(h('div', { style: 'font-size:14px;color:var(--text-secondary);' }, [
+                h('p', { style: 'font-weight:600;margin-bottom:0.5rem;', text: 'Ce que vous avez à faire : donner l\'accès à BENILAB' }),
+                h('ol', { style: 'margin:0 0 0 1.2rem;line-height:1.8;' }, [
+                    'Ouvrez Google Maps ou Google, connecté au compte qui gère votre fiche.',
+                    'Ouvrez votre fiche, puis Menu (⋮) → « Paramètres de la fiche » → « Personnes et accès ».',
+                    'Cliquez sur « Ajouter », saisissez ' + managerEmail + ' et choisissez le rôle « Gestionnaire ».',
+                    'Prévenez votre conseiller : il confirme l\'accès et prend le relais.',
+                ].map(text => h('li', { text }))),
+                h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:0.75rem;', text: 'Pas encore de fiche ? Votre conseiller la crée avec les informations de votre entreprise ; vous n\'aurez qu\'à confirmer le code que Google vous enverra.' }),
+            ]));
+        }
+        if (setup.profile_url) {
+            card.appendChild(h('a', { class: 'btn btn-outline btn-sm', style: 'margin-top:1rem;', href: setup.profile_url, target: '_blank', rel: 'noopener', text: 'Voir ma fiche Google' }));
+        }
+        return card;
+    }
+
+    function reportCard(channel, title) {
+        const [latest, ...older] = channel.reports;
+        const defs = channel.definitions.filter(d => latest.metrics[d.key] !== undefined);
+        const card = h('div', { class: 'card', style: 'margin-top:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: title + ' : ' + monthName(latest.period) }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Chiffres relevés par votre conseiller, comparés au mois précédent.' }),
+            h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:0.75rem;' },
+                defs.map(d => h('div', { style: 'padding:0.9rem;border:1px solid var(--border);border-radius:var(--radius-md);min-width:0;' }, [
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);', text: d.label }),
+                    h('div', { style: 'font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent);', text: metricValue(d, latest.metrics[d.key]) }),
+                    changeBadge(latest.changes[d.key]),
+                ]))),
+        ]);
+        if ((latest.top_searches || []).length) {
+            card.appendChild(h('p', { style: 'font-size:13px;margin-top:1rem;', text: 'Recherches qui vous ont trouvé : ' + latest.top_searches.join(' · ') }));
+        }
+        if (latest.note) {
+            card.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-top:1rem;display:block;' }, [h('strong', { text: 'Le mot de votre conseiller : ' }), h('span', { text: latest.note })]));
+        }
+        if (older.length) {
+            const columns = channel.definitions.filter(d => channel.reports.some(r => r.metrics[d.key] !== undefined));
+            card.appendChild(h('h4', { style: 'font-size:13px;margin:1.5rem 0 0.5rem;', text: 'Historique' }));
+            card.appendChild(h('div', { style: 'overflow-x:auto;' }, h('table', { style: 'width:100%;font-size:12px;border-collapse:collapse;' }, [
+                h('thead', {}, h('tr', {}, ['Mois', ...columns.map(d => d.label)].map(label => h('th', { style: 'text-align:left;padding:6px;color:var(--text-muted);white-space:nowrap;', text: label })))),
+                h('tbody', {}, channel.reports.map(r => h('tr', { style: 'border-top:1px solid var(--border);' },
+                    [monthName(r.period), ...columns.map(d => metricValue(d, r.metrics[d.key]))].map(value => h('td', { style: 'padding:6px;white-space:nowrap;', text: value }))))),
+            ])));
+        }
+        return card;
+    }
+
+    function appendTracking(pageKey) {
+        const channelKey = TRACKED_CHANNELS[pageKey];
+        const root = document.querySelector('[data-service-root="' + pageKey + '"]');
+        if (!channelKey || !root || !_performance) return;
+        const granted = SERVICE_PAGES[pageKey].keys.some(key => isGranted(entitlementValue(key)));
+        if (pageKey === 'google' && granted) root.appendChild(googleSetupCard(_performance.google_setup, _performance.manager_email));
+        const channel = _performance.channels[channelKey];
+        if (channel.reports.length) {
+            root.appendChild(reportCard(channel, pageKey === 'google' ? 'Votre fiche Google' : 'Votre site web'));
+        } else if (granted) {
+            root.appendChild(h('div', { class: 'card', style: 'margin-top:1.5rem;' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Vos résultats mensuels' }),
+                h('p', { style: 'font-size:14px;color:var(--text-muted);', text: 'Votre premier rapport arrivera au début du mois prochain : vous serez prévenu par e-mail.' }),
+            ]));
+        }
+    }
+
+    function renderServiceOffer(pageKey) {
         const root = document.querySelector('[data-service-root="' + pageKey + '"]');
         const config = SERVICE_PAGES[pageKey];
         if (!root || !config) return;

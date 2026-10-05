@@ -915,6 +915,7 @@
         container.appendChild(mainDiv);
         if ((_me?.staff_permissions || []).includes('order:create')) container.appendChild(directSaleCard(org));
         if ((_me?.staff_permissions || []).includes('closer:manage')) container.appendChild(closerAttachCard(org));
+        container.appendChild(trackingCard(org));
     }
 
     // ── Diagnostics (Prospects) ──
@@ -1586,6 +1587,144 @@
         actionTd.appendChild(btn);
         tr.appendChild(actionTd);
         return tr;
+    }
+
+    // ── Suivi Google Business et site web : mise en place et rapports mensuels ──
+    const SETUP_LABELS = {
+        NOT_STARTED: 'Pas commencée', PROFILE_CREATED: 'Fiche créée', ACCESS_GRANTED: 'Accès donné à BENILAB',
+        VERIFIED: 'Fiche validée par Google', ACTIVE: 'Fiche active, gérée par BENILAB',
+    };
+    const CHANNEL_LABELS = { GOOGLE_BUSINESS: 'Google Business', WEBSITE: 'Site web' };
+    function el(tag, props = {}, children = []) {
+        const node = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+            if (key === 'text') node.textContent = value;
+            else if (key === 'style') node.style.cssText = value;
+            else if (key.startsWith('on')) node[key] = value;
+            else node.setAttribute(key, value);
+        });
+        (Array.isArray(children) ? children : [children]).forEach(child => { if (child) node.appendChild(child); });
+        return node;
+    }
+    function previousMonth() {
+        const d = new Date();
+        d.setDate(1);
+        d.setMonth(d.getMonth() - 1);
+        return d.toISOString().slice(0, 7);
+    }
+
+    function trackingCard(org) {
+        const card = el('div', { class: 'card', style: 'margin-top:1.5rem;' }, [el('h3', { text: 'Suivi Google & site web' }), el('p', { style: 'font-size:13px;color:var(--text-muted);', text: 'Chargement…' })]);
+        const canEdit = (_me?.staff_permissions || []).includes('task:manage');
+        const base = '/admin/organizations/' + org.id;
+        const msg = el('div', { style: 'font-size:13px;min-height:18px;margin-top:0.5rem;' });
+        const say = (text, ok) => { msg.style.color = ok ? 'var(--success)' : 'var(--error)'; msg.textContent = text; };
+        const label = (text, control) => el('div', { style: 'margin-bottom:0.6rem;' }, [el('label', { style: 'display:block;font-size:12px;color:var(--text-muted);margin-bottom:3px;', text }), control]);
+
+        function render(data) {
+            card.textContent = '';
+            card.appendChild(el('h3', { style: 'margin-bottom:0.25rem;', text: 'Suivi Google & site web' }));
+            card.appendChild(el('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Le client voit l\'avancement et chaque rapport dans son espace ; il est prévenu par e-mail du premier rapport de chaque mois.' }));
+
+            // Mise en place de la fiche Google
+            const setup = data.google_setup;
+            const status = el('select', { class: 'form-select', style: 'width:100%;' }, Object.entries(SETUP_LABELS).map(([value, text]) => {
+                const option = el('option', { value, text });
+                if (value === setup.status) option.selected = true;
+                return option;
+            }));
+            const url = el('input', { class: 'form-input', placeholder: 'https://maps.google.com/…', style: 'width:100%;' });
+            url.value = setup.profile_url || '';
+            const note = el('textarea', { class: 'form-input', rows: '2', maxlength: '2000', placeholder: 'Message au client (ex. : surveillez le SMS de Google)', style: 'width:100%;' });
+            note.value = setup.note || '';
+            card.append(el('h4', { style: 'font-size:13px;margin-bottom:0.5rem;', text: 'Fiche Google Business' }), label('Étape', status), label('Lien de la fiche', url), label('Message au client', note));
+            if (canEdit) {
+                card.appendChild(el('button', { class: 'btn btn-outline btn-sm', text: 'Enregistrer l\'étape', onclick: async () => {
+                    try {
+                        await apiFetch(base + '/google-setup', { method: 'PUT', body: { status: status.value, profile_url: url.value.trim() || null, note: note.value.trim() || null } });
+                        say('Étape enregistrée : le client la voit dans son espace.', true);
+                    } catch (e) { say(e.detail || e.message); }
+                } }));
+            }
+
+            // Saisie d'un rapport mensuel
+            const channel = el('select', { class: 'form-select', style: 'width:100%;' }, Object.entries(CHANNEL_LABELS).map(([value, text]) => el('option', { value, text })));
+            const month = el('input', { class: 'form-input', type: 'month', style: 'width:100%;' });
+            month.value = previousMonth();
+            const fields = el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 0.75rem;' });
+            const searches = el('input', { class: 'form-input', placeholder: 'coiffeuse cocody, tresses abidjan', style: 'width:100%;' });
+            const searchesRow = label('Recherches qui ont mené à la fiche (5 max, séparées par des virgules)', searches);
+            const reportNote = el('textarea', { class: 'form-input', rows: '2', maxlength: '2000', placeholder: 'Ce qui a été fait ce mois-ci, ce qui est prévu', style: 'width:100%;' });
+            const inputs = {};
+            const buildFields = values => {
+                fields.textContent = '';
+                data.channels[channel.value].definitions.forEach(def => {
+                    const input = el('input', { class: 'form-input', type: 'number', min: def.kind === 'rating' ? '1' : '0', max: def.kind === 'rating' ? '5' : '', step: def.kind === 'rating' ? '0.1' : '1', style: 'width:100%;' });
+                    if (values && values[def.key] !== undefined) input.value = values[def.key];
+                    inputs[def.key] = input;
+                    fields.appendChild(label(def.label, input));
+                });
+                searchesRow.style.display = channel.value === 'GOOGLE_BUSINESS' ? '' : 'none';
+            };
+            channel.onchange = () => buildFields(null);
+            buildFields(null);
+            const fill = (channelKey, report) => {
+                channel.value = channelKey;
+                month.value = report.period.slice(0, 7);
+                buildFields(report.metrics);
+                searches.value = (report.top_searches || []).join(', ');
+                reportNote.value = report.note || '';
+                month.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+            card.append(el('h4', { style: 'font-size:13px;margin:1.5rem 0 0.5rem;', text: 'Rapport mensuel' }),
+                el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;' }, [label('Canal', channel), label('Mois', month)]),
+                fields, searchesRow, label('Commentaire pour le client', reportNote));
+            if (canEdit) {
+                card.appendChild(el('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer le rapport', onclick: async () => {
+                    if (!month.value) { say('Choisissez le mois du rapport.'); return; }
+                    const metrics = {};
+                    Object.entries(inputs).forEach(([key, input]) => { if (input.value !== '') metrics[key] = Number(input.value); });
+                    if (!Object.keys(metrics).length) { say('Saisissez au moins un chiffre.'); return; }
+                    try {
+                        const updated = await apiFetch(base + '/reports/' + channel.value + '/' + month.value + '-01', { method: 'PUT', body: {
+                            metrics,
+                            top_searches: channel.value === 'GOOGLE_BUSINESS' ? searches.value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 5) : [],
+                            note: reportNote.value.trim() || null,
+                        } });
+                        render(updated);
+                        say('Rapport enregistré : le client le voit dans son espace.', true);
+                    } catch (e) { say((e.detail || e.message) + ((e.errors || []).length ? ' (' + e.errors.map(x => x.field).join(', ') + ')' : '')); }
+                } }));
+            }
+
+            // Rapports déjà saisis
+            Object.entries(CHANNEL_LABELS).forEach(([key, name]) => {
+                const reports = data.channels[key].reports;
+                if (!reports.length) return;
+                card.appendChild(el('h4', { style: 'font-size:13px;margin:1.5rem 0 0.5rem;', text: name + ' : rapports saisis' }));
+                reports.forEach(report => {
+                    const period = new Date(report.period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                    const actions = el('div', { style: 'display:flex;gap:0.5rem;' });
+                    if (canEdit) {
+                        actions.append(
+                            el('button', { class: 'btn btn-ghost btn-sm', text: 'Modifier', onclick: () => fill(key, report) }),
+                            el('button', { class: 'btn btn-ghost btn-sm', text: 'Supprimer', onclick: async () => {
+                                if (!confirm('Supprimer le rapport ' + name + ' de ' + period + ' ? Le client ne le verra plus.')) return;
+                                try { await apiFetch(base + '/reports/' + key + '/' + report.period, { method: 'DELETE' }); render(await apiFetch(base + '/performance')); }
+                                catch (e) { say(e.detail || e.message); }
+                            } }),
+                        );
+                    }
+                    card.appendChild(el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:6px 0;border-top:1px solid var(--border);font-size:13px;' }, [
+                        el('span', { text: period + ' · ' + Object.keys(report.metrics).length + ' indicateur(s)' }), actions,
+                    ]));
+                });
+            });
+            card.appendChild(msg);
+        }
+
+        apiFetch(base + '/performance').then(render).catch(e => { card.lastChild.textContent = 'Suivi indisponible : ' + (e.detail || e.message); });
+        return card;
     }
 
     // ── Closers 3.0 : relevés, versements, suspension, rattachement ──
