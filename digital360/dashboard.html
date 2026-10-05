@@ -46,10 +46,11 @@
                 <div class="dash-sidebar-user">
                     <div class="dash-avatar" id="userAvatar">A</div>
                     <div class="dash-user-info">
-                        <div class="dash-user-name" id="userName">Amadou Diallo</div>
-                        <div class="dash-user-role">Client</div>
+                        <div class="dash-user-name" id="userName">—</div>
+                        <div class="dash-user-role" id="userRole">Client</div>
                     </div>
                 </div>
+                <div id="projectSwitcher" style="margin-top:0.75rem;"></div>
             </div>
             <nav class="dash-sidebar-nav">
                 <div class="dash-nav-section">Principal</div>
@@ -90,6 +91,9 @@
                 </div>
                 <div class="dash-nav-item" data-page="support" onclick="switchPage('support')">
                     <span class="nav-icon">💬</span> Support
+                </div>
+                <div class="dash-nav-item" data-page="compte" onclick="switchPage('compte')">
+                    <span class="nav-icon">👤</span> Mon compte
                 </div>
                 <div class="dash-nav-section">Gagner avec BENILAB</div>
                 <div class="dash-nav-item" data-page="closer" onclick="switchPage('closer')">
@@ -290,6 +294,15 @@
                      </div>
                  </div>
 
+                <!-- ═══ MON COMPTE ═══ -->
+                <div class="dash-page" id="page-compte">
+                    <div class="page-header reveal">
+                        <h1>Mon compte</h1>
+                        <p>Vos informations, votre mot de passe, votre équipe et vos projets.</p>
+                    </div>
+                    <div class="reveal delay-1" id="accountRoot"></div>
+                </div>
+
                 <!-- ═══ CLOSER 3.0 ═══ -->
                 <div class="dash-page" id="page-closer">
                     <div class="page-header reveal">
@@ -396,7 +409,8 @@
         analytics: 'Analytics',
         abonnement: 'Mon abonnement',
         support: 'Support',
-        closer: 'Closer 3.0'
+        closer: 'Closer 3.0',
+        compte: 'Mon compte'
     };
 
     function switchPage(pageId) {
@@ -654,7 +668,10 @@
             const me = await checkAuth();
             _meData = me;
             _user = me?.user;
-            const membership = me?.memberships?.[0];
+            _memberships = me?.memberships || [];
+            const wanted = new URLSearchParams(window.location.search).get('org') || readStoredProject();
+            const membership = _memberships.find(m => m.organization_id === wanted) || _memberships[0];
+            if (membership) storeProject(membership.organization_id);
             _isOwner = membership?.role === 'CLIENT_OWNER';
             if (membership) {
                 _orgId = membership.organization_id;
@@ -716,6 +733,11 @@
             Object.keys(SERVICE_PAGES).forEach(renderServicePage);
             renderProject();
             renderCloser();
+            renderProjectSwitcher(membership);
+            renderAccount();
+            if (new URLSearchParams(window.location.search).get('notice') === 'invitation_accepted' && membership) {
+                showPaymentBanner('success', 'Bienvenue dans l\'équipe de ' + membership.organization_name + '.');
+            }
             // Lien des e-mails Closer 3.0 : dashboard.html#closer
             if (window.location.hash === '#closer') switchPage('closer');
             handlePaymentReturn();
@@ -1522,6 +1544,208 @@
         } finally {
             hideD360Loading();
         }
+    }
+
+    // ── Projets : un compte, plusieurs entreprises, chacune avec ses diagnostics ──
+    let _memberships = [];
+    const ROLE_NAMES = { CLIENT_OWNER: 'Responsable', CLIENT_MEMBER: 'Membre' };
+    function readStoredProject() { try { return localStorage.getItem('d360_org'); } catch (_) { return null; } }
+    function storeProject(id) { try { localStorage.setItem('d360_org', id); } catch (_) {} }
+    function openProject(id) { storeProject(id); window.location.href = 'dashboard.html'; }
+    function startNewProject() {
+        try {
+            localStorage.setItem('d360_diag_target', 'new');
+            localStorage.removeItem('d360_diag_id');
+            localStorage.removeItem('d360_diag_token');
+        } catch (_) {}
+        window.location.href = 'index.html#diagnostic';
+    }
+    // Tout lien « diagnostic » de l'espace vise le projet affiché : le résultat y sera rattaché
+    document.addEventListener('click', event => {
+        const link = event.target.closest && event.target.closest('a[href="index.html#diagnostic"]');
+        if (!link) return;
+        try {
+            localStorage.setItem('d360_diag_target', _orgId || 'new');
+            localStorage.removeItem('d360_diag_id');
+            localStorage.removeItem('d360_diag_token');
+        } catch (_) {}
+    });
+
+    function renderProjectSwitcher(current) {
+        const root = document.getElementById('projectSwitcher');
+        if (!root) return;
+        root.textContent = '';
+        if (current) document.getElementById('userRole').textContent = ROLE_NAMES[current.role] || 'Client';
+        if (!_memberships.length) return;
+        const label = h('div', { style: 'font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;', text: 'Projet' });
+        const select = h('select', { class: 'form-input', 'aria-label': 'Projet affiché', style: 'width:100%;padding:6px 8px;font-size:13px;' },
+            _memberships.map(m => {
+                const option = h('option', { value: m.organization_id, text: m.organization_name });
+                if (current && m.organization_id === current.organization_id) option.selected = true;
+                return option;
+            }).concat([h('option', { value: '__new__', text: '+ Nouveau projet' })]));
+        select.onchange = () => (select.value === '__new__' ? startNewProject() : openProject(select.value));
+        root.append(label, select);
+    }
+
+    const PASSWORD_REASONS = {
+        too_short: 'au moins 10 caractères', too_long: '128 caractères maximum',
+        too_common: 'pas un mot de passe trop courant', same_as_email: "différent de l'e-mail",
+        single_character: 'pas un seul caractère répété',
+    };
+    function feedback() { return h('div', { style: 'font-size:13px;min-height:18px;margin-top:0.5rem;' }); }
+    function say(el, text, ok) { el.style.color = ok ? 'var(--success)' : 'var(--error)'; el.textContent = text; }
+    function field(label, control) {
+        return h('div', { class: 'form-group', style: 'margin-bottom:0.75rem;' }, [h('label', { class: 'form-label', text: label }), control]);
+    }
+    function textInput(attrs, value) {
+        const el = h('input', { class: 'form-input', style: 'max-width:360px;', ...attrs });
+        if (value) el.value = value;
+        return el;
+    }
+
+    function profileCard() {
+        const user = _meData?.user || {};
+        const name = textInput({ type: 'text', maxlength: '200', autocomplete: 'name' }, user.full_name);
+        const phone = textInput({ type: 'tel', placeholder: '+2290100000000', autocomplete: 'tel' }, user.phone);
+        const email = textInput({ type: 'email', disabled: 'disabled' }, user.email);
+        const msg = feedback();
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:1rem;', text: 'Mes informations' }),
+            field('Nom complet', name), field('Téléphone (format international)', phone), field('E-mail de connexion', email),
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer', onclick: async () => {
+                const number = normalizeNumber(phone.value.trim());
+                if (number && !/^\+[1-9]\d{6,14}$/.test(number)) { say(msg, 'Téléphone au format international, par exemple +2290100000000.'); return; }
+                try {
+                    const updated = await sendJson('PATCH', '/me', { full_name: name.value.trim(), phone: number });
+                    _meData.user = updated;
+                    document.getElementById('userName').textContent = updated.full_name;
+                    say(msg, 'Informations enregistrées.', true);
+                } catch (e) { say(msg, e.message); }
+            } }),
+            msg,
+        ]);
+    }
+
+    function passwordCard() {
+        const current = textInput({ type: 'password', autocomplete: 'current-password' });
+        const fresh = textInput({ type: 'password', autocomplete: 'new-password' });
+        const again = textInput({ type: 'password', autocomplete: 'new-password' });
+        const msg = feedback();
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:1rem;', text: 'Mot de passe' }),
+            field('Mot de passe actuel', current), field('Nouveau mot de passe (10 caractères minimum)', fresh), field('Confirmer le nouveau mot de passe', again),
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Changer le mot de passe', onclick: async () => {
+                if (fresh.value !== again.value) { say(msg, 'Les deux nouveaux mots de passe ne sont pas identiques.'); return; }
+                try {
+                    await sendJson('POST', '/me/password', { current_password: current.value, new_password: fresh.value });
+                    current.value = fresh.value = again.value = '';
+                    say(msg, 'Mot de passe changé. Vos autres appareils ont été déconnectés.', true);
+                } catch (e) {
+                    say(msg, e.code === 'WEAK_PASSWORD'
+                        ? 'Mot de passe trop faible : ' + (e.errors || []).map(x => PASSWORD_REASONS[x.reason] || x.reason).join(', ') + '.'
+                        : e.message);
+                }
+            } }),
+            msg,
+        ]);
+    }
+
+    async function fetchList(path) {
+        try {
+            const res = await fetch(D360_API_BASE + path, { credentials: 'include' });
+            return res.ok ? ((await res.json()).data || []) : [];
+        } catch (_) { return []; }
+    }
+
+    async function teamCard() {
+        const org = _memberships.find(m => m.organization_id === _orgId);
+        const card = h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: 'Mon équipe' }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Projet : ' + (org?.organization_name || '') }),
+        ]);
+        const msg = feedback();
+        const refresh = () => teamCard().then(next => card.replaceWith(next));
+        const members = await fetchList('/orgs/' + _orgId + '/members');
+        const invitations = _isOwner ? await fetchList('/orgs/' + _orgId + '/invitations') : [];
+        const myId = _meData?.user?.id;
+        members.forEach(m => {
+            const action = _isOwner && m.user_id !== myId
+                ? h('button', { class: 'btn btn-ghost btn-sm', text: 'Retirer', onclick: async () => {
+                    if (!confirm('Retirer ' + m.full_name + ' de l\'équipe ? Cette personne n\'aura plus accès à ce projet.')) return;
+                    try { await sendJson('DELETE', '/orgs/' + _orgId + '/members/' + m.user_id); refresh(); } catch (e) { say(msg, e.message); }
+                } })
+                : h('span', { style: 'font-size:12px;color:var(--text-muted);', text: m.user_id === myId ? 'Vous' : '' });
+            card.appendChild(h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:8px 0;border-top:1px solid var(--border);flex-wrap:wrap;' }, [
+                h('div', { style: 'min-width:0;' }, [
+                    h('div', { style: 'font-weight:600;font-size:14px;', text: m.full_name }),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);overflow-wrap:anywhere;', text: m.email + ' · ' + (ROLE_NAMES[m.role] || m.role) }),
+                ]),
+                action,
+            ]));
+        });
+        invitations.forEach(inv => {
+            card.appendChild(h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:8px 0;border-top:1px dashed var(--border);flex-wrap:wrap;' }, [
+                h('div', { style: 'min-width:0;font-size:13px;color:var(--text-muted);overflow-wrap:anywhere;', text: inv.email + ' · ' + (ROLE_NAMES[inv.role] || inv.role) + ' · invitation envoyée' }),
+                h('div', { style: 'display:flex;gap:0.5rem;' }, [
+                    h('button', { class: 'btn btn-ghost btn-sm', text: 'Renvoyer', onclick: async () => {
+                        try { await sendJson('POST', '/orgs/' + _orgId + '/invitations', { email: inv.email, role: inv.role }); say(msg, 'Invitation renvoyée à ' + inv.email + '.', true); } catch (e) { say(msg, e.message); }
+                    } }),
+                    h('button', { class: 'btn btn-ghost btn-sm', text: 'Annuler', onclick: async () => {
+                        try { await sendJson('DELETE', '/orgs/' + _orgId + '/invitations/' + inv.id); refresh(); } catch (e) { say(msg, e.message); }
+                    } }),
+                ]),
+            ]));
+        });
+        if (_isOwner) {
+            const email = textInput({ type: 'email', placeholder: 'collegue@entreprise.com', autocomplete: 'off' });
+            const role = h('select', { class: 'form-input', style: 'max-width:360px;' }, [
+                h('option', { value: 'CLIENT_MEMBER', text: 'Membre : consulte l\'espace' }),
+                h('option', { value: 'CLIENT_OWNER', text: 'Responsable : peut acheter et tout gérer' }),
+            ]);
+            card.append(
+                h('h4', { style: 'font-size:13px;margin:1.25rem 0 0.75rem;', text: 'Inviter un membre' }),
+                field('E-mail', email), field('Rôle', role),
+                h('button', { class: 'btn btn-primary btn-sm', text: 'Envoyer l\'invitation', onclick: async () => {
+                    if (!email.value.trim()) { say(msg, 'Indiquez l\'e-mail de la personne à inviter.'); return; }
+                    try {
+                        await sendJson('POST', '/orgs/' + _orgId + '/invitations', { email: email.value.trim(), role: role.value });
+                        say(msg, 'Invitation envoyée : la personne reçoit un lien valable 7 jours.', true);
+                        setTimeout(refresh, 1500);
+                    } catch (e) { say(msg, e.message); }
+                } }),
+            );
+        } else {
+            card.appendChild(h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:1rem;', text: 'Seul un responsable du projet peut inviter ou retirer des membres.' }));
+        }
+        card.appendChild(msg);
+        return card;
+    }
+
+    function projectsCard() {
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: 'Mes projets' }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Chaque projet a son propre diagnostic, son plan d\'action, ses offres et ses paiements.' }),
+            ...(_memberships.map(m => h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:8px 0;border-top:1px solid var(--border);' }, [
+                h('div', { style: 'min-width:0;' }, [
+                    h('div', { style: 'font-weight:600;font-size:14px;overflow-wrap:anywhere;', text: m.organization_name }),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);', text: ROLE_NAMES[m.role] || m.role }),
+                ]),
+                m.organization_id === _orgId
+                    ? h('span', { class: 'badge badge-success', text: 'Affiché' })
+                    : h('button', { class: 'btn btn-outline btn-sm', text: 'Ouvrir', onclick: () => openProject(m.organization_id) }),
+            ]))),
+            h('button', { class: 'btn btn-primary btn-sm', style: 'margin-top:1rem;', text: '+ Nouveau projet (nouveau diagnostic)', onclick: startNewProject }),
+        ]);
+    }
+
+    async function renderAccount() {
+        const root = document.getElementById('accountRoot');
+        if (!root || !_meData?.user) return;
+        root.textContent = '';
+        root.append(profileCard(), passwordCard());
+        if (_orgId) root.appendChild(await teamCard());
+        root.appendChild(projectsCard());
     }
 
     // ── Closer 3.0 : apporteur d'affaires (calculs faits par le serveur) ──

@@ -455,6 +455,7 @@
         },
         logout() { return apiFetch('/auth/logout', { method: 'POST' }).catch(() => {}); },
         getMe() { return apiFetch('/me'); },
+        acceptInvitation(token) { return apiFetch('/invitations/accept', { method: 'POST', body: { token } }); },
          async createOrg(body, diagToken) {
              const code = referralCode();
              const org = await apiFetch('/orgs', { method: 'POST', body: code ? { ...body, referral_code: code } : body, headers: diagHeaders(diagToken) });
@@ -1144,33 +1145,12 @@
           renderScorePage(scoreResult.score);
           renderPassportFromScore(scoreResult.passport);
           renderPlanFromScore(scoreResult.action_plan);
-           // If user is connected, auto-claim diagnostic to their org
+           // Connecté : le diagnostic va dans le projet choisi (jamais deviné)
            if (_user && diagSessionId && diagToken && !MOCK_MODE) {
-               try {
-                   const meData = await api.getMe();
-                   const membership = meData?.memberships?.[0];
-                   if (membership) {
-                       try {
-                           await api.claimDiagnostic(membership.organization_id, { diagnostic_id: diagSessionId }, diagToken);
-                           localStorage.removeItem('d360_diag_id');
-                           localStorage.removeItem('d360_diag_token');
-                       } catch (claimErr) {
-                           if (claimErr.code !== 'DIAGNOSTIC_ALREADY_CLAIMED') {
-                               console.error('[D360] Claim failed:', claimErr);
-                           }
-                       }
-                   } else {
-                       // No org yet — create one
-                       try {
-                           const org = await api.createOrg({ diagnostic_id: diagSessionId }, diagToken);
-                           localStorage.removeItem('d360_diag_id');
-                           localStorage.removeItem('d360_diag_token');
-                           showNotice('Espace créé pour « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.');
-                       } catch (err) {
-                           showNotice('Compte connecté, mais le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err));
-                       }
-                   }
-               } catch (_) {}
+               showPage('score');
+               const result = await attachDiagnostic(diagSessionId, diagToken, currentAnswers.company);
+               if (result.message) showNotice(result.message);
+               return;
            }
           showPage('score');
      }
@@ -1764,49 +1744,18 @@
              await refreshAuth();
              closeAuthModal();
              // Attach diagnostic if one is pending in localStorage
+             // Lien d'invitation ouvert avant la connexion : on l'accepte d'abord
+             if (pendingInvitation()) { await acceptPendingInvitation(); return; }
              const pendingId = localStorage.getItem('d360_diag_id');
              const pendingToken = localStorage.getItem('d360_diag_token');
              if (pendingId && pendingToken) {
-                 try {
-                     const meData = await api.getMe();
-                     const membership = meData?.memberships?.[0];
-                       if (membership) {
-                           // Claim onto existing org
-                           try {
-                               await api.claimDiagnostic(membership.organization_id, { diagnostic_id: pendingId }, pendingToken);
-                               localStorage.removeItem('d360_diag_id');
-                               localStorage.removeItem('d360_diag_token');
-                               window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_claimed';
-                           } catch (claimErr) {
-                               if (claimErr.code === 'DIAGNOSTIC_ALREADY_CLAIMED') {
-                                   localStorage.removeItem('d360_diag_id');
-                                   localStorage.removeItem('d360_diag_token');
-                                   window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_already_claimed';
-                               } else {
-                                   window.location.href = 'dashboard.html?welcome=1&notice=diagnostic_claim_failed';
-                               }
-                           }
-                        } else {
-                            // No org yet — check if staff member
-                            const isStaff = meData?.staff_roles && meData.staff_roles.length > 0;
-                            if (isStaff) {
-                                localStorage.removeItem('d360_diag_id');
-                                localStorage.removeItem('d360_diag_token');
-                                window.location.href = 'admin.html';
-                            } else {
-                                try {
-                                    const org = await api.createOrg({ diagnostic_id: pendingId }, pendingToken);
-                                    localStorage.removeItem('d360_diag_id');
-                                    localStorage.removeItem('d360_diag_token');
-                                    window.location.href = 'dashboard.html?welcome=1&notice=org_created';
-                                } catch (err) {
-                                    window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
-                                }
-                            }
-                        }
-                 } catch (meErr) {
-                     console.error('[D360] Failed to get user after login:', meErr);
+                 const isStaffOnly = (_meData?.staff_roles || []).length > 0 && !(_meData?.memberships || []).length;
+                 if (isStaffOnly) {
+                     window.location.href = 'admin.html';
+                     return;
                  }
+                 const result = await attachDiagnostic(pendingId, pendingToken, null);
+                 window.location.href = 'dashboard.html?welcome=1' + (result.notice ? '&notice=' + result.notice : '');
                } else {
                    // Aucun diagnostic en attente : rester sur la page
                    await refreshAuth();
@@ -1846,23 +1795,120 @@
             }
             return;
         }
+        if (pendingInvitation()) { await refreshAuth(); await acceptPendingInvitation(); return; }
         // Diagnostic terminé dans ce navigateur : il devient l'espace de l'entreprise
         const diagnosticDone = scoreResult && diagSessionId && diagToken && !MOCK_MODE;
         if (diagnosticDone) {
-            try {
-                const org = await api.createOrg({ diagnostic_id: diagSessionId }, diagToken);
-                localStorage.removeItem('d360_diag_id');
-                localStorage.removeItem('d360_diag_token');
-                window.location.href = 'dashboard.html?welcome=1&notice=org_created';
-            } catch (err) {
-                window.location.href = 'dashboard.html?welcome=1&notice=org_creation_failed';
-            }
+            await refreshAuth();
+            const result = await attachDiagnostic(diagSessionId, diagToken, currentAnswers.company);
+            window.location.href = 'dashboard.html?welcome=1' + (result.notice ? '&notice=' + result.notice : '');
         } else {
             // Pas de diagnostic en attente : rester sur la page, ne pas rediriger
             await refreshAuth();
             closeAuthModal();
         }
     }
+    // ── Un compte, plusieurs projets : chaque diagnostic va dans le projet choisi ──
+    // d360_diag_target : « new » (bouton « Nouveau projet ») ou l'identifiant du projet depuis
+    // lequel le client a relancé son diagnostic. Sans cible, on lui demande.
+    function chooseProject(projects, company) {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay open';
+            const box = document.createElement('div');
+            box.className = 'modal-box';
+            box.style.maxWidth = '460px';
+            const title = document.createElement('h2');
+            title.style.cssText = 'font-family:var(--font-display);font-size:1.3rem;margin-bottom:0.5rem;';
+            title.textContent = 'À quel projet correspond ce diagnostic ?';
+            const help = document.createElement('p');
+            help.style.cssText = 'color:var(--text-muted);font-size:14px;margin-bottom:1.25rem;';
+            help.textContent = 'Chaque projet garde ses propres diagnostics, son score et son plan d\'action.';
+            box.append(title, help);
+            const finish = value => { overlay.remove(); document.body.style.overflow = ''; resolve(value); };
+            projects.forEach(project => {
+                const b = document.createElement('button');
+                b.className = 'btn btn-outline';
+                b.style.cssText = 'width:100%;justify-content:center;margin-bottom:0.5rem;';
+                b.textContent = project.organization_name;
+                b.onclick = () => finish(project.organization_id);
+                box.appendChild(b);
+            });
+            const fresh = document.createElement('button');
+            fresh.className = 'btn btn-primary';
+            fresh.style.cssText = 'width:100%;justify-content:center;margin-top:0.5rem;';
+            fresh.textContent = company ? '+ Nouveau projet : ' + company : '+ Nouveau projet';
+            fresh.onclick = () => finish('new');
+            const later = document.createElement('button');
+            later.className = 'btn btn-ghost btn-sm';
+            later.style.cssText = 'width:100%;justify-content:center;margin-top:0.75rem;';
+            later.textContent = 'Décider plus tard';
+            later.onclick = () => finish(null);
+            box.append(fresh, later);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    async function attachDiagnostic(diagId, diagToken, company) {
+        const forget = () => { localStorage.removeItem('d360_diag_id'); localStorage.removeItem('d360_diag_token'); localStorage.removeItem('d360_diag_target'); };
+        let me;
+        try { me = await api.getMe(); } catch (_) { return { message: null }; }
+        // Seul un responsable rattache un diagnostic à un projet existant
+        const projects = (me?.memberships || []).filter(m => m.role === 'CLIENT_OWNER');
+        const target = localStorage.getItem('d360_diag_target');
+        let choice;
+        if (target === 'new' || !projects.length) choice = 'new';
+        else if (projects.some(p => p.organization_id === target)) choice = target;
+        else choice = await chooseProject(projects, company);
+        if (!choice) return { message: 'Diagnostic gardé de côté : vous pourrez le rattacher à un projet à votre prochaine connexion.' };
+        try {
+            if (choice === 'new') {
+                const org = await api.createOrg({ diagnostic_id: diagId }, diagToken);
+                localStorage.setItem('d360_org', org.id);
+                forget();
+                return { notice: 'org_created', message: 'Nouveau projet créé : « ' + org.commercial_name + ' ». Votre diagnostic y est enregistré.' };
+            }
+            await api.claimDiagnostic(choice, { diagnostic_id: diagId }, diagToken);
+            localStorage.setItem('d360_org', choice);
+            forget();
+            const name = projects.find(p => p.organization_id === choice)?.organization_name || 'votre projet';
+            return { notice: 'diagnostic_claimed', message: 'Diagnostic enregistré dans « ' + name + ' ».' };
+        } catch (err) {
+            if (err.code === 'DIAGNOSTIC_ALREADY_CLAIMED') { forget(); return { notice: 'diagnostic_already_claimed', message: 'Ce diagnostic est déjà enregistré dans un projet.' }; }
+            return { notice: choice === 'new' ? 'org_creation_failed' : 'diagnostic_claim_failed', message: 'Le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err) };
+        }
+    }
+
+    // ── Invitation à rejoindre une équipe : lien #invitation=… de l'e-mail ──
+    function pendingInvitation() {
+        try { return sessionStorage.getItem('d360_invitation'); } catch (_) { return null; }
+    }
+    async function acceptPendingInvitation() {
+        const token = pendingInvitation();
+        if (!token) return;
+        try {
+            const accepted = await api.acceptInvitation(token);
+            sessionStorage.removeItem('d360_invitation');
+            localStorage.setItem('d360_org', accepted.organization_id);
+            window.location.href = 'dashboard.html?notice=invitation_accepted';
+        } catch (err) {
+            // Mauvais compte : on garde le lien pour se reconnecter avec la bonne adresse
+            if (err.code !== 'INVITATION_EMAIL_MISMATCH') sessionStorage.removeItem('d360_invitation');
+            showNotice(describeApiError(err));
+        }
+    }
+    async function handleInvitationLink() {
+        const match = location.hash.match(/^#invitation=([\w-]{10,200})$/);
+        if (!match) return;
+        try { sessionStorage.setItem('d360_invitation', match[1]); } catch (_) {}
+        history.replaceState(null, '', location.pathname + location.search);
+        if (_user) { await acceptPendingInvitation(); return; }
+        showNotice('Invitation reçue : connectez-vous, ou créez votre compte, avec l\'adresse qui a reçu l\'e-mail.');
+        openAuthModal('register');
+    }
+
     function showNotice(message) {
         const notice = document.createElement('div');
         notice.setAttribute('role', 'status');
@@ -1913,7 +1959,7 @@
     // ── Démarrage : jeton CSRF (requis pour toute inscription ou connexion) puis état de session.
     // Placé en fin de script : refreshAuth utilise _user, déclaré plus haut avec let.
     api.getCsrf().catch(e => console.error('[D360] Jeton CSRF indisponible :', e));
-    refreshAuth();
+    refreshAuth().then(handleInvitationLink);
     </script>
 
     <!-- ═══════════════ AUTH MODAL ═══════════════ -->
