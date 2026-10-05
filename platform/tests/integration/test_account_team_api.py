@@ -249,3 +249,54 @@ def test_should_add_new_diagnostic_to_the_chosen_project_only(api: ApiClient) ->
     assert [d["id"] for d in api.get(f"/orgs/{second['id']}/diagnostics").json()["data"]] == [
         redo.id
     ]
+
+
+# ── Adresse e-mail ──
+
+
+def test_should_change_login_email_and_warn_old_address(
+    api: ApiClient, second_api: ApiClient, http_client: TestClient, outbox: RecordingEmailSender
+) -> None:
+    old_email = api.register()["user"]["email"]
+    new_email = "nouvelle-" + old_email
+
+    response = api.post("/me/email", {"new_email": new_email.upper(), "current_password": PASSWORD})
+    run_pending_jobs(http_client)
+
+    assert response.status_code == 200
+    assert response.json()["email"] == new_email
+    assert _login(second_api, new_email, PASSWORD).status_code == 200
+    assert _login(second_api, old_email, PASSWORD).status_code == 401
+    warning = next(m for m in outbox.sent if m.to == [old_email])
+    assert new_email in warning.text
+
+
+def test_should_refuse_email_change_without_correct_password(api: ApiClient) -> None:
+    email = api.register()["user"]["email"]
+
+    response = api.post("/me/email", {"new_email": "x-" + email, "current_password": "faux"})
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "INVALID_CURRENT_PASSWORD"
+    assert api.get("/me").json()["user"]["email"] == email
+
+
+def test_should_refuse_email_already_used_by_another_account(
+    api: ApiClient, second_api: ApiClient
+) -> None:
+    taken = second_api.register()["user"]["email"]
+    api.register()
+
+    response = api.post("/me/email", {"new_email": taken, "current_password": PASSWORD})
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "ALREADY_EXISTS"
+
+
+def test_should_let_owner_update_business_email(api: ApiClient) -> None:
+    org = _owner_with_org(api)
+
+    response = api.patch(f"/orgs/{org['id']}", {"email": "contact@maquis-delice.ci"})
+
+    assert response.status_code == 200
+    assert response.json()["email"] == "contact@maquis-delice.ci"

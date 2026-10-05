@@ -45,7 +45,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /admin/website-projects` · `POST /admin/website-projects/{id}/transition` | **Disponible** | Équipe : suivi et étapes des projets (§13) |
 | `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne Cartflox : achat ou renouvellement (§14) |
 | `GET·POST·PATCH /me/closer` | **Disponible** | Closer 3.0 : espace de l'apporteur d'affaires (§15) |
-| `POST /me/password` | **Disponible** | Changer son mot de passe (§16) |
+| `POST /me/password` · `POST /me/email` | **Disponible** | Changer son mot de passe ou son e-mail de connexion (§16) |
 | `POST·GET /orgs/{id}/invitations` · `DELETE …/{invitation_id}` · `DELETE /orgs/{id}/members/{user_id}` · `POST /invitations/accept` | **Disponible** | Équipe d'un projet (§16) |
 | `GET /admin/closers` · `GET /admin/commission-statements` · `POST …/{id}/pay` · `PATCH /admin/closers/{id}` · `PUT /admin/organizations/{id}/closer` | **Disponible** | Équipe : closers, relevés et versements (§15) |
 
@@ -378,6 +378,8 @@ Un client qui a **déjà payé une offre** peut devenir Closer 3.0. Il touche **
   - sinon, le client choisit le projet dans une fenêtre, ou crée un nouveau projet.
 
 **Profil** : `PATCH /me` avec `{ full_name, phone }` (§1).
+
+**E-mail de connexion** : `POST /me/email` avec `{ new_email, current_password }` → l'utilisateur mis à jour. L'ancienne adresse reçoit un e-mail d'alerte. Erreurs : 400 `INVALID_CURRENT_PASSWORD`, 409 `ALREADY_EXISTS` (adresse déjà utilisée par un autre compte). L'e-mail de l'entreprise, lui, se modifie avec `PATCH /orgs/{id}` (champ `email`).
 
 **Mot de passe** : `POST /me/password` avec `{ current_password, new_password }` → 204. Les autres appareils connectés sont déconnectés ; celui-ci reste connecté. Erreurs : 400 `INVALID_CURRENT_PASSWORD`, 400 `WEAK_PASSWORD` (mêmes règles qu'à l'inscription), 429 après 5 essais en 15 minutes.
 

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from digital360.core.actor import Actor
 from digital360.core.audit import record_audit
 from digital360.core.errors import AppError
+from digital360.core.jobs import enqueue
 from digital360.core.permissions import ClientRole, Principal, StaffRole
 from digital360.core.tenancy import set_user_scope
 from digital360.modules.identity.domain.passwords import password_problems
@@ -24,6 +25,9 @@ from digital360.modules.identity.infrastructure.models import (
     User,
     UserSession,
 )
+
+# E-mail de sécurité envoyé à l'ancienne adresse (tâche enregistrée dans password_reset)
+EMAIL_CHANGED_JOB = "identity.notify_email_changed"
 
 
 class PasswordHasher(Protocol):
@@ -280,6 +284,49 @@ class AuthService:
                 ip=client.ip,
                 user_agent=client.user_agent,
             )
+
+    async def change_email(
+        self, user_id: uuid.UUID, *, new_email: str, current_password: str, client: ClientInfo
+    ) -> User:
+        """Change l'adresse de connexion (mot de passe exigé) ; l'ancienne adresse est prévenue."""
+        new_email = normalize_email(new_email)
+        try:
+            async with self._session_factory() as session, session.begin():
+                user = (
+                    await session.execute(select(User).where(User.id == user_id).with_for_update())
+                ).scalar_one()
+                if not self._hasher.verify(user.password_hash, current_password):
+                    raise AppError(
+                        "INVALID_CURRENT_PASSWORD",
+                        "Le mot de passe actuel est incorrect.",
+                        errors=[{"field": "current_password", "reason": "invalid"}],
+                    )
+                old_email = user.email
+                if normalize_email(old_email) != new_email:
+                    user.email = new_email
+                    await session.flush()  # l'index unique refuse une adresse déjà utilisée
+                    await record_audit(
+                        session,
+                        actor=Actor.user(user_id),
+                        action="user.email_change",
+                        entity_type="user",
+                        entity_id=user_id,
+                        old_value={"email": old_email},
+                        new_value={"email": new_email},
+                        ip=client.ip,
+                        user_agent=client.user_agent,
+                    )
+                    await enqueue(
+                        session,
+                        EMAIL_CHANGED_JOB,
+                        {"old_email": old_email, "new_email": new_email, "name": user.full_name},
+                    )
+                await session.refresh(user)
+        except IntegrityError as exc:
+            raise AppError(
+                "ALREADY_EXISTS", "Un autre compte utilise déjà cette adresse e-mail.", status=409
+            ) from exc
+        return user
 
     async def _create_session(
         self, session: AsyncSession, user_id: uuid.UUID, client: ClientInfo

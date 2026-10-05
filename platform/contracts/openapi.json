@@ -1779,6 +1779,27 @@
         "title": "DirectSaleIn",
         "type": "object"
       },
+      "EmailChangeRequest": {
+        "properties": {
+          "current_password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_email": {
+            "format": "email",
+            "title": "New Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_email",
+          "current_password"
+        ],
+        "title": "EmailChangeRequest",
+        "type": "object"
+      },
       "EntitlementList": {
         "properties": {
           "entitlements": {
@@ -7171,6 +7192,48 @@
         "summary": "Join Closer Program",
         "tags": [
           "closers"
+        ]
+      }
+    },
+    "/api/v1/me/email": {
+      "post": {
+        "description": "Change l'adresse de connexion (mot de passe actuel exigé, ancienne adresse prévenue).",
+        "operationId": "change_email_api_v1_me_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Email",
+        "tags": [
+          "auth"
         ]
       }
     },

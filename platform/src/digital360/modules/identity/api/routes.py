@@ -14,6 +14,7 @@ from digital360.modules.identity.api.dependencies import (
 )
 from digital360.modules.identity.api.schemas import (
     CsrfResponse,
+    EmailChangeRequest,
     LoginRequest,
     PasswordChangeRequest,
     PasswordForgotRequest,
@@ -214,3 +215,22 @@ async def change_password(
         current_token=request.cookies.get(SESSION_COOKIE_NAME),
         client=client,
     )
+
+
+@router.post("/me/email", response_model=UserOut, dependencies=[Depends(require_csrf)])
+async def change_email(
+    body: EmailChangeRequest,
+    request: Request,
+    auth: Auth,
+    client: Client,
+    authenticated: Annotated[AuthenticatedUser, Depends(get_authenticated_user)],
+) -> UserOut:
+    """Change l'adresse de connexion (mot de passe actuel exigé, ancienne adresse prévenue)."""
+    _limiter(request).hit(f"email-change:{authenticated.user.id}", PASSWORD_CHANGE_PER_USER)
+    user = await auth.change_email(
+        authenticated.user.id,
+        new_email=str(body.new_email),
+        current_password=body.current_password,
+        client=client,
+    )
+    return UserOut.model_validate(user)

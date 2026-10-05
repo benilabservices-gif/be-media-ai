@@ -21,6 +21,7 @@ from digital360.core.email import EmailMessage, EmailSender
 from digital360.core.errors import AppError
 from digital360.core.jobs import JobRegistry, enqueue
 from digital360.modules.identity.application.auth_service import (
+    EMAIL_CHANGED_JOB,
     ClientInfo,
     PasswordHasher,
     hash_token,
@@ -153,7 +154,32 @@ def _reset_email(user: User, link: str) -> EmailMessage:
     )
 
 
+def _email_changed_message(old_email: str, new_email: str, name: str) -> EmailMessage:
+    first = name.split(" ")[0] if name else ""
+    paragraphs = [
+        f"Bonjour {first},",
+        "L'adresse de connexion de votre compte BENILAB Digital360 vient d'être remplacée par "
+        f"{new_email}. Utilisez désormais cette adresse pour vous connecter.",
+        "Si vous n'êtes pas à l'origine de ce changement, répondez immédiatement à cet e-mail : "
+        "notre équipe sécurisera votre compte.",
+    ]
+    text = "\n\n".join(paragraphs) + "\n\nL'équipe BENILAB"
+    body = "".join(f"<p>{html.escape(item)}</p>" for item in paragraphs) + "<p>L'équipe BENILAB</p>"
+    return EmailMessage(
+        to=[old_email],
+        subject="L'adresse e-mail de votre compte a été modifiée",
+        text=text,
+        html=body,
+    )
+
+
 def register_jobs(registry: JobRegistry, sender: EmailSender) -> None:
+    @registry.job(EMAIL_CHANGED_JOB)
+    async def notify_email_changed(_: AsyncSession, payload: dict[str, Any]) -> None:
+        await sender.send(
+            _email_changed_message(payload["old_email"], payload["new_email"], payload["name"])
+        )
+
     @registry.job(SEND_PASSWORD_RESET_JOB)
     async def send_password_reset(session: AsyncSession, payload: dict[str, Any]) -> None:
         user = await session.get(User, uuid.UUID(payload["user_id"]))

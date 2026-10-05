@@ -43,6 +43,11 @@ class PasswordChangeRequest(BaseModel):
     new_password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
 
 
+class EmailChangeRequest(BaseModel):
+    new_email: EmailStr
+    current_password: Annotated[str, Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)]
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

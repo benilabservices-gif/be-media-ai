@@ -810,13 +810,17 @@
             ['Activité', o.description], ['Ville', o.city], ['Adresse', o.address], ['Téléphone', o.phone],
             ['WhatsApp', o.whatsapp], ['E-mail', o.email], ['Site web', o.website],
         ];
-        root.appendChild(h('div', { class: 'card' }, [
-            h('h3', { style: 'margin-bottom:0.75rem;', text: 'Fiche entreprise' }),
+        const sheet = h('div', { class: 'card' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:0.75rem;flex-wrap:wrap;' }, [
+                h('h3', { text: 'Fiche entreprise' }),
+                _isOwner ? h('button', { class: 'btn btn-outline btn-sm', text: 'Modifier la fiche', onclick: () => sheet.replaceWith(companyForm()) }) : null,
+            ]),
             ...rows.map(([label, value]) => h('div', { class: 'passport-field' }, [
                 h('div', { class: 'passport-field-label', text: label }),
                 h('div', { class: 'passport-field-value', text: value || '—' }),
             ])),
-        ]));
+        ]);
+        root.appendChild(sheet);
         root.appendChild(sectionTitle('Mon Passport digital'));
         const items = passportData?.items || [];
         if (!items.length) {
@@ -831,6 +835,53 @@
                     h('span', { class: 'badge ' + css, text: label }),
                 ]);
             })));
+    }
+
+    // Fiche entreprise modifiable (responsable) : champ vidé = valeur effacée
+    const COMPANY_FIELDS = [
+        ['commercial_name', 'Nom commercial', 'text', true], ['legal_name', 'Raison sociale', 'text'],
+        ['description', 'Activité', 'textarea'], ['city', 'Ville', 'text'], ['address', 'Adresse', 'text'],
+        ['phone', 'Téléphone', 'tel'], ['whatsapp', 'WhatsApp', 'tel'], ['email', "E-mail de l'entreprise", 'email'],
+        ['website', 'Site web (https://…)', 'url'],
+    ];
+    function companyForm() {
+        const o = _orgData || {};
+        const inputs = {};
+        const msg = h('div', { style: 'font-size:13px;min-height:18px;margin-top:0.5rem;' });
+        const card = h('div', { class: 'card' }, [h('h3', { style: 'margin-bottom:1rem;', text: 'Modifier la fiche entreprise' })]);
+        COMPANY_FIELDS.forEach(([key, label, type]) => {
+            const control = type === 'textarea'
+                ? h('textarea', { class: 'form-input', rows: '3', maxlength: '2000', style: 'resize:vertical;' })
+                : h('input', { class: 'form-input', type, maxlength: key === 'email' ? '320' : '300' });
+            control.value = o[key] || '';
+            inputs[key] = control;
+            card.appendChild(h('div', { class: 'form-group', style: 'margin-bottom:0.75rem;' }, [h('label', { class: 'form-label', text: label }), control]));
+        });
+        const back = () => renderCompany();
+        card.append(h('div', { style: 'display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;' }, [
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer', onclick: async () => {
+                const changes = {};
+                for (const [key, , type, required] of COMPANY_FIELDS) {
+                    let value = inputs[key].value.trim();
+                    if (type === 'tel' && value) value = normalizeNumber(value);
+                    if (required && !value) { msg.style.color = 'var(--error)'; msg.textContent = 'Le nom commercial est obligatoire.'; return; }
+                    if ((value || null) !== (o[key] || null)) changes[key] = value || null;
+                }
+                if (!Object.keys(changes).length) { back(); return; }
+                try {
+                    _orgData = await sendJson('PATCH', '/orgs/' + _orgId, changes);
+                    document.getElementById('welcomeName').textContent = _orgData.commercial_name;
+                    back();
+                } catch (e) {
+                    const fields = (e.errors || []).map(x => String(x.field || '').split('.').pop()).filter(Boolean);
+                    const labels = fields.map(f => (COMPANY_FIELDS.find(c => c[0] === f) || [f, f])[1]);
+                    msg.style.color = 'var(--error)';
+                    msg.textContent = labels.length ? 'À corriger : ' + labels.join(', ') + ' (téléphone au format +229…, site commençant par https://).' : e.message;
+                }
+            } }),
+            h('button', { class: 'btn btn-ghost btn-sm', text: 'Annuler', onclick: back }),
+        ]), msg);
+        return card;
     }
 
     // Services : état réel selon l'offre du client (le serveur reste seul juge des droits)
@@ -1608,11 +1659,10 @@
         const user = _meData?.user || {};
         const name = textInput({ type: 'text', maxlength: '200', autocomplete: 'name' }, user.full_name);
         const phone = textInput({ type: 'tel', placeholder: '+2290100000000', autocomplete: 'tel' }, user.phone);
-        const email = textInput({ type: 'email', disabled: 'disabled' }, user.email);
         const msg = feedback();
         return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
             h('h3', { style: 'margin-bottom:1rem;', text: 'Mes informations' }),
-            field('Nom complet', name), field('Téléphone (format international)', phone), field('E-mail de connexion', email),
+            field('Nom complet', name), field('Téléphone (format international)', phone),
             h('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer', onclick: async () => {
                 const number = normalizeNumber(phone.value.trim());
                 if (number && !/^\+[1-9]\d{6,14}$/.test(number)) { say(msg, 'Téléphone au format international, par exemple +2290100000000.'); return; }
@@ -1621,6 +1671,30 @@
                     _meData.user = updated;
                     document.getElementById('userName').textContent = updated.full_name;
                     say(msg, 'Informations enregistrées.', true);
+                } catch (e) { say(msg, e.message); }
+            } }),
+            msg,
+        ]);
+    }
+
+    function emailCard() {
+        const email = textInput({ type: 'email', autocomplete: 'email' }, _meData?.user?.email);
+        const password = textInput({ type: 'password', autocomplete: 'current-password' });
+        const msg = feedback();
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: 'Adresse e-mail de connexion' }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: "C'est l'adresse qui sert à vous connecter et à recevoir vos reçus. L'ancienne adresse est prévenue du changement." }),
+            field('Nouvelle adresse e-mail', email), field('Mot de passe actuel (pour confirmer)', password),
+            h('button', { class: 'btn btn-primary btn-sm', text: "Changer l'e-mail", onclick: async () => {
+                const value = email.value.trim();
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) { say(msg, 'Indiquez une adresse e-mail valide.'); return; }
+                if (!password.value) { say(msg, 'Saisissez votre mot de passe actuel pour confirmer.'); return; }
+                try {
+                    const updated = await sendJson('POST', '/me/email', { new_email: value, current_password: password.value });
+                    _meData.user = updated;
+                    password.value = '';
+                    email.value = updated.email;
+                    say(msg, 'Adresse modifiée : connectez-vous désormais avec ' + updated.email + '.', true);
                 } catch (e) { say(msg, e.message); }
             } }),
             msg,
@@ -1743,7 +1817,7 @@
         const root = document.getElementById('accountRoot');
         if (!root || !_meData?.user) return;
         root.textContent = '';
-        root.append(profileCard(), passwordCard());
+        root.append(profileCard(), emailCard(), passwordCard());
         if (_orgId) root.appendChild(await teamCard());
         root.appendChild(projectsCard());
     }
