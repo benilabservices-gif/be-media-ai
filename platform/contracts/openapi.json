@@ -1407,6 +1407,70 @@
         "title": "DefinitionOut",
         "type": "object"
       },
+      "DeletionIn": {
+        "properties": {
+          "confirm_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Confirm Name",
+            "type": "string"
+          },
+          "delete_payments": {
+            "default": false,
+            "title": "Delete Payments",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_name"
+        ],
+        "title": "DeletionIn",
+        "type": "object"
+      },
+      "DeletionPreviewOut": {
+        "properties": {
+          "commercial_name": {
+            "title": "Commercial Name",
+            "type": "string"
+          },
+          "diagnostics": {
+            "title": "Diagnostics",
+            "type": "integer"
+          },
+          "members": {
+            "title": "Members",
+            "type": "integer"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "payments": {
+            "title": "Payments",
+            "type": "integer"
+          },
+          "purchase_requests": {
+            "title": "Purchase Requests",
+            "type": "integer"
+          },
+          "website_projects": {
+            "title": "Website Projects",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "organization_id",
+          "commercial_name",
+          "members",
+          "diagnostics",
+          "payments",
+          "website_projects",
+          "purchase_requests"
+        ],
+        "title": "DeletionPreviewOut",
+        "type": "object"
+      },
       "DesignPromptIn": {
         "properties": {
           "prompt": {
@@ -3577,7 +3641,8 @@
           "staff:manage",
           "audit:read",
           "config:manage",
-          "closer:manage"
+          "closer:manage",
+          "organization:delete"
         ],
         "title": "Permission",
         "type": "string"
@@ -6167,6 +6232,97 @@
           }
         },
         "summary": "Admin Set Referral",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organization_id}/delete": {
+      "post": {
+        "description": "Suppression définitive (ADMIN). 422 CONFIRMATION_MISMATCH, 409 HAS_PAYMENTS.",
+        "operationId": "admin_delete_organization_api_v1_admin_organizations__organization_id__delete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Delete Organization",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organization_id}/deletion-preview": {
+      "get": {
+        "description": "Ce qui sera supprimé avec l'entreprise (à afficher dans la confirmation).",
+        "operationId": "admin_deletion_preview_api_v1_admin_organizations__organization_id__deletion_preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Deletion Preview",
         "tags": [
           "admin"
         ]

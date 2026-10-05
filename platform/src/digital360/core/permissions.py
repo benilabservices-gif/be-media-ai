@@ -32,6 +32,8 @@ class Permission(StrEnum):
     CONFIG_MANAGE = "config:manage"
     # Closer 3.0 : verser les commissions, suspendre un closer, rattacher un client
     CLOSER_MANAGE = "closer:manage"
+    # Suppression définitive d'une entreprise et de toutes ses données : ADMIN uniquement
+    ORGANIZATION_DELETE = "organization:delete"
 
 
 class ClientRole(StrEnum):

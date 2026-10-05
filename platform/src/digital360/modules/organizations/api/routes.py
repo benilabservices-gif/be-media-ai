@@ -138,6 +138,55 @@ async def admin_get_organization(
     return OrganizationOut.model_validate(await service.admin_get(organization_id))
 
 
+class DeletionPreviewOut(BaseModel):
+    organization_id: uuid.UUID
+    commercial_name: str
+    members: int
+    diagnostics: int
+    payments: int
+    website_projects: int
+    purchase_requests: int
+
+
+class DeletionIn(BaseModel):
+    # Le nom commercial, retapé par l'administrateur
+    confirm_name: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
+    ]
+    # Obligatoire si l'entreprise a des paiements (chiffre d'affaires et reçus supprimés)
+    delete_payments: bool = False
+
+
+OrgDeleter = Annotated[Principal, Depends(require_staff_permission(Permission.ORGANIZATION_DELETE))]
+
+
+@admin_router.get(
+    "/organizations/{organization_id}/deletion-preview", response_model=DeletionPreviewOut
+)
+async def admin_deletion_preview(
+    organization_id: uuid.UUID, _: OrgDeleter, service: Service
+) -> DeletionPreviewOut:
+    """Ce qui sera supprimé avec l'entreprise (à afficher dans la confirmation)."""
+    return DeletionPreviewOut.model_validate(await service.admin_deletion_preview(organization_id))
+
+
+@admin_router.post(
+    "/organizations/{organization_id}/delete",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_delete_organization(
+    organization_id: uuid.UUID, body: DeletionIn, principal: OrgDeleter, service: Service
+) -> None:
+    """Suppression définitive (ADMIN). 422 CONFIRMATION_MISMATCH, 409 HAS_PAYMENTS."""
+    await service.admin_delete(
+        organization_id,
+        principal.user_id,
+        confirm_name=body.confirm_name,
+        delete_payments=body.delete_payments,
+    )
+
+
 # ── Équipe : invitations et membres ──
 
 

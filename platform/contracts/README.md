@@ -20,6 +20,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /orgs/{org_id}` · `PATCH /orgs/{org_id}` | **Disponible** | PATCH partiel : seuls les champs envoyés changent |
 | `GET /orgs/{org_id}/members` | **Disponible** | |
 | `GET /admin/organizations` · `GET /admin/organizations/{id}` | **Disponible** | Staff uniquement ; pagination et filtres (§5) |
+| `GET /admin/organizations/{id}/deletion-preview` · `POST /admin/organizations/{id}/delete` | **Disponible** | ADMIN : suppression définitive d'une entreprise (§10) |
 | `GET /public/questionnaire` | **Disponible** | Sections, questions, options, `visible_if` (§9) |
 | `POST /public/diagnostics` | **Disponible** | Renvoie `id` et `token` : les garder en `localStorage` |
 | `PUT /public/diagnostics/{id}/answers` | **Disponible** | Réponses partielles, en-tête `X-Diagnostic-Token` |
@@ -247,6 +248,13 @@ npx openapi-typescript platform/contracts/openapi.json -o digital360/js/api/type
 - Rôles : `ADMIN`, `MANAGER`, `CONTENT_MANAGER`, `DEVELOPER`, `FINANCE`.
 
 **`GET /admin/audit-logs`** (ADMIN) : filtres `organization_id`, `action` (ex. `staff_role.grant`) et `entity_type`, pagination comme au §5. Chaque entrée contient `occurred_at`, `actor_type`, `actor_label`, `action`, `entity_type`, `entity_id`, `organization_id`, `old_value` et `new_value` (objets ou `null`), `ip`. Affiche `old_value` et `new_value` avec `textContent` (`JSON.stringify`), jamais avec `innerHTML`.
+
+**Supprimer une entreprise** (ADMIN uniquement, permission `organization:delete`) :
+- `GET /admin/organizations/{id}/deletion-preview` renvoie ce qui disparaîtra : `{ commercial_name, members, diagnostics, payments, website_projects, purchase_requests }`.
+- `POST /admin/organizations/{id}/delete` avec `{ "confirm_name": "<nom commercial retapé>", "delete_payments": false }` → 204.
+  - La suppression est **définitive** : toutes les données de l'entreprise partent avec elle. Les comptes des membres sont conservés, sans l'accès à cette entreprise.
+  - La suppression est tracée dans le journal d'audit (`organization.delete`).
+  - Erreurs : 422 `CONFIRMATION_MISMATCH` (nom différent ; les majuscules et les espaces autour ne comptent pas), 409 `HAS_PAYMENTS` (l'entreprise a des paiements et `delete_payments` n'est pas `true`).
 
 ## 11. « Je veux démarrer » : demandes d'achat
 

@@ -275,3 +275,67 @@ def test_should_filter_audit_log_by_organization_and_paginate(
     assert len(everything) >= 2
     assert all(entry["organization_id"] == organization["id"] for entry in everything)
     assert [entry["id"] for entry in first_page["data"]] == [everything[0]["id"]]
+
+
+# ── Suppression définitive d'une entreprise ──
+
+
+def test_should_delete_organization_after_name_confirmation_and_keep_accounts(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    _staff_member(second_api, test_database_url, "ADMIN")
+
+    preview = second_api.get(f"/admin/organizations/{org['id']}/deletion-preview").json()
+    wrong = second_api.post(f"/admin/organizations/{org['id']}/delete", {"confirm_name": "Autre"})
+    deleted = second_api.post(
+        f"/admin/organizations/{org['id']}/delete",
+        {"confirm_name": "  " + org["commercial_name"].upper() + " "},
+    )
+
+    assert (preview["members"], preview["diagnostics"], preview["payments"]) == (1, 1, 0)
+    assert wrong.status_code == 422
+    assert wrong.json()["code"] == "CONFIRMATION_MISMATCH"
+    assert deleted.status_code == 204
+    assert second_api.get(f"/admin/organizations/{org['id']}").status_code == 404
+    # Le compte du client existe toujours, sans l'entreprise supprimée
+    me = api.get("/me")
+    assert me.status_code == 200
+    assert me.json()["memberships"] == []
+    logs = second_api.get("/admin/audit-logs?action=organization.delete").json()["data"]
+    assert any(item["entity_id"] == org["id"] for item in logs)
+
+
+def test_should_require_explicit_confirmation_to_delete_payments(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    _staff_member(second_api, test_database_url, "ADMIN")
+    second_api.post(
+        f"/admin/organizations/{org['id']}/sales",
+        {"product_code": "DIGITAL_START", "payment": {"method": "WAVE", "reference": "WV-DEL"}},
+    )
+    url = f"/admin/organizations/{org['id']}/delete"
+
+    refused = second_api.post(url, {"confirm_name": org["commercial_name"]})
+    accepted = second_api.post(
+        url, {"confirm_name": org["commercial_name"], "delete_payments": True}
+    )
+
+    assert refused.status_code == 409
+    assert refused.json()["code"] == "HAS_PAYMENTS"
+    assert accepted.status_code == 204
+
+
+def test_should_reserve_organization_deletion_to_admins(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    response = second_api.post(
+        f"/admin/organizations/{org['id']}/delete", {"confirm_name": org["commercial_name"]}
+    )
+
+    assert response.status_code == 403
+    assert api.get(f"/orgs/{org['id']}").status_code == 200

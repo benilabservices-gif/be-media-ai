@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from digital360.core.actor import Actor
@@ -72,6 +72,24 @@ def _values_from_answers(answers: dict[str, Any]) -> dict[str, Any]:
     if "description" in values:
         values["description"] = str(values["description"])[:2000]
     return values
+
+
+# Données rattachées à une entreprise, comptées avant sa suppression (tables d'autres
+# modules : requêtes paramétrées sur leur nom, sans importer leurs modèles)
+_LINKED_TABLES = {
+    "members": "SELECT count(*) FROM memberships WHERE organization_id = :id AND status = 'ACTIVE'",
+    "diagnostics": "SELECT count(*) FROM diagnostic_sessions WHERE organization_id = :id",
+    "payments": "SELECT count(*) FROM payments WHERE organization_id = :id",
+    "website_projects": "SELECT count(*) FROM website_projects WHERE organization_id = :id",
+    "purchase_requests": "SELECT count(*) FROM purchase_requests WHERE organization_id = :id",
+}
+
+
+async def _linked_counts(session: AsyncSession, organization_id: uuid.UUID) -> dict[str, int]:
+    return {
+        key: int(await session.scalar(text(query), {"id": organization_id}) or 0)
+        for key, query in _LINKED_TABLES.items()
+    }
 
 
 def _not_found() -> AppError:
@@ -223,6 +241,66 @@ class OrganizationService:
             )
             counts = dict(rows.tuples().all())
         return {status.value: counts.get(status.value, 0) for status in OrganizationStatus}
+
+    async def admin_deletion_preview(self, organization_id: uuid.UUID) -> dict[str, Any]:
+        """Ce qui disparaîtra avec l'entreprise, à montrer avant la confirmation."""
+        async with staff_transaction(self._session_factory) as session:
+            organization = await self._load(session, organization_id)
+            return {
+                "organization_id": organization.id,
+                "commercial_name": organization.commercial_name,
+                **await _linked_counts(session, organization_id),
+            }
+
+    async def admin_delete(
+        self,
+        organization_id: uuid.UUID,
+        staff_user_id: uuid.UUID,
+        *,
+        confirm_name: str,
+        delete_payments: bool,
+    ) -> None:
+        """Suppression définitive : toutes les données de l'entreprise partent avec elle
+        (diagnostics, paiements, projets…). Les comptes des membres sont conservés."""
+        async with staff_transaction(self._session_factory) as session:
+            organization = (
+                await session.execute(
+                    select(Organization).where(Organization.id == organization_id).with_for_update()
+                )
+            ).scalar_one_or_none()
+            if organization is None:
+                raise _not_found()
+            if confirm_name.strip().casefold() != organization.commercial_name.strip().casefold():
+                raise AppError(
+                    "CONFIRMATION_MISMATCH",
+                    "Le nom saisi ne correspond pas au nom de l'entreprise.",
+                    status=422,
+                    errors=[{"field": "confirm_name", "reason": "mismatch"}],
+                )
+            counts = await _linked_counts(session, organization_id)
+            if counts["payments"] and not delete_payments:
+                raise AppError(
+                    "HAS_PAYMENTS",
+                    f"Cette entreprise a {counts['payments']} paiement(s) enregistré(s) : confirmez "
+                    "explicitement leur suppression.",
+                    status=409,
+                )
+            # Tracé avant la suppression : le journal d'audit n'est pas lié à l'entreprise
+            await record_audit(
+                session,
+                actor=Actor.user(staff_user_id),
+                action="organization.delete",
+                entity_type="organization",
+                entity_id=organization.id,
+                organization_id=organization.id,
+                old_value={
+                    "commercial_name": organization.commercial_name,
+                    "country": organization.country,
+                    "status": organization.status,
+                    **counts,
+                },
+            )
+            await session.execute(delete(Organization).where(Organization.id == organization_id))
 
     async def admin_get(self, organization_id: uuid.UUID) -> Organization:
         async with staff_transaction(self._session_factory) as session:
