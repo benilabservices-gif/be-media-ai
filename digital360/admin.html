@@ -1376,6 +1376,26 @@
             paid.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:4px;';
             paid.textContent = paymentSummary(req.payment);
             tdStatus.appendChild(paid);
+            // Paiement en double (avant le contrôle anti-doublon) : annulable par ADMIN et FINANCE
+            if (req.status === 'WON' && (_me?.staff_permissions || []).includes('payment:refund')) {
+                const voidBtn = document.createElement('button');
+                voidBtn.className = 'btn btn-ghost btn-sm';
+                voidBtn.style.cssText = 'color:var(--error);font-size:11px;padding:2px 6px;margin-top:4px;';
+                voidBtn.textContent = 'Annuler (doublon)';
+                voidBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const reason = prompt('Annuler ce paiement en double de ' + (req.organization_name || 'ce client') + ' ?\nLe paiement est retiré du chiffre d\'affaires et la demande est close.\n\nMotif (obligatoire) :');
+                    if (reason === null) return;
+                    if (reason.trim().length < 3) { alert('Indiquez un motif (3 caractères minimum).'); return; }
+                    try {
+                        await apiFetch('/admin/purchase-requests/' + req.id + '/void-duplicate', { method: 'POST', body: { reason: reason.trim() } });
+                        alert('Paiement en double annulé.');
+                        loadPurchaseRequests(false);
+                        loadDashboard();
+                    } catch (err) { alert(err.detail || err.message); }
+                };
+                tdStatus.appendChild(voidBtn);
+            }
         }
         tr.appendChild(tdStatus);
 

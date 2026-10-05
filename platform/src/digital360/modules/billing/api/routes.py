@@ -403,3 +403,23 @@ async def get_client_billing(
         payments=[ClientPaymentOut(**payment) for payment in billing.payments],
         online_payment_available=await online.is_available(access.tenant),
     )
+
+
+class VoidDuplicateIn(BaseModel):
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=500)]
+
+
+@admin_router.post(
+    "/purchase-requests/{request_id}/void-duplicate",
+    response_model=StaffPurchaseRequestOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_void_duplicate_payment(
+    request_id: uuid.UUID,
+    body: VoidDuplicateIn,
+    principal: Annotated[Principal, Depends(require_staff_permission(Permission.PAYMENT_REFUND))],
+    service: Service,
+) -> StaffPurchaseRequestOut:
+    """Annule un paiement en double (ADMIN, FINANCE). 409 NOT_A_DUPLICATE s'il est le seul."""
+    view = await service.admin_void_duplicate(request_id, principal.user_id, reason=body.reason)
+    return _staff_out(view)

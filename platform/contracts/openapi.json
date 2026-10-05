@@ -5530,6 +5530,21 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VoidDuplicateIn": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "VoidDuplicateIn",
+        "type": "object"
+      },
       "digital360__modules__billing__api__routes__PriceOut": {
         "properties": {
           "amount": {
@@ -7114,6 +7129,60 @@
           }
         },
         "summary": "Admin Update Purchase Request",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/purchase-requests/{request_id}/void-duplicate": {
+      "post": {
+        "description": "Annule un paiement en double (ADMIN, FINANCE). 409 NOT_A_DUPLICATE s'il est le seul.",
+        "operationId": "admin_void_duplicate_payment_api_v1_admin_purchase_requests__request_id__void_duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidDuplicateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPurchaseRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Void Duplicate Payment",
         "tags": [
           "admin"
         ]

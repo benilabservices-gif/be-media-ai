@@ -1,11 +1,14 @@
 """Paiement manuel : obligatoire pour gagner une vente, tracé, reçu au client, vente directe."""
 
+import asyncio
 from collections.abc import Iterator
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from digital360.main import create_app
 from tests.conftest import make_settings
@@ -284,3 +287,75 @@ def test_should_refuse_won_when_offer_was_paid_meanwhile(
     )
 
     assert retry.status_code == 409
+
+
+# ── Annulation d'un paiement en double (avant le contrôle anti-doublon) ──
+
+
+def _force_second_start_sale(database_url: str, org_id: str, staff_id: str) -> str:
+    """Reproduit un doublon d'avant le contrôle : 2e vente Start gagnée et payée."""
+
+    async def run() -> str:
+        engine = create_async_engine(database_url)
+        async with engine.begin() as connection:
+            await connection.execute(text("SELECT set_config('app.scope', 'staff', true)"))
+            request_id = (
+                await connection.execute(
+                    text(
+                        "INSERT INTO purchase_requests (id, organization_id, requested_by, "
+                        "product_code, amount, currency, period, channel, status) VALUES "
+                        "(gen_random_uuid(), :org, :user, 'DIGITAL_START', 109900, 'XOF', 'NONE', "
+                        "'EMAIL', 'WON') RETURNING id"
+                    ),
+                    {"org": org_id, "user": staff_id},
+                )
+            ).scalar_one()
+            await connection.execute(
+                text(
+                    "INSERT INTO payments (id, organization_id, purchase_request_id, product_code, "
+                    "amount, currency, method, channel, reference, received_on) VALUES "
+                    "(gen_random_uuid(), :org, :req, 'DIGITAL_START', 109900, 'XOF', 'WAVE', "
+                    "'MANUAL', 'WV-DOUBLON', current_date)"
+                ),
+                {"org": org_id, "req": request_id},
+            )
+        await engine.dispose()
+        return str(request_id)
+
+    return asyncio.run(run())
+
+
+def test_should_void_a_duplicate_payment_but_never_the_only_one(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    org = _client_with_diagnostic(api)
+    staff_id = _staff_member(second_api, test_database_url, "ADMIN")["user"]["id"]
+    first = second_api.post(
+        f"/admin/organizations/{org['id']}/sales",
+        {"product_code": "DIGITAL_START", "payment": ORANGE},
+    ).json()
+    duplicate_id = _force_second_start_sale(test_database_url, org["id"], staff_id)
+    url = "/admin/purchase-requests/{}/void-duplicate"
+
+    voided = second_api.post(url.format(duplicate_id), {"reason": "Payé deux fois par erreur"})
+    only_one = second_api.post(url.format(first["id"]), {"reason": "Essai"})
+
+    assert voided.status_code == 200, voided.json()
+    assert voided.json()["status"] == "LOST"
+    assert voided.json()["payment"] is None
+    assert len(api.get(f"/orgs/{org['id']}/billing").json()["payments"]) == 1
+    assert only_one.status_code == 409
+    assert only_one.json()["code"] == "NOT_A_DUPLICATE"
+
+
+def test_should_reserve_duplicate_voiding_to_finance_and_admin(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    _, request_id = _request_start(api)
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    response = second_api.post(
+        f"/admin/purchase-requests/{request_id}/void-duplicate", {"reason": "Essai manager"}
+    )
+
+    assert response.status_code == 403

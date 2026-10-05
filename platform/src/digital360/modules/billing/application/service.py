@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -684,6 +684,80 @@ class PurchaseRequestService:
                 organization_id=request.organization_id,
                 old_value=old,
                 new_value={"status": request.status, "staff_note": request.staff_note},
+            )
+            await session.flush()
+            await session.refresh(request)
+            return (await _load_views(session, [request]))[0]
+
+    async def admin_void_duplicate(
+        self, request_id: uuid.UUID, staff_user_id: uuid.UUID, *, reason: str
+    ) -> PurchaseRequestView:
+        """Annule le paiement d'une vente payée en double (offre déjà payée par ailleurs).
+
+        Le paiement est retiré (le chiffre d'affaires est corrigé), la demande passe à LOST
+        et un projet de site en double pas encore démarré est supprimé. Tout est tracé.
+        """
+        async with staff_transaction(self._session_factory) as session:
+            request = (
+                await session.execute(
+                    select(PurchaseRequest)
+                    .where(PurchaseRequest.id == request_id)
+                    .with_for_update()
+                )
+            ).scalar_one_or_none()
+            if request is None:
+                raise AppError("NOT_FOUND", "Demande introuvable.", status=404)
+            payment = await session.scalar(
+                select(Payment).where(Payment.purchase_request_id == request.id)
+            )
+            if request.status != S.WON.value or payment is None:
+                raise AppError(
+                    "NOT_PAID", "Cette demande n'a pas de paiement à annuler.", status=409
+                )
+            other = await session.scalar(
+                select(func.count())
+                .select_from(Payment)
+                .where(
+                    Payment.organization_id == request.organization_id,
+                    Payment.product_code == request.product_code,
+                    Payment.id != payment.id,
+                )
+            )
+            if not other:
+                raise AppError(
+                    "NOT_A_DUPLICATE",
+                    "C'est le seul paiement de cette offre pour ce client : ce n'est pas un doublon.",
+                    status=409,
+                )
+            snapshot = _payment_payload(payment)
+            await session.delete(payment)
+            request.status = S.LOST.value
+            previous_note = (request.staff_note + " | ") if request.staff_note else ""
+            request.staff_note = previous_note + f"Paiement en double annulé : {reason}"
+            request.handled_by = staff_user_id
+            # Projet de site créé pour cette vente en double, s'il n'a pas démarré
+            removed_projects = (
+                await session.execute(
+                    text(
+                        "DELETE FROM website_projects WHERE purchase_request_id = :id "
+                        "AND status = 'BRIEF_PENDING' RETURNING id"
+                    ),
+                    {"id": request.id},
+                )
+            ).all()
+            await record_audit(
+                session,
+                actor=Actor.user(staff_user_id),
+                action="payment.void_duplicate",
+                entity_type="purchase_request",
+                entity_id=request.id,
+                organization_id=request.organization_id,
+                old_value={"status": S.WON.value, "payment": snapshot},
+                new_value={
+                    "status": request.status,
+                    "reason": reason,
+                    "website_projects_removed": len(removed_projects),
+                },
             )
             await session.flush()
             await session.refresh(request)
