@@ -44,6 +44,8 @@ from digital360.modules.organizations.application.service import OrganizationSer
 from digital360.modules.organizations.application.team import TeamService
 from digital360.modules.passport.api import routes as passport_routes
 from digital360.modules.passport.application.service import PassportService
+from digital360.modules.performance.api import routes as performance_routes
+from digital360.modules.performance.application.service import PerformanceService
 from digital360.modules.projects.api import routes as project_routes
 from digital360.modules.projects.application.service import ProjectService
 from digital360.modules.referrals.api import routes as referral_routes
@@ -89,6 +91,9 @@ def create_app(
         )
         app.state.organization_service = OrganizationService(session_factory)
         app.state.team_service = TeamService(session_factory)
+        app.state.performance_service = PerformanceService(
+            session_factory, manager_email=settings.google_manager_email
+        )
         app.state.diagnostic_service = DiagnosticService(session_factory, registry)
         app.state.passport_service = PassportService(session_factory)
         app.state.catalog_service = CatalogService(session_factory)
@@ -171,6 +176,8 @@ def create_app(
     api_router.include_router(billing_routes.admin_router)
     api_router.include_router(project_routes.router)
     api_router.include_router(project_routes.admin_router)
+    api_router.include_router(performance_routes.router)
+    api_router.include_router(performance_routes.admin_router)
     api_router.include_router(referral_routes.router)
     api_router.include_router(referral_routes.admin_router)
     api_router.include_router(admin.router)

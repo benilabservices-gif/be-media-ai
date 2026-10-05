@@ -46,6 +46,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne Cartflox : achat ou renouvellement (§14) |
 | `GET·POST·PATCH /me/closer` | **Disponible** | Closer 3.0 : espace de l'apporteur d'affaires (§15) |
 | `POST /me/password` · `POST /me/email` | **Disponible** | Changer son mot de passe ou son e-mail de connexion (§16) |
+| `GET /orgs/{id}/performance` · `GET /admin/organizations/{id}/performance` · `PUT …/google-setup` · `PUT·DELETE …/reports/{channel}/{period}` | **Disponible** | Suivi Google Business et site web (§17) |
 | `POST·GET /orgs/{id}/invitations` · `DELETE …/{invitation_id}` · `DELETE /orgs/{id}/members/{user_id}` · `POST /invitations/accept` | **Disponible** | Équipe d'un projet (§16) |
 | `GET /admin/closers` · `GET /admin/commission-statements` · `POST …/{id}/pay` · `PATCH /admin/closers/{id}` · `PUT /admin/organizations/{id}/closer` | **Disponible** | Équipe : closers, relevés et versements (§15) |
 
@@ -388,6 +389,31 @@ Un client qui a **déjà payé une offre** peut devenir Closer 3.0. Il touche **
 - `GET /orgs/{id}/invitations` liste les invitations en attente. `DELETE /orgs/{id}/invitations/{invitation_id}` en annule une (le lien ne marche plus).
 - `GET /orgs/{id}/members` liste les membres. `DELETE /orgs/{id}/members/{user_id}` retire un membre, qui perd l'accès aussitôt. 409 `LAST_OWNER` : le projet garde au moins un responsable.
 - **Accepter** : `POST /invitations/accept` avec `{ token }`, une fois connecté **avec l'adresse invitée** (après inscription si besoin). Renvoie `{ organization_id, organization_name, role }`. Erreurs : 400 `INVALID_INVITATION` (expirée, annulée ou déjà utilisée), 403 `INVITATION_EMAIL_MISMATCH` (autre compte connecté : se reconnecter avec la bonne adresse).
+
+## 17. Suivi des résultats : Google Business et site web
+
+Étape 1 : chaque mois, l'équipe saisit les chiffres relevés sur les tableaux de bord de Google et de l'outil de mesure du site. Le serveur calcule l'évolution par rapport au mois précédent ; le frontend ne calcule rien.
+
+**`GET /orgs/{id}/performance`** (`organization:read`) renvoie trois blocs :
+- `google_setup` : `{ status, steps, profile_url, note, updated_at }`.
+  - `status` vaut `NOT_STARTED`, `PROFILE_CREATED`, `ACCESS_GRANTED`, `VERIFIED` ou `ACTIVE`.
+  - `steps` donne les 4 étapes, chacune avec `done`.
+  - `note` est le message de l'équipe au client.
+- `manager_email` : l'adresse que le client ajoute comme « Gestionnaire » de sa fiche Google.
+- `channels.GOOGLE_BUSINESS` et `channels.WEBSITE` : `{ definitions, reports }`.
+  - `definitions` : `[{ key, label, kind }]`, où `kind` vaut `count` (nombre) ou `rating` (note de 1 à 5). Afficher les libellés tels quels.
+  - `reports` : du plus récent au plus ancien, `[{ period, metrics, top_searches, note, changes }]`. Dans `metrics`, une clé absente signifie « non mesuré ce mois-ci ».
+  - `changes[key]` : `{ percent }` (nombre) ou `{ points }` (note), plus `good`. `good` vaut `true` pour une bonne nouvelle, `false` pour un point à surveiller, `null` si c'est stable. Une baisse des avis sans réponse compte comme une bonne nouvelle.
+
+**Indicateurs** :
+- Google Business : `views_search`, `views_maps`, `calls`, `website_clicks`, `directions`, `messages`, `reviews_total`, `rating_average`, `reviews_unanswered`, plus `top_searches` (5 recherches au maximum).
+- Site web : `visitors`, `page_views`, `from_google`, `from_social`, `from_whatsapp`, `direct`, `whatsapp_clicks`, `call_clicks`.
+
+**Admin** (lecture : `organization:read` ; saisie : `task:manage`, accordé à ADMIN, MANAGER, CONTENT_MANAGER et DEVELOPER) :
+- `GET /admin/organizations/{id}/performance` renvoie le même format.
+- `PUT /admin/organizations/{id}/google-setup` avec `{ status, profile_url, note }`.
+- `PUT /admin/organizations/{id}/reports/{channel}/{period}` avec `{ metrics, top_searches, note }` crée ou corrige le rapport du mois. `period` est une date quelconque du mois, par exemple `2026-09-01`, et ne peut pas être dans le futur. Le client est prévenu par e-mail à la création seulement, pas à la correction. Erreur 422 si un indicateur est inconnu, négatif ou non entier, ou si une note est hors de 1 à 5.
+- `DELETE …/reports/{channel}/{period}` supprime un rapport.
 
 ## 8. Demander un changement
 

@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     # Paiement en ligne Cartflox (clé secrète af_live_sec_… de l'espace SchoolConnect) ;
     # vide = paiement en ligne désactivé, seul le paiement manuel est proposé
     cartflox_secret_key: SecretStr | None = None
+    # Adresse que le client ajoute comme gestionnaire de sa fiche Google Business
+    google_manager_email: str = "clientele@bemedia-ai.online"
 
     @model_validator(mode="after")
     def _require_brevo_key(self) -> "Settings":
