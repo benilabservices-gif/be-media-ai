@@ -231,3 +231,56 @@ async def admin_list_diagnostics(
     return DiagnosticPage(
         data=[DiagnosticSummaryOut.model_validate(asdict(item)) for item in summaries], page=page
     )
+
+
+class OrphansOut(BaseModel):
+    # Prospects sans fiche entreprise de plus de 24 h (supprimables)
+    deletable: int
+    # Sans fiche mais récents : épargnés (inscription peut-être en cours)
+    recent_kept: int
+
+
+class PurgeIn(BaseModel):
+    # L'administrateur retape « SUPPRIMER »
+    confirm: str
+
+
+class PurgeOut(BaseModel):
+    deleted: int
+
+
+Deleter = Annotated[Principal, Depends(require_staff_permission(Permission.ORGANIZATION_DELETE))]
+
+
+@admin_router.get("/diagnostics/orphans", response_model=OrphansOut)
+async def admin_orphan_diagnostics(_: Deleter, service: Service) -> OrphansOut:
+    return OrphansOut(**await service.admin_orphans())
+
+
+@admin_router.post(
+    "/diagnostics/purge-orphans", response_model=PurgeOut, dependencies=[Depends(require_csrf)]
+)
+async def admin_purge_orphan_diagnostics(
+    body: PurgeIn, principal: Deleter, service: Service
+) -> PurgeOut:
+    """Supprime tous les prospects sans fiche entreprise de plus de 24 h (ADMIN)."""
+    if body.confirm.strip().upper() != "SUPPRIMER":
+        raise AppError(
+            "CONFIRMATION_MISMATCH",
+            "Tapez SUPPRIMER pour confirmer.",
+            status=422,
+            errors=[{"field": "confirm", "reason": "mismatch"}],
+        )
+    return PurgeOut(deleted=await service.admin_purge_orphans(principal.user_id))
+
+
+@admin_router.delete(
+    "/diagnostics/{diagnostic_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_delete_diagnostic(
+    diagnostic_id: uuid.UUID, principal: Deleter, service: Service
+) -> None:
+    """Supprime un prospect sans fiche entreprise (409 s'il est rattaché à une entreprise)."""
+    await service.admin_delete_orphan(diagnostic_id, principal.user_id)

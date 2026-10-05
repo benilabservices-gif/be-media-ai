@@ -3173,6 +3173,24 @@
         "title": "OrganizationUpdate",
         "type": "object"
       },
+      "OrphansOut": {
+        "properties": {
+          "deletable": {
+            "title": "Deletable",
+            "type": "integer"
+          },
+          "recent_kept": {
+            "title": "Recent Kept",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deletable",
+          "recent_kept"
+        ],
+        "title": "OrphansOut",
+        "type": "object"
+      },
       "OverrideCreate": {
         "properties": {
           "entitlement_key": {
@@ -4254,6 +4272,32 @@
           }
         },
         "title": "PurchaseRequestUpdate",
+        "type": "object"
+      },
+      "PurgeIn": {
+        "properties": {
+          "confirm": {
+            "title": "Confirm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "PurgeIn",
+        "type": "object"
+      },
+      "PurgeOut": {
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "PurgeOut",
         "type": "object"
       },
       "QuestionOut": {
@@ -6045,6 +6089,106 @@
           }
         },
         "summary": "Admin List Diagnostics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/diagnostics/orphans": {
+      "get": {
+        "operationId": "admin_orphan_diagnostics_api_v1_admin_diagnostics_orphans_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrphansOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Admin Orphan Diagnostics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/diagnostics/purge-orphans": {
+      "post": {
+        "description": "Supprime tous les prospects sans fiche entreprise de plus de 24 h (ADMIN).",
+        "operationId": "admin_purge_orphan_diagnostics_api_v1_admin_diagnostics_purge_orphans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Purge Orphan Diagnostics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/diagnostics/{diagnostic_id}": {
+      "delete": {
+        "description": "Supprime un prospect sans fiche entreprise (409 s'il est rattaché à une entreprise).",
+        "operationId": "admin_delete_diagnostic_api_v1_admin_diagnostics__diagnostic_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "diagnostic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Diagnostic Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Delete Diagnostic",
         "tags": [
           "admin"
         ]

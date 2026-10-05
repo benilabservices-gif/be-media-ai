@@ -357,3 +357,72 @@ def test_should_reserve_organization_deletion_to_admins(
 
     assert response.status_code == 403
     assert api.get(f"/orgs/{org['id']}").status_code == 200
+
+
+# ── Prospects sans fiche entreprise ──
+
+
+def _age_diagnostic(database_url: str, diagnostic_id: str, hours: int) -> None:
+    async def run() -> None:
+        engine = create_async_engine(database_url)
+        async with engine.begin() as connection:
+            await connection.execute(text("SELECT set_config('app.scope', 'staff', true)"))
+            await connection.execute(
+                text(
+                    "UPDATE diagnostic_sessions SET created_at = now() - make_interval(hours => :h) "
+                    "WHERE id = :id"
+                ),
+                {"h": hours, "id": diagnostic_id},
+            )
+        await engine.dispose()
+
+    asyncio.run(run())
+
+
+def test_should_purge_old_prospects_without_organization_only(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    attached = _client_with_diagnostic(api)
+    old = Diagnostic(ApiClient(api.http))
+    old.put_answers(BEGINNER_ANSWERS)
+    recent = Diagnostic(ApiClient(api.http))
+    _age_diagnostic(test_database_url, old.id, 48)
+    _staff_member(second_api, test_database_url, "ADMIN")
+
+    before = second_api.get("/admin/diagnostics/orphans").json()
+    refused = second_api.post("/admin/diagnostics/purge-orphans", {"confirm": "oui"})
+    purged = second_api.post("/admin/diagnostics/purge-orphans", {"confirm": "supprimer"})
+
+    assert before["deletable"] >= 1 and before["recent_kept"] >= 1
+    assert refused.status_code == 422
+    assert purged.status_code == 200 and purged.json()["deleted"] >= 1
+    remaining = [d["id"] for d in second_api.get("/admin/diagnostics?limit=100").json()["data"]]
+    assert old.id not in remaining
+    assert recent.id in remaining  # moins de 24 h : épargné
+    assert api.get(f"/orgs/{attached['id']}/diagnostics").json()["data"]  # rattaché : intact
+
+
+def test_should_delete_one_orphan_but_not_an_attached_prospect(
+    api: ApiClient, second_api: ApiClient, test_database_url: str
+) -> None:
+    attached = _client_with_diagnostic(api)
+    attached_id = api.get(f"/orgs/{attached['id']}/diagnostics").json()["data"][0]["id"]
+    orphan = Diagnostic(ApiClient(api.http))
+    _staff_member(second_api, test_database_url, "ADMIN")
+
+    assert second_api.request("DELETE", f"/admin/diagnostics/{orphan.id}").status_code == 204
+    refused = second_api.request("DELETE", f"/admin/diagnostics/{attached_id}")
+    assert refused.status_code == 409
+    assert refused.json()["code"] == "ATTACHED_TO_ORGANIZATION"
+
+
+def test_should_reserve_prospect_deletion_to_admins(
+    second_api: ApiClient, test_database_url: str
+) -> None:
+    _staff_member(second_api, test_database_url, "MANAGER")
+
+    assert second_api.get("/admin/diagnostics/orphans").status_code == 403
+    assert (
+        second_api.post("/admin/diagnostics/purge-orphans", {"confirm": "SUPPRIMER"}).status_code
+        == 403
+    )

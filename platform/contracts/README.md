@@ -32,6 +32,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /orgs/{id}/diagnostics` | **Disponible** | Historique des diagnostics de l'entreprise |
 | `POST /orgs/{id}/diagnostics/claim` | **Disponible** | Rattache à une entreprise **existante** un diagnostic fait avant la connexion (corps `{"diagnostic_id"}`, en-tête `X-Diagnostic-Token`) |
 | `GET /admin/diagnostics` | **Disponible** | Staff : prospects captés (coordonnées, score, consentements) |
+| `GET /admin/diagnostics/orphans` · `POST /admin/diagnostics/purge-orphans` · `DELETE /admin/diagnostics/{id}` | **Disponible** | ADMIN : supprimer les prospects sans fiche entreprise (§10) |
 | `GET /public/catalog?currency=XOF` | **Disponible** | Offres publiques, `price` (ou `null` si non vendue dans la devise), `available_currencies`. Pour l'instant **XOF uniquement** : XAF et EUR renvoient `price: null` |
 | `GET /orgs/{id}/entitlements` | **Disponible** | Droits effectifs de l'entreprise (`value` : booléen, entier ou `"UNLIMITED"`), avec leur `sources` |
 | `GET·POST /admin/organizations/{id}/entitlement-overrides` · `DELETE …/{override_id}` | **Disponible** | Staff : accorder ou retirer un droit (geste commercial, test) |
@@ -255,6 +256,11 @@ npx openapi-typescript platform/contracts/openapi.json -o digital360/js/api/type
   - La suppression est **définitive** : toutes les données de l'entreprise partent avec elle. Les comptes des membres sont conservés, sans l'accès à cette entreprise.
   - La suppression est tracée dans le journal d'audit (`organization.delete`).
   - Erreurs : 422 `CONFIRMATION_MISMATCH` (nom différent ; les majuscules et les espaces autour ne comptent pas), 409 `HAS_PAYMENTS` (l'entreprise a des paiements et `delete_payments` n'est pas `true`).
+
+**Prospects sans fiche entreprise** (ADMIN, `organization:delete`). Un prospect rattaché à une entreprise part avec elle ; ceux-ci n'ont jamais été rattachés (`organization_id` vide) :
+- `GET /admin/diagnostics/orphans` renvoie `{ deletable, recent_kept }`. Les prospects de moins de 24 h sont épargnés : l'inscription est peut-être en cours.
+- `POST /admin/diagnostics/purge-orphans` avec `{ "confirm": "SUPPRIMER" }` → `{ deleted }`. 422 `CONFIRMATION_MISMATCH` si le mot de confirmation est différent.
+- `DELETE /admin/diagnostics/{id}` supprime un seul prospect → 204. 409 `ATTACHED_TO_ORGANIZATION` s'il est rattaché à une entreprise.
 
 ## 11. « Je veux démarrer » : demandes d'achat
 

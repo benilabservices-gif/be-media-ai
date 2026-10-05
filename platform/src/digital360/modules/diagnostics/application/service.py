@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select, text, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from digital360.core.actor import Actor
@@ -112,6 +112,10 @@ class ClaimedDiagnostic:
     session_id: uuid.UUID
     answers: dict[str, Any]
     passport_statuses: dict[str, str] = field(default_factory=dict)
+
+
+# Un diagnostic de moins de 24 h sans entreprise est peut-être en cours d'inscription
+ORPHAN_GRACE = timedelta(hours=24)
 
 
 @dataclass(frozen=True)
@@ -447,6 +451,68 @@ class DiagnosticService:
             "conversion_rate": round(claimed / finished, 3) if finished else None,
             "average_score": round(float(average), 1) if average is not None else None,
         }
+
+    async def admin_orphans(self) -> dict[str, int]:
+        """Prospects sans fiche entreprise : supprimables, et récents épargnés (moins de 24 h)."""
+        threshold = datetime.now(UTC) - ORPHAN_GRACE
+        async with staff_transaction(self._session_factory) as session:
+            orphan = DiagnosticSession.organization_id.is_(None)
+            deletable = await session.scalar(
+                select(func.count())
+                .select_from(DiagnosticSession)
+                .where(orphan, DiagnosticSession.created_at < threshold)
+            )
+            recent = await session.scalar(
+                select(func.count())
+                .select_from(DiagnosticSession)
+                .where(orphan, DiagnosticSession.created_at >= threshold)
+            )
+        return {"deletable": int(deletable or 0), "recent_kept": int(recent or 0)}
+
+    async def admin_purge_orphans(self, staff_user_id: uuid.UUID) -> int:
+        """Supprime les prospects sans fiche entreprise de plus de 24 h ; renvoie leur nombre."""
+        threshold = datetime.now(UTC) - ORPHAN_GRACE
+        async with staff_transaction(self._session_factory) as session:
+            deleted = list(
+                await session.scalars(
+                    delete(DiagnosticSession)
+                    .where(
+                        DiagnosticSession.organization_id.is_(None),
+                        DiagnosticSession.created_at < threshold,
+                    )
+                    .returning(DiagnosticSession.id)
+                )
+            )
+            await record_audit(
+                session,
+                actor=Actor.user(staff_user_id),
+                action="diagnostics.purge_orphans",
+                entity_type="diagnostic_session",
+                new_value={"deleted": len(deleted)},
+            )
+        return len(deleted)
+
+    async def admin_delete_orphan(self, diagnostic_id: uuid.UUID, staff_user_id: uuid.UUID) -> None:
+        """Supprime un prospect sans fiche ; celui d'une entreprise part avec l'entreprise."""
+        async with staff_transaction(self._session_factory) as session:
+            diagnostic = await session.get(DiagnosticSession, diagnostic_id)
+            if diagnostic is None:
+                raise AppError("NOT_FOUND", "Prospect introuvable.", status=404)
+            if diagnostic.organization_id is not None:
+                raise AppError(
+                    "ATTACHED_TO_ORGANIZATION",
+                    "Ce prospect est rattaché à une entreprise : il sera supprimé avec elle.",
+                    status=409,
+                )
+            await session.delete(diagnostic)
+            await record_audit(
+                session,
+                actor=Actor.user(staff_user_id),
+                action="diagnostics.delete",
+                entity_type="diagnostic_session",
+                entity_id=diagnostic_id,
+                old_value={"company": (diagnostic.answers or {}).get("company")},
+            )
 
     async def admin_list(
         self, params: PageParams, *, status: DiagnosticStatus | None

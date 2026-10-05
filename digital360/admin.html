@@ -277,13 +277,14 @@
                 <!-- PROSPECTS -->
                 <div class="admin-page" id="admin-prospects">
                     <div class="page-header"><h1>Prospects</h1><p>Diagnostics complétés et candidats captés.</p></div>
+                    <div id="orphanBar" class="card" style="display:none;margin-bottom:1rem;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;"></div>
                     <div id="diagLoading" class="loading-row">Chargement des prospects…</div>
                     <div id="diagError" class="error-row" style="display:none;"></div>
                     <div id="diagEmpty" class="empty-row" style="display:none;">Aucun prospect trouvé.</div>
                     <div id="diagContent" style="display:none;">
                         <div class="card" style="overflow-x:auto;">
                             <table class="admin-table">
-                                <thead><tr><th>Entreprise</th><th>Secteur</th><th>Ville</th><th>Pays</th><th>Téléphone</th><th>Email</th><th>Score</th><th>Statut</th><th>Date</th></tr></thead>
+                                <thead><tr><th>Entreprise</th><th>Secteur</th><th>Ville</th><th>Pays</th><th>Téléphone</th><th>Email</th><th>Score</th><th>Statut</th><th>Date</th><th>Fiche</th></tr></thead>
                                 <tbody id="diagTableBody"></tbody>
                             </table>
                         </div>
@@ -1011,7 +1012,70 @@
         tdDate.textContent = d.completed_at ? formatDate(d.completed_at) : '—';
         tr.appendChild(tdDate);
 
+        // Fiche entreprise : lien vers la fiche, sinon prospect supprimable (ADMIN)
+        const tdOrg = document.createElement('td');
+        if (d.organization_id) {
+            const open = document.createElement('button');
+            open.className = 'btn btn-ghost btn-sm';
+            open.textContent = 'Voir la fiche';
+            open.onclick = () => { switchPage('entreprises'); openOrgDetail(d.organization_id); };
+            tdOrg.appendChild(open);
+        } else {
+            const none = document.createElement('span');
+            none.style.cssText = 'font-size:12px;color:var(--text-muted);margin-right:0.25rem;';
+            none.textContent = 'Aucune';
+            tdOrg.appendChild(none);
+            if ((_me?.staff_permissions || []).includes('organization:delete')) {
+                const del = document.createElement('button');
+                del.className = 'btn btn-ghost btn-sm';
+                del.style.color = 'var(--error)';
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    if (!confirm('Supprimer définitivement le prospect « ' + (d.company || 'sans nom') + ' » ?')) return;
+                    try {
+                        await apiFetch('/admin/diagnostics/' + d.id, { method: 'DELETE' });
+                        tr.remove();
+                        loadOrphanBar();
+                    } catch (e) { alert(e.detail || e.message); }
+                };
+                tdOrg.appendChild(del);
+            }
+        }
+        tr.appendChild(tdOrg);
+
         tbody.appendChild(tr);
+    }
+
+    // Prospects sans fiche entreprise : suppression en masse (ADMIN), confirmée par « SUPPRIMER »
+    async function loadOrphanBar() {
+        const bar = document.getElementById('orphanBar');
+        if (!bar || !(_me?.staff_permissions || []).includes('organization:delete')) return;
+        let info;
+        try { info = await apiFetch('/admin/diagnostics/orphans'); } catch (_) { return; }
+        bar.innerHTML = '';
+        const text = document.createElement('div');
+        text.style.cssText = 'font-size:14px;';
+        text.textContent = info.deletable + ' prospect(s) sans fiche entreprise depuis plus de 24 h'
+            + (info.recent_kept ? ' (' + info.recent_kept + ' plus récent(s) épargné(s) : inscription peut-être en cours)' : '') + '.';
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm';
+        btn.style.cssText = 'background:var(--error);color:#fff;border-color:var(--error);';
+        btn.textContent = 'Supprimer les ' + info.deletable + ' prospect(s) sans fiche';
+        btn.disabled = info.deletable === 0;
+        btn.style.opacity = info.deletable === 0 ? '0.4' : '1';
+        btn.onclick = async () => {
+            const typed = prompt('Suppression définitive de ' + info.deletable + ' prospect(s) sans fiche entreprise.\nTapez SUPPRIMER pour confirmer :');
+            if (typed === null) return;
+            try {
+                const result = await apiFetch('/admin/diagnostics/purge-orphans', { method: 'POST', body: { confirm: typed } });
+                alert(result.deleted + ' prospect(s) supprimé(s).');
+                loadDiagnostics(false);
+                loadOrphanBar();
+                loadDashboard();
+            } catch (e) { alert(e.detail || e.message); }
+        };
+        bar.append(text, btn);
+        bar.style.display = 'flex';
     }
 
     // ── Staff (Équipe) ──
@@ -2274,7 +2338,7 @@
             // Load initial data
             loadDashboard();
             loadOrgs(false);
-            if (perms.includes('diagnostic:read')) loadDiagnostics(false);
+            if (perms.includes('diagnostic:read')) { loadDiagnostics(false); loadOrphanBar(); }
             if (perms.includes('staff:manage')) loadStaff();
             if (perms.includes('audit:read')) loadAuditLogs(false);
             if (perms.includes('order:create')) loadPurchaseRequests(false);
