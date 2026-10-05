@@ -664,8 +664,8 @@
     // ── Init ──
     (async () => {
         try {
-            await getCsrf();
-            const me = await checkAuth();
+            // Jeton CSRF et compte en parallèle : ils ne dépendent pas l'un de l'autre
+            const [, me] = await Promise.all([getCsrf(), checkAuth()]);
             _meData = me;
             _user = me?.user;
             _memberships = me?.memberships || [];
@@ -675,44 +675,26 @@
             _isOwner = membership?.role === 'CLIENT_OWNER';
             if (membership) {
                 _orgId = membership.organization_id;
-                // Load org data
-                try {
-                    _orgData = await fetch(D360_API_BASE + '/orgs/' + _orgId, { credentials: 'include' }).then(r => r.json());
-                } catch (_) {}
-                // Load passport
-                try {
-                    const passportRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/passport', { credentials: 'include' });
-                    if (passportRes.ok) passportData = await passportRes.json();
-                } catch (_) {}
-                // Load action plan
-                try {
-                    const planRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/action-plan', { credentials: 'include' });
-                    if (planRes.ok) actionPlanData = await planRes.json();
-                } catch (_) {}
-                // Load diagnostics
-                try {
-                    const diagRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/diagnostics', { credentials: 'include' });
-                    if (diagRes.ok) diagnosticsData = await diagRes.json();
-                } catch (_) {}
-                // Load entitlements
-                try {
-                    const entRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
-                    if (entRes.ok) entitlementsData = await entRes.json();
-                } catch (_) {}
-                // Load purchase requests
-                try {
-                    const prRes = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
-                    if (prRes.ok) {
-                        const prData = await prRes.json();
-                        _purchaseRequests = prData?.data || [];
-                    }
-                } catch (_) {}
-                // Load catalog for subscription page
-                await loadCatalogForDashboard();
-                await loadProject();
-                await loadBilling();
+                // Toutes les données du projet partent en même temps (elles sont indépendantes) :
+                // l'attente est celle de la plus lente, pas la somme des 13 requêtes
+                const get = path => fetch(D360_API_BASE + path, { credentials: 'include' })
+                    .then(r => (r.ok ? r.json() : null))
+                    .catch(() => null);
+                const base = '/orgs/' + _orgId;
+                const [org, passport, plan, diagnostics, entitlements, requests] = await Promise.all([
+                    get(base), get(base + '/passport'), get(base + '/action-plan'), get(base + '/diagnostics'),
+                    get(base + '/entitlements'), get(base + '/purchase-requests'),
+                    loadCatalogForDashboard(), loadProject(), loadBilling(), loadCloser(),
+                ]);
+                _orgData = org;
+                passportData = passport;
+                actionPlanData = plan;
+                diagnosticsData = diagnostics;
+                entitlementsData = entitlements;
+                _purchaseRequests = requests?.data || [];
+            } else {
+                await loadCloser();
             }
-            await loadCloser();
             // Update UI with real data
             if (_user) {
                 const initial = _user.full_name?.charAt(0).toUpperCase() || 'A';
