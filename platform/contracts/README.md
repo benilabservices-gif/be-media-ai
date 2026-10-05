@@ -250,7 +250,7 @@ npx openapi-typescript platform/contracts/openapi.json -o digital360/js/api/type
 **`GET /admin/audit-logs`** (ADMIN) : filtres `organization_id`, `action` (ex. `staff_role.grant`) et `entity_type`, pagination comme au §5. Chaque entrée contient `occurred_at`, `actor_type`, `actor_label`, `action`, `entity_type`, `entity_id`, `organization_id`, `old_value` et `new_value` (objets ou `null`), `ip`. Affiche `old_value` et `new_value` avec `textContent` (`JSON.stringify`), jamais avec `innerHTML`.
 
 **Supprimer une entreprise** (ADMIN uniquement, permission `organization:delete`) :
-- `GET /admin/organizations/{id}/deletion-preview` renvoie ce qui disparaîtra : `{ commercial_name, members, diagnostics, payments, website_projects, purchase_requests }`.
+- `GET /admin/organizations/{id}/deletion-preview` renvoie ce qui disparaîtra : `{ commercial_name, members, diagnostics, payments, website_projects, purchase_requests, prospects }`. `prospects` compte les diagnostics jamais rattachés qui concernent l'entreprise (même nom, e-mail de l'entreprise ou d'un membre, même numéro) : ils sont supprimés avec elle. Le registre des consentements est conservé (ajout seul : preuve légale).
 - `POST /admin/organizations/{id}/delete` avec `{ "confirm_name": "<nom commercial retapé>", "delete_payments": false }` → 204.
   - La suppression est **définitive** : toutes les données de l'entreprise partent avec elle. Les comptes des membres sont conservés, sans l'accès à cette entreprise.
   - La suppression est tracée dans le journal d'audit (`organization.delete`).

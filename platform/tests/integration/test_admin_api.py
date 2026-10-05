@@ -285,6 +285,20 @@ def test_should_delete_organization_after_name_confirmation_and_keep_accounts(
 ) -> None:
     org = _client_with_diagnostic(api)
     _staff_member(second_api, test_database_url, "ADMIN")
+    # Même entreprise, diagnostic refait sans le rattacher ; et un prospect sans rapport
+    related = Diagnostic(ApiClient(api.http))
+    related.put_answers({**BEGINNER_ANSWERS, "company": org["commercial_name"].upper()})
+    related.complete()
+    unrelated = Diagnostic(ApiClient(api.http))
+    unrelated.put_answers(
+        {
+            **BEGINNER_ANSWERS,
+            "company": "Autre Boutique Sans Rapport",
+            "phone": "+22990000001",
+            "whatsapp": "+22990000002",
+        }
+    )
+    unrelated.complete()
 
     preview = second_api.get(f"/admin/organizations/{org['id']}/deletion-preview").json()
     wrong = second_api.post(f"/admin/organizations/{org['id']}/delete", {"confirm_name": "Autre"})
@@ -294,6 +308,7 @@ def test_should_delete_organization_after_name_confirmation_and_keep_accounts(
     )
 
     assert (preview["members"], preview["diagnostics"], preview["payments"]) == (1, 1, 0)
+    assert preview["prospects"] >= 1
     assert wrong.status_code == 422
     assert wrong.json()["code"] == "CONFIRMATION_MISMATCH"
     assert deleted.status_code == 204
@@ -302,6 +317,9 @@ def test_should_delete_organization_after_name_confirmation_and_keep_accounts(
     me = api.get("/me")
     assert me.status_code == 200
     assert me.json()["memberships"] == []
+    prospects = [d["id"] for d in second_api.get("/admin/diagnostics?limit=100").json()["data"]]
+    assert related.id not in prospects
+    assert unrelated.id in prospects
     logs = second_api.get("/admin/audit-logs?action=organization.delete").json()["data"]
     assert any(item["entity_id"] == org["id"] for item in logs)
 

@@ -146,6 +146,8 @@ class DeletionPreviewOut(BaseModel):
     payments: int
     website_projects: int
     purchase_requests: int
+    # Prospects jamais rattachés qui concernent l'entreprise (même nom, e-mail ou numéro)
+    prospects: int
 
 
 class DeletionIn(BaseModel):

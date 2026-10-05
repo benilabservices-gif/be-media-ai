@@ -1450,6 +1450,10 @@
             "title": "Payments",
             "type": "integer"
           },
+          "prospects": {
+            "title": "Prospects",
+            "type": "integer"
+          },
           "purchase_requests": {
             "title": "Purchase Requests",
             "type": "integer"
@@ -1466,7 +1470,8 @@
           "diagnostics",
           "payments",
           "website_projects",
-          "purchase_requests"
+          "purchase_requests",
+          "prospects"
         ],
         "title": "DeletionPreviewOut",
         "type": "object"

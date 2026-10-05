@@ -85,11 +85,53 @@ _LINKED_TABLES = {
 }
 
 
-async def _linked_counts(session: AsyncSession, organization_id: uuid.UUID) -> dict[str, int]:
-    return {
-        key: int(await session.scalar(text(query), {"id": organization_id}) or 0)
+async def _linked_counts(session: AsyncSession, organization: Organization) -> dict[str, int]:
+    counts = {
+        key: int(await session.scalar(text(query), {"id": organization.id}) or 0)
         for key, query in _LINKED_TABLES.items()
     }
+    counts["prospects"] = len(await _related_prospects(session, organization))
+    return counts
+
+
+# Prospects (diagnostics) jamais rattachés à un compte mais qui concernent cette entreprise :
+# même nom, e-mail de l'entreprise ou d'un membre, ou même numéro (chiffres seuls comparés)
+_RELATED_PROSPECTS = text(
+    r"""
+    SELECT d.id FROM diagnostic_sessions d
+    WHERE d.organization_id IS NULL AND (
+        lower(trim(d.answers->>'company')) = lower(trim(:name))
+        OR lower(trim(d.answers->>'email')) = ANY(:emails)
+        OR regexp_replace(coalesce(d.answers->>'phone', ''), '\D', '', 'g') = ANY(:phones)
+        OR regexp_replace(coalesce(d.answers->>'whatsapp', ''), '\D', '', 'g') = ANY(:phones)
+    )
+    """
+)
+
+
+async def _related_prospects(session: AsyncSession, organization: Organization) -> list[uuid.UUID]:
+    member_emails = await session.scalars(
+        text(
+            "SELECT lower(u.email) FROM users u JOIN memberships m ON m.user_id = u.id "
+            "WHERE m.organization_id = :id"
+        ),
+        {"id": organization.id},
+    )
+    emails = {email for email in member_emails if email}
+    if organization.email:
+        emails.add(organization.email.strip().lower())
+    numbers = (organization.phone, organization.whatsapp)
+    phones = {
+        digits
+        for digits in ("".join(c for c in (number or "") if c.isdigit()) for number in numbers)
+        # Un numéro trop court ne suffit pas à rattacher un prospect
+        if len(digits) >= 8
+    }
+    rows = await session.scalars(
+        _RELATED_PROSPECTS,
+        {"name": organization.commercial_name, "emails": list(emails), "phones": list(phones)},
+    )
+    return list(rows)
 
 
 def _not_found() -> AppError:
@@ -249,7 +291,7 @@ class OrganizationService:
             return {
                 "organization_id": organization.id,
                 "commercial_name": organization.commercial_name,
-                **await _linked_counts(session, organization_id),
+                **await _linked_counts(session, organization),
             }
 
     async def admin_delete(
@@ -277,7 +319,7 @@ class OrganizationService:
                     status=422,
                     errors=[{"field": "confirm_name", "reason": "mismatch"}],
                 )
-            counts = await _linked_counts(session, organization_id)
+            counts = await _linked_counts(session, organization)
             if counts["payments"] and not delete_payments:
                 raise AppError(
                     "HAS_PAYMENTS",
@@ -299,6 +341,12 @@ class OrganizationService:
                     "status": organization.status,
                     **counts,
                 },
+            )
+            # Prospects liés jamais rattachés (ceux de l'entreprise partent en cascade). Le
+            # registre des consentements, lui, est en ajout seul : preuve légale conservée
+            prospects = await _related_prospects(session, organization)
+            await session.execute(
+                text("DELETE FROM diagnostic_sessions WHERE id = ANY(:ids)"), {"ids": prospects}
             )
             await session.execute(delete(Organization).where(Organization.id == organization_id))
 
