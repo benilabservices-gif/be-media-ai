@@ -709,8 +709,15 @@
         const hash = location.hash.slice(1);
         // Lien direct (ex. depuis l'espace client) : afficher la page ne suffit pas, il faut
         // charger le questionnaire comme le fait le bouton « Faire mon diagnostic »
+        const authModes = { inscription: 'register', connexion: 'login' };
         if (hash === 'diagnostic') {
             startDiagnostic();
+        } else if (authModes[hash]) {
+            // Lien envoyé par e-mail : la fenêtre est déclarée après ce script, d'où l'attente du DOM
+            showPage('landing', { push: false });
+            const open = () => openAuthModal(authModes[hash]);
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', open, { once: true });
+            else open();
         } else if (PAGES.includes(hash)) {
             showPage(hash, { push: false });
         } else if (hash && document.getElementById(hash)) {
@@ -890,14 +897,34 @@
         if (box) box.textContent = message || '';
     }
     function describeApiError(err) {
-        if (!err || err.status === undefined) return 'Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.';
+        if (!err || err.status === undefined) return { message: 'Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.', field: null };
         if (err.code === 'QUESTIONNAIRE_INCOMPLETE' || err.code === 'VALIDATION_ERROR') {
             const labels = {};
             questionnaireData?.sections.forEach(s => s.questions.forEach(q => { labels[q.key] = q.label; }));
-            const fields = (err.errors || []).map(e => labels[(e.field || '').replace('answers.', '')] || e.field);
-            return (err.detail || 'Réponses invalides.') + (fields.length ? ' ' + fields.join(' ; ') : '');
+            const errors = err.errors || [];
+            const firstField = errors.length ? (errors[0].field || '').replace('answers.', '') : null;
+            const fields = errors.map(e => labels[(e.field || '').replace('answers.', '')] || e.field);
+            return {
+                message: (err.detail || 'Réponses invalides.') + (fields.length ? ' ' + fields.join(' ; ') : ''),
+                field: firstField || null
+            };
         }
-        return err.detail || 'Une erreur est survenue. Réessayez.';
+        return { message: err.detail || 'Une erreur est survenue. Réessayez.', field: null };
+    }
+    function navigateToStepByField(fieldKey) {
+        if (!fieldKey || !questionnaireData) return;
+        for (let i = 0; i < questionnaireData.sections.length; i++) {
+            const found = questionnaireData.sections[i].questions.find(q => q.key === fieldKey);
+            if (found) {
+                currentDiagStep = i;
+                renderCurrentStep();
+                setTimeout(() => {
+                    const el = document.getElementById('q-' + fieldKey);
+                    if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                }, 100);
+                return;
+            }
+        }
     }
     function buildConsentBlock() {
         const block = document.createElement('div');
@@ -938,7 +965,7 @@
             content.innerHTML = '';
             const message = document.createElement('p');
             message.style.cssText = 'color:var(--error);margin-bottom:1rem;';
-            message.textContent = 'Le diagnostic est momentanément indisponible. ' + describeApiError(e);
+            message.textContent = 'Le diagnostic est momentanément indisponible. ' + describeApiError(e).message;
             const retry = document.createElement('button');
             retry.className = 'btn btn-primary';
             retry.textContent = 'Réessayer';
@@ -1019,6 +1046,13 @@
                 input.value = currentAnswers[q.key] || '';
                 input.addEventListener('input', () => { currentAnswers[q.key] = input.value; });
                 group.appendChild(input);
+                if (q.type === 'PHONE') {
+                    const help = document.createElement('div');
+                    help.style.cssText = 'font-size:12px;color:var(--text-muted);margin-top:4px;';
+                    // Le serveur ajoute l'indicatif du pays choisi : le numéro local suffit
+                    help.textContent = 'Ex. 01 90 49 31 32 ou +229 01 90 49 31 32';
+                    group.appendChild(help);
+                }
             } else if (q.type === 'SINGLE') {
                 const optionsDiv = document.createElement('div');
                 optionsDiv.className = 'diag-options';
@@ -1136,8 +1170,11 @@
             scoreResult = MOCK_MODE ? MOCK_COMPLETE : await completeWithApi();
         } catch (e) {
             console.error('[D360] Diagnostic non terminé :', e);
-            showDiagError(describeApiError(e));
+            const errInfo = describeApiError(e);
             if (button) { button.disabled = false; button.textContent = buttonLabel; }
+            // Après le changement d'étape : la zone d'erreur est recréée par renderCurrentStep
+            if (errInfo.field) navigateToStepByField(errInfo.field);
+            showDiagError(errInfo.message);
             return;
         }
 
@@ -1800,7 +1837,7 @@
                    }
                }
           } catch (err) {
-             document.getElementById('authError').textContent = describeApiError(err);
+              document.getElementById('authError').textContent = describeApiError(err).message;
          }
      }
     async function handleRegister(e) {
@@ -1823,16 +1860,19 @@
             } else if (err.code === 'ALREADY_EXISTS') {
                 errorEl.textContent = 'Un compte existe déjà avec cet email : connectez-vous.';
             } else {
-                errorEl.textContent = describeApiError(err);
+                errorEl.textContent = describeApiError(err).message;
             }
             return;
         }
         if (pendingInvitation()) { await refreshAuth(); await acceptPendingInvitation(); return; }
-        // Diagnostic terminé dans ce navigateur : il devient l'espace de l'entreprise
-        const diagnosticDone = scoreResult && diagSessionId && diagToken && !MOCK_MODE;
-        if (diagnosticDone) {
+        // Diagnostic fait dans ce navigateur : il devient l'espace de l'entreprise. Sans résultat
+        // en mémoire (arrivée par le lien #inscription d'un e-mail), on reprend celui gardé en
+        // localStorage, comme à la connexion.
+        const pendingId = scoreResult ? diagSessionId : localStorage.getItem('d360_diag_id');
+        const pendingToken = scoreResult ? diagToken : localStorage.getItem('d360_diag_token');
+        if (pendingId && pendingToken && !MOCK_MODE) {
             await refreshAuth();
-            const result = await attachDiagnostic(diagSessionId, diagToken, currentAnswers.company);
+            const result = await attachDiagnostic(pendingId, pendingToken, currentAnswers.company);
             window.location.href = 'dashboard.html?welcome=1' + (result.notice ? '&notice=' + result.notice : '');
         } else {
             // Pas de diagnostic en attente : rester sur la page, ne pas rediriger
@@ -1909,7 +1949,7 @@
             return { notice: 'diagnostic_claimed', message: 'Diagnostic enregistré dans « ' + name + ' ».' };
         } catch (err) {
             if (err.code === 'DIAGNOSTIC_ALREADY_CLAIMED') { forget(); return { notice: 'diagnostic_already_claimed', message: 'Ce diagnostic est déjà enregistré dans un projet.' }; }
-            return { notice: choice === 'new' ? 'org_creation_failed' : 'diagnostic_claim_failed', message: 'Le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err) };
+            return { notice: choice === 'new' ? 'org_creation_failed' : 'diagnostic_claim_failed', message: 'Le diagnostic n\'a pas pu être rattaché : ' + describeApiError(err).message };
         }
     }
 
@@ -1928,7 +1968,7 @@
         } catch (err) {
             // Mauvais compte : on garde le lien pour se reconnecter avec la bonne adresse
             if (err.code !== 'INVITATION_EMAIL_MISMATCH') sessionStorage.removeItem('d360_invitation');
-            showNotice(describeApiError(err));
+            showNotice(describeApiError(err).message);
         }
     }
     async function handleInvitationLink() {
