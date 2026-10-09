@@ -156,6 +156,49 @@ def test_should_normalize_phone_email_and_multi(questionnaire: QuestionnaireDefi
 
 
 @pytest.mark.parametrize(
+    ("country", "typed", "expected"),
+    [
+        # Saisies réelles des visiteurs TikTok : numéro local, sans indicatif
+        ("BJ", "01 90 49 31 32", "+2290190493132"),
+        ("CI", "07 00 00 00 00", "+2250700000000"),
+        ("SN", "77 123 45 67", "+221771234567"),
+        ("CM", "6 90 12 34 56", "+237690123456"),
+        ("TG", "90 12 34 56", "+22890123456"),
+        ("FR", "06 12 34 56 78", "+33612345678"),
+        # Indicatif tapé avec 00, ou sans le +
+        ("BJ", "00229 01 90 49 31 32", "+2290190493132"),
+        ("BJ", "229 01 90 49 31 32", "+2290190493132"),
+        # Indicatif d'un autre pays : gardé tel quel
+        ("BJ", "+225 07 00 00 00 00", "+2250700000000"),
+    ],
+)
+def test_should_add_country_code_to_local_phone(
+    questionnaire: QuestionnaireDefinition, country: str, typed: str, expected: str
+) -> None:
+    cleaned, errors = clean_answers(
+        questionnaire, {"phone": typed, "whatsapp": typed}, country=country
+    )
+
+    assert errors == []
+    assert cleaned["phone"] == cleaned["whatsapp"] == expected
+
+
+def test_should_take_country_from_same_answers(questionnaire: QuestionnaireDefinition) -> None:
+    cleaned, errors = clean_answers(questionnaire, {"country": "BJ", "phone": "0190493132"})
+
+    assert errors == []
+    assert cleaned["phone"] == "+2290190493132"
+
+
+def test_should_reject_local_phone_without_country(
+    questionnaire: QuestionnaireDefinition,
+) -> None:
+    _, errors = clean_answers(questionnaire, {"phone": "0190493132"})
+
+    assert [error.reason for error in errors] == ["invalid_phone"]
+
+
+@pytest.mark.parametrize(
     ("answers", "reason"),
     [
         ({"site": "peut-être"}, "unknown_option"),

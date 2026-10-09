@@ -201,7 +201,9 @@ class DiagnosticService:
             questionnaire = await config_store.load_questionnaire(
                 session, diagnostic.questionnaire_id
             )
-            cleaned, errors = clean_answers(questionnaire, answers)
+            cleaned, errors = clean_answers(
+                questionnaire, answers, country=diagnostic.answers.get("country")
+            )
             if errors:
                 raise AppError(
                     "VALIDATION_ERROR",

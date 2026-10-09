@@ -27,8 +27,40 @@ Answers = Mapping[str, Any]
 MAX_TEXT_LENGTH = 2000
 _E164 = re.compile(r"^\+[1-9]\d{6,14}$")
 _PHONE_SEPARATORS = re.compile(r"[\s.\-()]")
+# Indicatifs des pays du questionnaire. Seule la France retire le 0 initial : ailleurs
+# (Bénin 01…, Côte d'Ivoire 07…, Congo 06…) il fait partie du numéro.
+_DIAL_CODES = {
+    "CI": "225",
+    "SN": "221",
+    "CM": "237",
+    "BJ": "229",
+    "TG": "228",
+    "BF": "226",
+    "ML": "223",
+    "NE": "227",
+    "GA": "241",
+    "CG": "242",
+    "FR": "33",
+}
+_TRUNK_ZERO_DROPPED = {"FR"}
+# Un numéro national fait au plus 10 chiffres : au-delà, il contient déjà l'indicatif
+_MIN_INTERNATIONAL_DIGITS = 8
 
 # ── Réponses ──
+
+
+def _to_international(compact: str, country: str | None) -> str:
+    """« 0190493132 » au Bénin devient « +2290190493132 » ; un numéro en +… est gardé."""
+    if compact.startswith("00"):
+        return "+" + compact[2:]
+    code = _DIAL_CODES.get(country or "")
+    if compact.startswith("+") or code is None or not compact.isdigit():
+        return compact
+    if compact.startswith(code) and len(compact) >= len(code) + _MIN_INTERNATIONAL_DIGITS:
+        return "+" + compact
+    if country in _TRUNK_ZERO_DROPPED:
+        compact = compact.removeprefix("0")
+    return "+" + code + compact
 
 
 @dataclass(frozen=True)
@@ -37,7 +69,7 @@ class AnswerError:
     reason: str
 
 
-def _normalize(question: Question, value: Any) -> Any:
+def _normalize(question: Question, value: Any, country: str | None) -> Any:
     """Renvoie la valeur normalisée, ou lève ValueError(raison)."""
     match question.type:
         case QuestionType.SINGLE:
@@ -67,7 +99,7 @@ def _normalize(question: Question, value: Any) -> Any:
             if not isinstance(value, str):
                 raise ValueError("expected_text")
             # « +225 07 00 00 00 00 » est accepté et stocké « +2250700000000 »
-            compact = _PHONE_SEPARATORS.sub("", value)
+            compact = _to_international(_PHONE_SEPARATORS.sub("", value), country)
             if not _E164.match(compact):
                 raise ValueError("invalid_phone")
             return compact
@@ -81,9 +113,16 @@ def _normalize(question: Question, value: Any) -> Any:
 
 
 def clean_answers(
-    questionnaire: QuestionnaireDefinition, answers: Answers
+    questionnaire: QuestionnaireDefinition, answers: Answers, *, country: str | None = None
 ) -> tuple[dict[str, Any], list[AnswerError]]:
-    """Valide et normalise. `None` ou "" efface une réponse (renvoyée avec la valeur None)."""
+    """Valide et normalise. `None` ou "" efface une réponse (renvoyée avec la valeur None).
+
+    `country` (réponse déjà enregistrée) complète les numéros saisis sans indicatif ;
+    le pays envoyé dans `answers` est prioritaire.
+    """
+    sent_country = answers.get("country")
+    if isinstance(sent_country, str):
+        country = sent_country
     cleaned: dict[str, Any] = {}
     errors: list[AnswerError] = []
     for key, value in answers.items():
@@ -95,7 +134,7 @@ def clean_answers(
             cleaned[key] = None
             continue
         try:
-            cleaned[key] = _normalize(question, value)
+            cleaned[key] = _normalize(question, value, country)
         except ValueError as exc:
             errors.append(AnswerError(key, str(exc)))
     return cleaned, errors
