@@ -8522,6 +8522,50 @@
         ]
       }
     },
+    "/api/v1/orgs/{org_id}/catalog": {
+      "get": {
+        "description": "Offres aux prix que l'entreprise paiera : devise imposée, pas de paramètre `currency`.\n\nPrix Europe dès qu'un numéro de l'entreprise est hors d'Afrique (catalogue v4).",
+        "operationId": "get_organization_catalog_api_v1_orgs__org_id__catalog_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Organization Catalog",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/api/v1/orgs/{org_id}/checkouts": {
       "post": {
         "description": "Lance un paiement en ligne (achat ou renouvellement) : rediriger vers `checkout_url`.",
@@ -9449,6 +9493,7 @@
     },
     "/api/v1/public/catalog": {
       "get": {
+        "description": "Vitrine publique : la devise est libre ; la facturation, elle, l'impose (/orgs/…/catalog).",
         "operationId": "get_catalog_api_v1_public_catalog_get",
         "parameters": [
           {

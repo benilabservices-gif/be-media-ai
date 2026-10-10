@@ -33,7 +33,7 @@ from digital360.modules.billing.infrastructure.models import (
     PurchaseRequestStatus,
 )
 from digital360.modules.catalog.application.service import current_catalog
-from digital360.modules.catalog.domain.models import Product
+from digital360.modules.catalog.domain.models import Currency, Product
 from digital360.modules.catalog.infrastructure.models import EntitlementOverride
 from digital360.modules.diagnostics.infrastructure.models import ActionPlanItem, PlanItemStatus
 from digital360.modules.identity.infrastructure.models import Membership, MembershipStatus, User
@@ -453,6 +453,20 @@ class PurchaseRequestService:
         self._session_factory = session_factory
         self._registry = registry
 
+    async def billing_currency(self, context: TenantContext) -> Currency:
+        """Devise imposée à l'entreprise : prix Europe dès qu'un de ses numéros est hors
+        d'Afrique, sinon devise de son pays. Le client ne la choisit jamais."""
+        async with tenant_transaction(self._session_factory, context) as session:
+            catalog = await current_catalog(session)
+            organization = (
+                await session.execute(
+                    select(Organization).where(Organization.id == context.organization_id)
+                )
+            ).scalar_one()
+        return catalog.currency_for(
+            organization.country, (organization.phone, organization.whatsapp)
+        )
+
     async def create(
         self,
         context: TenantContext,
@@ -480,7 +494,9 @@ class PurchaseRequestService:
                     select(Organization).where(Organization.id == context.organization_id)
                 )
             ).scalar_one()
-            currency = catalog.currency_for_country(organization.country)
+            currency = catalog.currency_for(
+                organization.country, (organization.phone, organization.whatsapp)
+            )
             price = catalog.price_for(product, currency)
             if price is None:
                 raise _product_not_available(
@@ -789,7 +805,12 @@ class PurchaseRequestService:
             product = catalog.product(product_code)
             if product is None or not product.public:
                 raise _product_not_available("Cette offre n'existe pas.")
-            price = catalog.price_for(product, catalog.currency_for_country(organization.country))
+            price = catalog.price_for(
+                product,
+                catalog.currency_for(
+                    organization.country, (organization.phone, organization.whatsapp)
+                ),
+            )
             if price is None:
                 raise _product_not_available(
                     "Cette offre n'est pas proposée dans la devise du client."

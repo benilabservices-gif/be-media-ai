@@ -8,7 +8,11 @@ from pydantic import BaseModel, StringConstraints
 from digital360.core.actor import Actor
 from digital360.core.csrf import require_csrf
 from digital360.core.permissions import Permission, Principal
-from digital360.modules.catalog.application.service import CatalogService, price_payload
+from digital360.modules.catalog.application.service import (
+    CatalogService,
+    CatalogView,
+    price_payload,
+)
 from digital360.modules.catalog.domain.models import Currency, EntitlementValue
 from digital360.modules.identity.api.dependencies import (
     OrganizationAccess,
@@ -99,7 +103,11 @@ class OverrideList(BaseModel):
 async def get_catalog(
     service: Service, currency: Annotated[Currency | None, Query()] = None
 ) -> CatalogOut:
-    view = await service.public_catalog(currency)
+    """Vitrine publique : la devise est libre ; la facturation, elle, l'impose (/orgs/…/catalog)."""
+    return to_catalog_out(await service.public_catalog(currency))
+
+
+def to_catalog_out(view: CatalogView) -> CatalogOut:
     return CatalogOut(
         currency=view.currency.value,
         available_currencies=[item.value for item in view.available_currencies],

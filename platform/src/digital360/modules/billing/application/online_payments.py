@@ -258,10 +258,14 @@ class OnlinePaymentService:
             return False
         async with tenant_transaction(self._session_factory, context) as session:
             catalog = await current_catalog(session)
-            country = await session.scalar(
-                select(Organization.country).where(Organization.id == context.organization_id)
-            )
-        return catalog.currency_for_country(country).value in ONLINE_CURRENCIES
+            country, phone, whatsapp = (
+                await session.execute(
+                    select(Organization.country, Organization.phone, Organization.whatsapp).where(
+                        Organization.id == context.organization_id
+                    )
+                )
+            ).one()
+        return catalog.currency_for(country, (phone, whatsapp)).value in ONLINE_CURRENCIES
 
     async def start(
         self, context: TenantContext, user_id: uuid.UUID, *, product_code: str
@@ -278,7 +282,9 @@ class OnlinePaymentService:
                     select(Organization).where(Organization.id == context.organization_id)
                 )
             ).scalar_one()
-            currency = catalog.currency_for_country(organization.country)
+            currency = catalog.currency_for(
+                organization.country, (organization.phone, organization.whatsapp)
+            )
             price = catalog.price_for(product, currency)
             if price is None:
                 raise AppError(

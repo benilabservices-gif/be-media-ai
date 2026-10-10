@@ -23,6 +23,8 @@ from digital360.modules.billing.infrastructure.models import (
     PaymentMethod,
     PurchaseRequestStatus,
 )
+from digital360.modules.catalog.api.routes import CatalogOut, get_catalog_service, to_catalog_out
+from digital360.modules.catalog.application.service import CatalogService
 from digital360.modules.identity.api.dependencies import (
     OrganizationAccess,
     require_org_permission,
@@ -217,6 +219,22 @@ async def create_purchase_request(
     if not created:
         response.status_code = status.HTTP_200_OK
     return _client_out(view)
+
+
+@router.get("/orgs/{org_id}/catalog", response_model=CatalogOut)
+async def get_organization_catalog(
+    access: Annotated[
+        OrganizationAccess, Depends(require_org_permission(Permission.ORGANIZATION_READ))
+    ],
+    service: Service,
+    catalog: Annotated[CatalogService, Depends(get_catalog_service)],
+) -> CatalogOut:
+    """Offres aux prix que l'entreprise paiera : devise imposée, pas de paramètre `currency`.
+
+    Prix Europe dès qu'un numéro de l'entreprise est hors d'Afrique (catalogue v4).
+    """
+    currency = await service.billing_currency(access.tenant)
+    return to_catalog_out(await catalog.public_catalog(currency))
 
 
 @router.get("/orgs/{org_id}/purchase-requests", response_model=PurchaseRequestList)

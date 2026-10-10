@@ -89,11 +89,11 @@ def test_should_reject_derivation_from_a_derived_currency(catalog: Catalog) -> N
 
 
 def test_should_map_country_to_currency(catalog: Catalog) -> None:
-    assert catalog.currency_for_country("CI") is Currency.XOF
-    assert catalog.currency_for_country("CM") is Currency.XAF
-    assert catalog.currency_for_country("FR") is Currency.EUR
-    assert catalog.currency_for_country(None) is Currency.XOF
-    assert catalog.currency_for_country("US") is Currency.XOF
+    assert catalog.currency_for("CI") is Currency.XOF
+    assert catalog.currency_for("CM") is Currency.XAF
+    assert catalog.currency_for("FR") is Currency.EUR
+    assert catalog.currency_for(None) is Currency.XOF
+    assert catalog.currency_for("US") is Currency.XOF
 
 
 def test_should_grant_nothing_without_sources(catalog: Catalog) -> None:

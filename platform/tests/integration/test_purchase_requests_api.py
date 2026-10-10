@@ -96,6 +96,35 @@ def test_should_price_request_in_currency_of_organization_country(api: ApiClient
     assert body["price"]["amount"] > 0
 
 
+def test_should_impose_europe_prices_when_whatsapp_is_outside_africa(api: ApiClient) -> None:
+    api.register()
+    # Pays déclaré africain, numéro français : aucun moyen d'obtenir le prix FCFA
+    org = api.post(
+        "/orgs",
+        {"commercial_name": "Diaspora Conseil", "country": "CI", "whatsapp": "+33612345678"},
+    ).json()
+
+    catalog = api.get(f"/orgs/{org['id']}/catalog").json()
+    body = _request(api, org["id"], channel="EMAIL").json()
+
+    start = next(p for p in catalog["products"] if p["code"] == "DIGITAL_START")
+    assert catalog["currency"] == "EUR"
+    assert start["price"] == {"amount": 69000, "currency": "EUR", "period": "NONE"}
+    assert body["price"] == {"amount": 69000, "currency": "EUR", "period": "NONE"}
+
+
+def test_should_keep_fcfa_prices_for_african_numbers(api: ApiClient) -> None:
+    api.register()
+    org = api.post(
+        "/orgs",
+        {"commercial_name": "Salon Abidjan", "country": "CI", "whatsapp": "+2250700000000"},
+    ).json()
+
+    catalog = api.get(f"/orgs/{org['id']}/catalog").json()
+
+    assert catalog["currency"] == "XOF"
+
+
 @pytest.mark.parametrize("product_code", ["PRODUIT_INCONNU", "ANNUAL_RENEWAL"])
 def test_should_refuse_unknown_or_internal_product(api: ApiClient, product_code: str) -> None:
     org = _client_with_diagnostic(api)

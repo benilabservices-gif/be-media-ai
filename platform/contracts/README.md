@@ -33,7 +33,8 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `POST /orgs/{id}/diagnostics/claim` | **Disponible** | Rattache à une entreprise **existante** un diagnostic fait avant la connexion (corps `{"diagnostic_id"}`, en-tête `X-Diagnostic-Token`) |
 | `GET /admin/diagnostics` | **Disponible** | Staff : prospects captés (coordonnées, score, consentements) |
 | `GET /admin/diagnostics/orphans` · `POST /admin/diagnostics/purge-orphans` · `DELETE /admin/diagnostics/{id}` | **Disponible** | ADMIN : supprimer les prospects sans fiche entreprise (§10) |
-| `GET /public/catalog?currency=XOF` | **Disponible** | Offres publiques, `price` (ou `null` si non vendue dans la devise), `available_currencies`. Pour l'instant **XOF uniquement** : XAF et EUR renvoient `price: null` |
+| `GET /public/catalog?currency=XOF` | **Disponible** | Vitrine (page d'accueil) : offres publiques, `includes` (contenu exact à afficher, jamais en dur), `price` (ou `null`), `available_currencies`. XOF, XAF et EUR (prix Europe : 690 / 290 / 490 / 990 € HT) |
+| `GET /orgs/{id}/catalog` | **Disponible** | **Espace client : à utiliser à la place de `/public/catalog`.** Même format, mais devise **imposée** : prix Europe dès qu'un téléphone ou WhatsApp de l'entreprise est hors d'Afrique, sinon devise du pays. Aucun paramètre `currency`, aucun sélecteur de devise à afficher. Les demandes d'achat et paiements sont facturés dans cette même devise |
 | `GET /orgs/{id}/entitlements` | **Disponible** | Droits effectifs de l'entreprise (`value` : booléen, entier ou `"UNLIMITED"`), avec leur `sources` |
 | `GET·POST /admin/organizations/{id}/entitlement-overrides` · `DELETE …/{override_id}` | **Disponible** | Staff : accorder ou retirer un droit (geste commercial, test) |
 | `GET /admin/dashboard` | **Disponible** | Staff : indicateurs clés (§10) |

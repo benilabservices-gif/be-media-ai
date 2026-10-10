@@ -568,10 +568,15 @@ class DiagnosticService:
             )
         ).scalars()
         passport = declared_passport(questionnaire, diagnostic.answers)
-        # Prix dans la devise du pays déclaré ; absents si le catalogue n'est pas publié
+        # Prix dans la devise imposée (numéros, sinon pays) ; absents sans catalogue publié
         catalog = await current_catalog_or_none(session)
+        answers = diagnostic.answers
         currency = (
-            catalog.currency_for_country(diagnostic.answers.get("country")) if catalog else None
+            catalog.currency_for(
+                answers.get("country"), (answers.get("phone"), answers.get("whatsapp"))
+            )
+            if catalog
+            else None
         )
 
         def with_price(view: PlanItemView) -> PlanItemView:

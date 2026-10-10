@@ -3,6 +3,7 @@
 Montants en unité mineure (FCFA pour XOF/XAF, centimes pour EUR), toujours HT.
 """
 
+from collections.abc import Iterable
 from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from typing import Annotated, Literal, Self
@@ -21,6 +22,20 @@ class Currency(StrEnum):
 
 
 CURRENCY_EXPONENT = {Currency.XOF: 0, Currency.XAF: 0, Currency.EUR: 2}
+
+# Indicatifs du continent africain (UIT, zone 2). Exclus bien qu'en +2 : 262 (La Réunion,
+# Mayotte : départements français), 297 Aruba, 298 Féroé, 299 Groenland.
+_AFRICAN_DIAL_PREFIXES = frozenset(
+    {"20", "27", "290", "291"}
+    | {str(code) for code in range(211, 259)}
+    | {str(code) for code in range(260, 270) if code != 262}
+)
+
+
+def is_african_number(number: str) -> bool:
+    """Numéro E.164 (« +2290190493132 ») d'un pays d'Afrique."""
+    digits = number.removeprefix("+")
+    return any(digits.startswith(prefix) for prefix in _AFRICAN_DIAL_PREFIXES)
 
 
 class BillingPeriod(StrEnum):
@@ -112,6 +127,8 @@ class Catalog(_Frozen):
     products: tuple[Product, ...]
     # Devises dont le prix est calculé (parité fixe) quand aucun prix explicite n'existe
     derived_pricing: dict[Currency, DerivedPricing] = Field(default_factory=dict)
+    # Devise imposée dès qu'un numéro du client est hors d'Afrique (prix Europe)
+    outside_africa_currency: Currency | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -151,7 +168,16 @@ class Catalog(_Frozen):
     def product(self, code: str) -> Product | None:
         return next((product for product in self.products if product.code == code), None)
 
-    def currency_for_country(self, country: str | None) -> Currency:
+    def currency_for(self, country: str | None, numbers: Iterable[str | None] = ()) -> Currency:
+        """Devise de facturation imposée au client, jamais choisie par lui.
+
+        Un seul numéro (téléphone ou WhatsApp) hors d'Afrique suffit à appliquer les prix
+        Europe, quel que soit le pays déclaré ; sinon, devise du pays.
+        """
+        if self.outside_africa_currency is not None and any(
+            number and not is_african_number(number) for number in numbers
+        ):
+            return self.outside_africa_currency
         return self.currency_by_country.get(country or "", self.default_currency)
 
 

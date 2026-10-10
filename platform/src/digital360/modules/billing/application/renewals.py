@@ -205,7 +205,12 @@ class RenewalService:
             organization = await session.get(Organization, organization_id)
             if product is None or organization is None:
                 raise AppError("NOT_FOUND", "Offre ou entreprise introuvable.", status=404)
-            price = catalog.price_for(product, catalog.currency_for_country(organization.country))
+            price = catalog.price_for(
+                product,
+                catalog.currency_for(
+                    organization.country, (organization.phone, organization.whatsapp)
+                ),
+            )
             period = SUBSCRIPTION_PERIOD.get(price.period.value if price else "")
             if price is None or period is None:
                 raise AppError(
