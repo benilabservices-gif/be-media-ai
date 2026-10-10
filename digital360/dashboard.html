@@ -746,7 +746,7 @@
     let _catalogData = null;
     async function loadCatalogForDashboard() {
         try {
-            const res = await fetch(D360_API_BASE + '/public/catalog', { credentials: 'include' });
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/catalog', { credentials: 'include' });
             if (res.ok) _catalogData = await res.json();
         } catch (_) {}
     }
@@ -2215,6 +2215,7 @@
                 <div class="form-group" id="purchaseNumberGroup" style="margin-top:1rem;">
                     <label class="form-label" for="purchaseNumber" id="purchaseNumberLabel">Numéro WhatsApp</label>
                     <input type="tel" id="purchaseNumber" class="form-input" style="max-width:300px;" placeholder="+2250700000000" autocomplete="tel">
+                    <div id="purchaseNumberHelp" style="font-size:12px;color:var(--text-muted);margin-top:4px;">Avec l'indicatif du pays : ex. +229 01 90 49 31 32 ou +33 6 12 34 56 78</div>
                     <div id="purchaseNumberError" style="color:var(--error);font-size:12px;margin-top:4px;"></div>
                 </div>
                 <div class="form-group" style="margin-top:1rem;">
