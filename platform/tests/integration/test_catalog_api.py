@@ -57,13 +57,14 @@ def test_should_serve_public_catalog_in_xof_by_default(api: ApiClient) -> None:
     assert "ANNUAL_RENEWAL" not in products  # offre interne, non publique
 
 
-def test_should_convert_prices_to_euros_on_request(api: ApiClient) -> None:
+def test_should_show_europe_prices_on_request(api: ApiClient) -> None:
     body = api.get("/public/catalog?currency=EUR").json()
 
     assert body["currency"] == "EUR"
     prices = {product["code"]: product["price"] for product in body["products"]}
-    assert prices["DIGITAL_START"] == {"amount": 16800, "currency": "EUR", "period": "NONE"}
-    assert prices["DIGITAL_ESSENTIAL"] == {"amount": 6900, "currency": "EUR", "period": "MONTH"}
+    # Prix Europe fixés dans le catalogue v4, pas une conversion du FCFA
+    assert prices["DIGITAL_START"] == {"amount": 69000, "currency": "EUR", "period": "NONE"}
+    assert prices["DIGITAL_ESSENTIAL"] == {"amount": 29000, "currency": "EUR", "period": "MONTH"}
     assert all(product["available"] for product in body["products"])
 
 
@@ -89,7 +90,13 @@ def test_should_price_recommendations_in_xaf_and_eur_by_country(api: ApiClient) 
     france = _plan_prices(api, {**BEGINNER_ANSWERS, "country": "FR"})
 
     assert cameroon["no_website"] == {"amount": 109900, "currency": "XAF", "period": "NONE"}
-    assert france["no_website"] == {"amount": 16800, "currency": "EUR", "period": "NONE"}
+    assert france["no_website"] == {"amount": 69000, "currency": "EUR", "period": "NONE"}
+
+
+def test_should_price_recommendations_in_euros_for_number_outside_africa(api: ApiClient) -> None:
+    prices = _plan_prices(api, {**BEGINNER_ANSWERS, "country": "CI", "phone": "+33612345678"})
+
+    assert prices["no_website"] == {"amount": 69000, "currency": "EUR", "period": "NONE"}
 
 
 # ── Droits (entitlements) ──
