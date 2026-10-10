@@ -53,6 +53,26 @@
         .loading-row{text-align:center;padding:2rem;color:var(--text-muted);font-size:13px}
         .error-row{text-align:center;padding:2rem;color:var(--error);font-size:13px}
         .empty-row{text-align:center;padding:2rem;color:var(--text-muted);font-size:13px}
+        /* Prospects : tableau compact sur grand écran, une carte par prospect sur mobile */
+        .prospects-table td{vertical-align:middle}
+        .prospects-table td.cell-email{word-break:break-all;min-width:160px}
+        .prospects-table td.cell-actions{white-space:nowrap}
+        .prospects-table td.cell-actions .btn{display:block;margin-top:2px}
+        @media(max-width:900px){
+            .prospects-card{background:none;border:none;padding:0;overflow:visible!important}
+            .prospects-table thead{display:none}
+            .prospects-table,.prospects-table tbody{display:block}
+            .prospects-table tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:12px}
+            .prospects-table td{display:block;padding:0;border:none;font-size:13px;min-width:0}
+            .prospects-table td::before{content:attr(data-label);display:block;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)}
+            .prospects-table td.client-name{grid-column:1/-1;font-size:15px;padding-bottom:4px}
+            .prospects-table td.client-name::before{content:none}
+            .prospects-table td.cell-email,.prospects-table td.cell-actions{grid-column:1/-1;min-width:0}
+            .prospects-table td.cell-actions{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+            .prospects-table td.cell-actions::before{content:none}
+            .prospects-table td.cell-actions .btn{display:inline-flex;margin-top:0}
+            .prospects-table td.cell-empty{display:none}
+        }
         .org-detail{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1.5rem}
         @media(max-width:768px){.org-detail{grid-template-columns:1fr}}
         .staff-form{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem}
@@ -282,8 +302,8 @@
                     <div id="diagError" class="error-row" style="display:none;"></div>
                     <div id="diagEmpty" class="empty-row" style="display:none;">Aucun prospect trouvé.</div>
                     <div id="diagContent" style="display:none;">
-                        <div class="card" style="overflow-x:auto;">
-                            <table class="admin-table">
+                        <div class="card prospects-card" style="overflow-x:auto;">
+                            <table class="admin-table prospects-table">
                                 <thead><tr><th>Entreprise</th><th>Secteur</th><th>Ville</th><th>Pays</th><th>Téléphone</th><th>Email</th><th>Score</th><th>Statut</th><th>Date</th><th>Fiche</th></tr></thead>
                                 <tbody id="diagTableBody"></tbody>
                             </table>
@@ -970,37 +990,32 @@
         if (!tbody) return;
         const tr = document.createElement('tr');
 
-        const tdCompany = document.createElement('td');
-        tdCompany.className = 'client-name';
-        tdCompany.textContent = d.company || '—';
-        tr.appendChild(tdCompany);
-
-        const tdSector = document.createElement('td');
-        tdSector.textContent = d.sector || '—';
-        tr.appendChild(tdSector);
-
-        const tdCity = document.createElement('td');
-        tdCity.textContent = d.city || '—';
-        tr.appendChild(tdCity);
-
-        const tdCountry = document.createElement('td');
-        tdCountry.textContent = d.country || '—';
-        tr.appendChild(tdCountry);
-
-        const tdPhone = document.createElement('td');
-        tdPhone.textContent = d.phone || '—';
-        tr.appendChild(tdPhone);
-
-        const tdEmail = document.createElement('td');
-        tdEmail.textContent = d.email || '—';
-        tr.appendChild(tdEmail);
+        // data-label : intitulé de la colonne, affiché au-dessus de la valeur en vue carte (mobile)
+        const cell = (label, value, className) => {
+            const td = document.createElement('td');
+            td.dataset.label = label;
+            td.textContent = value || '—';
+            // Sur mobile, une case vide est masquée plutôt que d'afficher « — »
+            td.className = (className || '') + (value ? '' : ' cell-empty');
+            tr.appendChild(td);
+            return td;
+        };
+        const tdCompany = cell('Entreprise', d.company, 'client-name');
+        tdCompany.classList.remove('cell-empty');
+        cell('Secteur', d.sector);
+        cell('Ville', d.city);
+        cell('Pays', d.country);
+        cell('Téléphone', d.phone);
+        cell('Email', d.email, 'cell-email');
 
         const tdScore = document.createElement('td');
+        tdScore.dataset.label = 'Score';
         tdScore.style.cssText = 'font-weight:600;color:' + (d.total_score >= 60 ? 'var(--accent)' : d.total_score >= 40 ? 'var(--warning)' : 'var(--error)');
         tdScore.textContent = d.total_score != null ? d.total_score : '—';
         tr.appendChild(tdScore);
 
         const tdStatus = document.createElement('td');
+        tdStatus.dataset.label = 'Statut';
         const badge = document.createElement('span');
         const statusMap = { IN_PROGRESS: 'badge-muted', COMPLETED: 'badge-warning', CLAIMED: 'badge-success' };
         badge.className = 'badge ' + (statusMap[d.status] || 'badge-muted');
@@ -1008,12 +1023,11 @@
         tdStatus.appendChild(badge);
         tr.appendChild(tdStatus);
 
-        const tdDate = document.createElement('td');
-        tdDate.textContent = d.completed_at ? formatDate(d.completed_at) : '—';
-        tr.appendChild(tdDate);
+        cell('Date', d.completed_at ? formatDate(d.completed_at) : '');
 
         // Fiche entreprise : lien vers la fiche, sinon prospect supprimable (ADMIN)
         const tdOrg = document.createElement('td');
+        tdOrg.className = 'cell-actions';
         if (d.organization_id) {
             const open = document.createElement('button');
             open.className = 'btn btn-ghost btn-sm';
