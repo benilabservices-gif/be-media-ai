@@ -47,7 +47,9 @@ class Settings(BaseSettings):
     # du retour de paiement. Par défaut, la plateforme en ligne : un oubli de variable sur
     # l'hébergeur ne doit jamais envoyer un client vers « localhost » (en local, surcharger
     # dans .env, par exemple APP_URL=http://localhost:5500/digital360/)
-    password_reset_url: str = "https://digital360.bemedia-ai.online/reset-password.html"  # noqa: S105
+    password_reset_url: str = (
+        "https://digital360.bemedia-ai.online/reset-password.html"  # noqa: S105
+    )
     admin_url: str = "https://digital360.bemedia-ai.online/admin.html"
     # Page d'accueil de Digital360 (bouton « Créer mon espace » de l'e-mail au prospect)
     app_url: str = "https://digital360.bemedia-ai.online/"

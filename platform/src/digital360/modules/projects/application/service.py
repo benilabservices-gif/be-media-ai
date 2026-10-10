@@ -192,9 +192,11 @@ async def generate_design_prompt(session: AsyncSession, project: WebsiteProject)
     """Prompt rédigé à partir du brief actuel et de la fiche entreprise."""
     organization = await session.get(Organization, project.organization_id)
     context = PromptContext(
-        sector=" / ".join(part for part in (organization.sector, organization.sub_sector) if part)
-        if organization
-        else None,
+        sector=(
+            " / ".join(part for part in (organization.sector, organization.sub_sector) if part)
+            if organization
+            else None
+        ),
         country=organization.country if organization else None,
         due_on=project.due_on,
     )

@@ -96,8 +96,7 @@ async def _linked_counts(session: AsyncSession, organization: Organization) -> d
 
 # Prospects (diagnostics) jamais rattachés à un compte mais qui concernent cette entreprise :
 # même nom, e-mail de l'entreprise ou d'un membre, ou même numéro (chiffres seuls comparés)
-_RELATED_PROSPECTS = text(
-    r"""
+_RELATED_PROSPECTS = text(r"""
     SELECT d.id FROM diagnostic_sessions d
     WHERE d.organization_id IS NULL AND (
         lower(trim(d.answers->>'company')) = lower(trim(:name))
@@ -105,8 +104,7 @@ _RELATED_PROSPECTS = text(
         OR regexp_replace(coalesce(d.answers->>'phone', ''), '\D', '', 'g') = ANY(:phones)
         OR regexp_replace(coalesce(d.answers->>'whatsapp', ''), '\D', '', 'g') = ANY(:phones)
     )
-    """
-)
+    """)
 
 
 async def _related_prospects(session: AsyncSession, organization: Organization) -> list[uuid.UUID]:
