@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Client — BENILAB Digital360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .dash-page { display: none; }
+        .dash-page.active { display: block; }
+        .chart-placeholder {
+            width: 100%; height: 200px;
+            background: linear-gradient(135deg, rgba(127,181,168,0.03), rgba(127,181,168,0.01));
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 13px;
+        }
+        /* Simple CSS bar chart */
+        .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 1rem; }
+        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 1s cubic-bezier(0.16,1,0.3,1); min-height: 4px; }
+        .bar-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .bar-value { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div id="d360-loading-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,10,15,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+        <div style="text-align:center">
+            <div style="width:36px;height:36px;border:3px solid rgba(127,181,168,0.2);border-top-color:#7fb5a8;border-radius:50%;animation:d360spin .8s linear infinite;margin:0 auto 1rem;"></div>
+            <div style="color:#c8c4d0;font-size:14px;font-weight:500;">Connexion au serveur…</div>
+        </div>
+    </div>
+    <style>@keyframes d360spin{to{transform:rotate(360deg)}}</style>
+    <div class="noise"></div>
+
+    <div class="dash-layout">
+        <!-- Sidebar -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="dash-sidebar-header">
+                <div class="dash-sidebar-logo">BENILAB <em>Digital360</em></div>
+                <div class="dash-sidebar-user">
+                    <div class="dash-avatar" id="userAvatar">A</div>
+                    <div class="dash-user-info">
+                        <div class="dash-user-name" id="userName">—</div>
+                        <div class="dash-user-role" id="userRole">Client</div>
+                    </div>
+                </div>
+                <div id="projectSwitcher" style="margin-top:0.75rem;"></div>
+            </div>
+            <nav class="dash-sidebar-nav">
+                <div class="dash-nav-section">Principal</div>
+                <div class="dash-nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <span class="nav-icon">📊</span> Tableau de bord
+                </div>
+                <div class="dash-nav-item" data-page="entreprise" onclick="switchPage('entreprise')">
+                    <span class="nav-icon">🏢</span> Mon entreprise
+                </div>
+                <div class="dash-nav-item" data-page="site" onclick="switchPage('site')">
+                    <span class="nav-icon">🌐</span> Mon site web
+                </div>
+                <div class="dash-nav-section">Modules</div>
+                <div class="dash-nav-item" data-page="google" onclick="switchPage('google')">
+                    <span class="nav-icon">📍</span> Google Business
+                </div>
+                <div class="dash-nav-item" data-page="reseaux" onclick="switchPage('reseaux')">
+                    <span class="nav-icon">📱</span> Réseaux sociaux
+                </div>
+                <div class="dash-nav-item" data-page="contenus" onclick="switchPage('contenus')">
+                    <span class="nav-icon">✍️</span> Contenus
+                </div>
+                <div class="dash-nav-item" data-page="prospects" onclick="switchPage('prospects')">
+                    <span class="nav-icon">👥</span> Prospects
+                </div>
+                <div class="dash-nav-item" data-page="publicite" onclick="switchPage('publicite')">
+                    <span class="nav-icon">⚡</span> Publicité
+                </div>
+                <div class="dash-nav-item" data-page="conversion" onclick="switchPage('conversion')">
+                    <span class="nav-icon">🔄</span> Conversion
+                </div>
+                <div class="dash-nav-section">Suivi</div>
+                <div class="dash-nav-item" data-page="analytics" onclick="switchPage('analytics')">
+                    <span class="nav-icon">📈</span> Analytics
+                </div>
+                <div class="dash-nav-item" data-page="abonnement" onclick="switchPage('abonnement')">
+                    <span class="nav-icon">💳</span> Abonnement
+                </div>
+                <div class="dash-nav-item" data-page="support" onclick="switchPage('support')">
+                    <span class="nav-icon">💬</span> Support
+                </div>
+                <div class="dash-nav-item" data-page="compte" onclick="switchPage('compte')">
+                    <span class="nav-icon">👤</span> Mon compte
+                </div>
+                <div class="dash-nav-section">Gagner avec BENILAB</div>
+                <div class="dash-nav-item" data-page="closer" onclick="switchPage('closer')">
+                    <span class="nav-icon">🤝</span> Closer 3.0
+                </div>
+                <div style="padding:12px;">
+                    <a href="index.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Retour à l'accueil</a>
+                    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="handleLogout()">Déconnexion</button>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="dash-sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- Main -->
+        <main class="dash-main">
+            <header class="dash-topbar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="dash-hamburger" onclick="toggleSidebar()">☰</button>
+                    <div class="dash-topbar-title" id="pageTitle">Tableau de bord</div>
+                </div>
+                <div class="dash-topbar-actions">
+                    <button class="btn btn-ghost btn-sm" style="position:relative;" onclick="showNotifications()">
+                        🔔
+                    </button>
+                    <a href="admin.html" class="btn btn-ghost btn-sm" id="navAdminLink" style="display:none;">Espace Admin</a>
+                    <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Déconnexion</button>
+                </div>
+            </header>
+
+            <div class="dash-content">
+
+                 <!-- ═══ DASHBOARD ═══ -->
+                 <div class="dash-page active" id="page-dashboard">
+                     <div class="dash-welcome reveal">
+                         <h1>Bonjour <span class="name" id="welcomeName">—</span></h1>
+                         <p id="welcomeSub">Chargement de vos données…</p>
+                     </div>
+
+                     <!-- Score Banner -->
+                     <div class="dash-score-banner reveal delay-1" id="scoreBanner">
+                         <div class="dash-score-ring score-ring">
+                             <svg viewBox="0 0 120 120">
+                                 <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                 <circle class="score-ring-fill" id="dashScoreCircle" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+                             </svg>
+                             <div class="score-ring-text">
+                                 <div class="score-ring-value" id="dashScoreValue" style="font-size:2rem;">—</div>
+                                 <div class="score-ring-label">/100</div>
+                             </div>
+                         </div>
+                           <div class="dash-score-info">
+                               <h2>Votre Digital Score</h2>
+                               <p id="dashScoreMsg">Aucun diagnostic effectué.</p>
+                               <p id="dashScoreEvolution" style="font-size:13px;color:var(--accent);margin-top:4px;display:none;"></p>
+                           </div>
+                          <div class="dash-next-action" id="dashNoDiagCta" style="display:none;">
+                              <div class="label">Premier pas</div>
+                              <p>Faites votre diagnostic gratuit pour obtenir votre plan de transformation.</p>
+                              <a href="index.html#diagnostic" class="btn btn-primary btn-sm" style="display:inline-block;margin-top:0.5rem;">Faire mon diagnostic</a>
+                          </div>
+                         <div class="dash-next-action" id="dashNextAction" style="display:none;">
+                             <div class="label">Recommandations</div>
+                             <div id="dashPlanItems"></div>
+                           </div>
+                      </div>
+                      <div id="dashDiagAction" style="display:none;margin-bottom:2rem;"></div>
+
+                      <!-- Stats -->
+                     <div class="dash-stats reveal delay-2" id="dashStats">
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Visiteurs ce mois</div><div class="dash-stat-change">Module Analytics</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Leads captés</div><div class="dash-stat-change">Module CRM</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Contenus publiés</div><div class="dash-stat-change">Module Contenu</div></div>
+                         <div class="dash-stat"><div class="dash-stat-value">—</div><div class="dash-stat-label">Campagnes actives</div><div class="dash-stat-change">Module Publicité</div></div>
+                     </div>
+
+                     <!-- Modules quick access -->
+                     <div class="reveal delay-3" style="margin-bottom:2rem;">
+                         <h3 style="font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;">Vos modules</h3>
+                         <div class="dash-modules" id="dashModules"></div>
+                     </div>
+
+                     <!-- Chart + Recent -->
+                     <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;" class="reveal delay-4">
+                         <div class="chart-container">
+                             <h3>Trafic — 6 derniers mois</h3>
+                             <div class="chart-placeholder" id="dashTrafficChart">Graphique en chargement…</div>
+                         </div>
+                         <div class="chart-container">
+                             <h3>Activité récente</h3>
+                             <div id="dashRecentActivity"><div class="empty-state" style="padding:2rem;"><div class="empty-state-icon">📭</div><p>Aucune activité récente</p></div></div>
+                         </div>
+                     </div>
+
+                     <!-- Welcome message -->
+                     <div id="welcomeMessage" style="display:none;margin-top:2rem;padding:1.5rem;background:rgba(127,181,168,0.06);border:1px solid rgba(127,181,168,0.2);border-radius:var(--radius-lg);">
+                         <p style="color:var(--accent);font-weight:600;margin-bottom:0.5rem;">✅ Votre espace est prêt</p>
+                         <p style="color:var(--text-secondary);font-size:14px;">Votre diagnostic a été enregistré. Vous pouvez maintenant suivre votre transformation digitale.</p>
+                     </div>
+                 </div>
+
+                <!-- ═══ ENTREPRISE ═══ -->
+                <div class="dash-page" id="page-entreprise">
+                    <div class="page-header reveal">
+                        <h1>Mon entreprise</h1>
+                        <p>Votre Digital Passport — informations centrales de votre activité.</p>
+                    </div>
+                    <div id="companyRoot"></div>
+                </div>
+
+
+                <!-- ═══ SITE WEB ═══ -->
+                <div class="dash-page" id="page-site">
+                    <div class="page-header reveal">
+                        <h1>Mon site web</h1>
+                        <p>Votre brief, l'avancement de la réalisation, la relecture et la mise en ligne.</p>
+                    </div>
+                    <div id="projectRoot"></div>
+                </div>
+
+                <div class="dash-page" id="page-google">
+                    <div class="page-header reveal">
+                        <h1>Google Business</h1>
+                        <p>Gérez votre fiche Google pour être trouvé localement.</p>
+                    </div>
+                    <div data-service-root="google"></div>
+                </div>
+
+
+                <!-- ═══ RÉSEAUX SOCIAUX ═══ -->
+                <div class="dash-page" id="page-reseaux">
+                    <div class="page-header reveal">
+                        <h1>Réseaux sociaux</h1>
+                        <p>Calendrier éditorial et performances de vos réseaux.</p>
+                    </div>
+                    <div data-service-root="reseaux"></div>
+                </div>
+
+
+                <!-- ═══ CONTENUS ═══ -->
+                <div class="dash-page" id="page-contenus">
+                    <div class="page-header reveal">
+                        <h1>Content Studio</h1>
+                        <p>Gérez vos contenus de A à Z.</p>
+                    </div>
+                    <div data-service-root="contenus"></div>
+                </div>
+
+
+                <!-- ═══ PROSPECTS ═══ -->
+                <div class="dash-page" id="page-prospects">
+                    <div class="page-header reveal">
+                        <h1>Prospects</h1>
+                        <p>Suivez vos prospects et convertissez-les en clients.</p>
+                    </div>
+                    <div data-service-root="prospects"></div>
+                </div>
+
+
+                <!-- ═══ PUBLICITÉ ═══ -->
+                <div class="dash-page" id="page-publicite">
+                    <div class="page-header reveal">
+                        <h1>Ads Center</h1>
+                        <p>Campagnes publicitaires et performances.</p>
+                    </div>
+                    <div data-service-root="publicite"></div>
+                </div>
+
+
+                <!-- ═══ CONVERSION ═══ -->
+                <div class="dash-page" id="page-conversion">
+                    <div class="page-header reveal">
+                        <h1>Conversion Center</h1>
+                        <p>Landing pages, formulaires, WhatsApp et tunnels de conversion.</p>
+                    </div>
+                    <div data-service-root="conversion"></div>
+                </div>
+
+
+                <!-- ═══ ANALYTICS ═══ -->
+                <div class="dash-page" id="page-analytics">
+                    <div class="page-header reveal">
+                        <h1>Analytics</h1>
+                        <p>Trafic, sources, conversions et performances.</p>
+                    </div>
+                    <div data-service-root="analytics"></div>
+                </div>
+
+
+                 <!-- ═══ ABONNEMENT ═══ -->
+                 <div class="dash-page" id="page-abonnement">
+                     <div class="page-header reveal">
+                         <h1>Mon abonnement</h1>
+                         <p>Gérez votre offre et consultez vos factures.</p>
+                     </div>
+                     <div class="reveal delay-1" id="subscriptionContent">
+                         <!-- Chargement des données -->
+                     </div>
+                 </div>
+
+                <!-- ═══ MON COMPTE ═══ -->
+                <div class="dash-page" id="page-compte">
+                    <div class="page-header reveal">
+                        <h1>Mon compte</h1>
+                        <p>Vos informations, votre mot de passe, votre équipe et vos projets.</p>
+                    </div>
+                    <div class="reveal delay-1" id="accountRoot"></div>
+                </div>
+
+                <!-- ═══ CLOSER 3.0 ═══ -->
+                <div class="dash-page" id="page-closer">
+                    <div class="page-header reveal">
+                        <h1>Closer 3.0</h1>
+                        <p>Recommandez Digital360 et touchez 20 % sur les paiements des clients que vous apportez.</p>
+                    </div>
+                    <div class="reveal delay-1" id="closerRoot"></div>
+                </div>
+
+                <!-- ═══ SUPPORT ═══ -->
+                <div class="dash-page" id="page-support">
+                    <div class="page-header reveal">
+                        <h1>Support</h1>
+                        <p>Besoin d'aide ? Nous sommes là pour vous.</p>
+                    </div>
+                    <div id="supportRoot"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // ── Configuration ──
+    const D360_API_BASE = window.D360_API_BASE
+        // En local : API sur localhost:8000. En ligne : même adresse que le site, relayée par Vercel vers l'API
+        || (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8000/api/v1' : '/api/v1');
+    let _csrfToken = '';
+
+    async function getCsrf() {
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/auth/csrf', { credentials: 'include' });
+            const data = await res.json();
+            _csrfToken = data.csrf_token || '';
+        } catch (_) {}
+        finally { hideD360Loading(); }
+    }
+    function showD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'flex';
+    }
+    function hideD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'none';
+    }
+
+    function csrfHeaders() {
+        return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
+    }
+
+    // ── State ──
+    let _user = null;
+    let _orgId = null;
+    let _isStaffNoOrg = false;
+    let _meData = null;
+    let _isOwner = false;
+    let _purchaseRequests = [];
+    let _orgData = null;
+    let passportData = null;
+    let actionPlanData = null;
+    let diagnosticsData = null;
+    let entitlementsData = null;
+
+    // ── Price formatter ──
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return null;
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || 'XOF';
+        if (cur === 'EUR') {
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    // ── Auth guard ──
+    async function checkAuth() {
+        try {
+            const data = await fetch(D360_API_BASE + '/me', { credentials: 'include' }).then(r => {
+                if (!r.ok) throw Object.assign(new Error('Not authenticated'), { status: r.status, code: 'UNAUTHENTICATED' });
+                return r.json();
+            });
+            return data;
+        } catch (e) {
+            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED') {
+                window.location.href = 'index.html';
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    // ── Page routing ──
+    const pageTitles = {
+        dashboard: 'Tableau de bord',
+        entreprise: 'Mon entreprise',
+        site: 'Mon site web',
+        google: 'Google Business',
+        reseaux: 'Réseaux sociaux',
+        contenus: 'Content Studio',
+        prospects: 'Prospects',
+        publicite: 'Publicité',
+        conversion: 'Conversion Center',
+        analytics: 'Analytics',
+        abonnement: 'Mon abonnement',
+        support: 'Support',
+        closer: 'Closer 3.0',
+        compte: 'Mon compte'
+    };
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+        const page = document.getElementById('page-' + pageId);
+        if (page) page.classList.add('active');
+
+        document.querySelectorAll('.dash-nav-item').forEach(n => n.classList.remove('active'));
+        const navItem = document.querySelector(`.dash-nav-item[data-page="${pageId}"]`);
+        if (navItem) navItem.classList.add('active');
+
+        document.getElementById('pageTitle').textContent = pageTitles[pageId] || pageId;
+        window.scrollTo({ top: 0 });
+
+        // Close mobile sidebar
+        document.getElementById('dashSidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+
+        // Trigger reveals
+        setTimeout(() => {
+            document.querySelectorAll(`#page-${pageId} .reveal`).forEach(el => {
+                if (isInViewport(el)) el.classList.add('active');
+            });
+        }, 100);
+    }
+
+    function isInViewport(el) {
+        return el.getBoundingClientRect().top < window.innerHeight * 0.9;
+    }
+
+    function toggleSidebar() {
+        document.getElementById('dashSidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+
+    function switchTab(btn, panelId) {
+        btn.closest('.tab-group').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function toggleKanbanView() {
+        const kv = document.getElementById('kanbanView');
+        const tv = document.getElementById('tableView');
+        if (kv.style.display === 'none') {
+            kv.style.display = 'block'; tv.style.display = 'none';
+        } else {
+            kv.style.display = 'none'; tv.style.display = 'block';
+        }
+    }
+
+    function showNotifications() {
+        // Remove hardcoded notification
+    }
+
+    // ── Render dashboard from API ──
+    function renderDashboard() {
+        // Welcome message for ?welcome=1 or ?notice=…
+        const params = new URLSearchParams(window.location.search);
+        const noticeMap = {
+            diagnostic_claimed:    'Diagnostic rattaché à votre entreprise.',
+            diagnostic_already_claimed: 'Ce diagnostic était déjà rattaché à une entreprise.',
+            diagnostic_claim_failed: 'Le rattachement du diagnostic a échoué.',
+            org_created:           'Espace créé pour votre entreprise. Votre diagnostic y est enregistré.',
+            org_creation_failed:   'Compte connecté, mais le diagnostic n\'a pas pu être rattaché.',
+            account_created:       'Compte créé. Faites votre diagnostic pour créer l’espace de votre entreprise.',
+        };
+        const welcomeEl = document.getElementById('welcomeMessage');
+        const noticeParam = params.get('notice');
+        if (params.get('welcome') === '1') {
+            welcomeEl.style.display = 'block';
+            if (noticeParam !== null && noticeMap[noticeParam] !== undefined) {
+                const p = welcomeEl.querySelector('p:last-child');
+                if (p) p.textContent = noticeMap[noticeParam];
+            }
+        }
+
+        // Score from last diagnostic
+        const diagList = diagnosticsData?.data || [];
+        const latest = diagList[0];
+        if (latest) {
+            const total = latest.score?.total || 0;
+            document.getElementById('dashScoreValue').textContent = total;
+            const circumference = 326.7;
+            const offset = circumference - (total / 100) * circumference;
+            document.getElementById('dashScoreCircle').style.strokeDashoffset = offset;
+            const welcomeSub = document.getElementById('welcomeSub');
+            welcomeSub.textContent = '';
+            const span1 = document.createElement('span');
+            span1.textContent = 'Votre présence digitale est à ';
+            const strong = document.createElement('strong');
+            strong.style.color = 'var(--accent)';
+            strong.textContent = total + '%';
+            const span2 = document.createElement('span');
+            span2.textContent = ' — ' + (latest.score?.maturity_label || 'voici où vous en êtes.');
+            welcomeSub.appendChild(span1);
+            welcomeSub.appendChild(strong);
+            welcomeSub.appendChild(span2);
+          } else {
+               document.getElementById('welcomeSub').textContent = 'Aucun diagnostic effectué pour le moment.';
+               if (_isStaffNoOrg) {
+                   const el = document.getElementById('dashNoDiagCta');
+                   el.innerHTML = '<div class="label">Compte d\'équipe</div><p style="margin:0.5rem 0;">Ce compte est un compte d\'équipe BENILAB.</p><a href="admin.html" class="btn btn-primary btn-sm">Aller à l\'administration</a>';
+                   el.style.display = '';
+               } else {
+                   document.getElementById('dashNoDiagCta').style.display = '';
+               }
+               document.getElementById('dashNextAction').style.display = 'none';
+           }
+
+          // Score evolution and diagnostic info
+          if (diagList.length > 0) {
+              const scores = diagList;
+              const first = scores[scores.length - 1];
+              const last = scores[0];
+              // Update "Aucun diagnostic" msg if we have data
+              const dashScoreMsg = document.getElementById('dashScoreMsg');
+              dashScoreMsg.textContent = '';
+              if (last.score) {
+                  const s1 = document.createElement('span');
+                  s1.textContent = 'Votre présence digitale est à ';
+                  const sStrong = document.createElement('strong');
+                  sStrong.style.color = 'var(--accent)';
+                  sStrong.textContent = last.score.total + '%';
+                  const s2 = document.createElement('span');
+                  s2.textContent = ' — ' + (last.score.maturity_label || '');
+                  dashScoreMsg.appendChild(s1);
+                  dashScoreMsg.appendChild(sStrong);
+                  dashScoreMsg.appendChild(s2);
+              }
+              // Evolution
+              const evEl = document.getElementById('dashScoreEvolution');
+              if (scores.length >= 2 && first.score?.total != null && last.score?.total != null) {
+                  const diff = last.score.total - first.score.total;
+                  const dateStr = last.completed_at ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+                  const sign = diff >= 0 ? '+' : '';
+                  evEl.textContent = sign + diff + ' points depuis le ' + dateStr;
+                  evEl.style.display = '';
+              }
+          }
+
+          // Diagnostic action button (show below score banner)
+          const diagActionEl = document.getElementById('dashDiagAction');
+          if (diagActionEl) {
+              diagActionEl.innerHTML = '';
+              if (diagList.length > 0) {
+                  const last = diagList[0];
+                  const dateStr = last.completed_at
+                      ? new Date(last.completed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+                      : '';
+                  const span = document.createElement('span');
+                  span.style.cssText = 'font-size:13px;color:var(--text-muted);';
+                  span.textContent = 'Dernier diagnostic : ' + dateStr + ' · ';
+                  const btn = document.createElement('a');
+                  btn.href = 'index.html#diagnostic';
+                  btn.className = 'btn btn-outline btn-sm';
+                  btn.style.marginLeft = '0.5rem';
+                  btn.textContent = 'Mettre à jour mon diagnostic';
+                  diagActionEl.appendChild(span);
+                  diagActionEl.appendChild(btn);
+                  diagActionEl.style.display = '';
+              } else {
+                  const btn = document.createElement('a');
+                  btn.href = 'index.html#diagnostic';
+                  btn.className = 'btn btn-primary btn-sm';
+                  btn.textContent = 'Faire mon premier diagnostic';
+                  diagActionEl.appendChild(btn);
+                  diagActionEl.style.display = '';
+              }
+          }
+
+        // Action plan recommendations
+        if (actionPlanData?.items) {
+            const shown = actionPlanData.items.filter(i => i.status === 'PROPOSED' || i.status === 'ACCEPTED' || i.status === 'IN_PROGRESS');
+            const planEl = document.getElementById('dashNextAction');
+            const planItemsEl = document.getElementById('dashPlanItems');
+            if (shown.length > 0 && planItemsEl) {
+                planEl.style.display = '';
+                planItemsEl.innerHTML = '';
+                // Une offre couvre souvent plusieurs recommandations : une carte et un bouton par offre
+                const groups = new Map();
+                const standalone = [];
+                shown.forEach(item => {
+                    if (!item.product_code) { standalone.push(item); return; }
+                    if (!groups.has(item.product_code)) groups.set(item.product_code, []);
+                    groups.get(item.product_code).push(item);
+                });
+                groups.forEach((items, code) => planItemsEl.appendChild(offerCard(code, items)));
+                standalone.forEach(item => planItemsEl.appendChild(recommendationCard(item)));
+            } else {
+                planEl.style.display = 'none';
+            }
+        }
+
+        // Modules from passport
+        const modulesGrid = document.getElementById('dashModules');
+        modulesGrid.innerHTML = '';
+        const moduleConfig = [
+            { key: 'WEBSITE', icon: '🌐', name: 'Site web', page: 'site', entitlement: 'WEBSITE' },
+            { key: 'GOOGLE_BUSINESS', icon: '📍', name: 'Google Business', page: 'google', entitlement: 'GOOGLE_BUSINESS_MANAGEMENT' },
+            { key: 'FACEBOOK', icon: '📱', name: 'Réseaux sociaux', page: 'reseaux', entitlement: 'SOCIAL_MANAGEMENT' },
+            { key: 'CRM', icon: '👥', name: 'Prospects', page: 'prospects', entitlement: 'LEAD_TRACKING' },
+            { key: 'ADS', icon: '⚡', name: 'Publicité', page: 'publicite', entitlement: 'ADS_MANAGEMENT' },
+            { key: 'ANALYTICS', icon: '📈', name: 'Analytics', page: 'analytics', entitlement: 'ADVANCED_REPORTING' },
+        ];
+        const statusLabels = { ACTIVE: 'Opérationnel', IN_PROGRESS: 'En cours', NOT_CONFIGURED: 'À créer', ERROR: 'Erreur', EXPIRED: 'Expiré', PAUSED: 'Suspendu' };
+        const statusBadges = { ACTIVE: 'badge-success', IN_PROGRESS: 'badge-warning', NOT_CONFIGURED: 'badge-error', ERROR: 'badge-error', EXPIRED: 'badge-error', PAUSED: 'badge-muted' };
+        const entitlements = {};
+        (entitlementsData?.entitlements || []).forEach(e => { entitlements[e.key] = e.value; });
+
+        moduleConfig.forEach(mod => {
+            const passportItem = passportData?.items?.find(i => i.key === mod.key);
+            const rawVal = entitlements[mod.entitlement];
+            const isEnabled = rawVal === true || (typeof rawVal === 'number' && rawVal > 0) || rawVal === 'UNLIMITED';
+            const status = passportItem?.status || (isEnabled ? 'NOT_CONFIGURED' : 'NOT_CONFIGURED');
+            const label = statusLabels[status] || status;
+            const badgeClass = statusBadges[status] || 'badge-muted';
+            const desc = isEnabled
+                ? (passportItem ? (status === 'ACTIVE' ? 'Configurez votre module' : 'En cours de configuration') : 'Module activé')
+                : 'Non inclus dans votre offre';
+            const card = document.createElement('div');
+            card.className = 'dash-module';
+            card.onclick = () => { if (isEnabled) switchPage(mod.page); };
+            card.innerHTML = `
+                <div class="dash-module-icon">${mod.icon}</div>
+                <h3>${mod.name}</h3>
+                <p>${desc}</p>
+                <div class="dash-module-status"><span class="badge ${isEnabled ? badgeClass : 'badge-muted'}">${isEnabled ? label : 'Non activé'}</span></div>
+            `;
+            modulesGrid.appendChild(card);
+        });
+
+        // Stats — show empty states with offer info
+        const offerCode = _orgData?.subscription?.plan_code || '';
+        const statData = [
+            { id: 'statVisitors', label: 'Visiteurs ce mois', sub: 'Module Analytics', offer: 'DIGITAL_PERFORMANCE' },
+            { id: 'statLeads', label: 'Leads captés', sub: 'Module CRM', offer: 'DIGITAL_GROWTH' },
+            { id: 'statContents', label: 'Contenus publiés', sub: 'Module Contenu', offer: 'DIGITAL_ESSENTIAL' },
+            { id: 'statCampaigns', label: 'Campagnes actives', sub: 'Module Publicité', offer: 'DIGITAL_PERFORMANCE' },
+        ];
+        statData.forEach(s => {
+            const el = document.getElementById(s.id);
+            if (el) el.textContent = '—';
+        });
+
+        // Trigger reveals
+        document.querySelectorAll('.reveal').forEach(el => {
+            if (isInViewport(el)) el.classList.add('active');
+        });
+    }
+
+    // ── Init ──
+    (async () => {
+        try {
+            // Jeton CSRF et compte en parallèle : ils ne dépendent pas l'un de l'autre
+            const [, me] = await Promise.all([getCsrf(), checkAuth()]);
+            _meData = me;
+            _user = me?.user;
+            _memberships = me?.memberships || [];
+            const wanted = new URLSearchParams(window.location.search).get('org') || readStoredProject();
+            const membership = _memberships.find(m => m.organization_id === wanted) || _memberships[0];
+            if (membership) storeProject(membership.organization_id);
+            _isOwner = membership?.role === 'CLIENT_OWNER';
+            if (membership) {
+                _orgId = membership.organization_id;
+                // Toutes les données du projet partent en même temps (elles sont indépendantes) :
+                // l'attente est celle de la plus lente, pas la somme des 13 requêtes
+                const get = path => fetch(D360_API_BASE + path, { credentials: 'include' })
+                    .then(r => (r.ok ? r.json() : null))
+                    .catch(() => null);
+                const base = '/orgs/' + _orgId;
+                const [org, passport, plan, diagnostics, entitlements, requests, performance] = await Promise.all([
+                    get(base), get(base + '/passport'), get(base + '/action-plan'), get(base + '/diagnostics'),
+                    get(base + '/entitlements'), get(base + '/purchase-requests'), get(base + '/performance'),
+                    loadCatalogForDashboard(), loadProject(), loadBilling(), loadCloser(),
+                ]);
+                _orgData = org;
+                passportData = passport;
+                actionPlanData = plan;
+                diagnosticsData = diagnostics;
+                entitlementsData = entitlements;
+                _purchaseRequests = requests?.data || [];
+                _performance = performance;
+            } else {
+                await loadCloser();
+            }
+            // Update UI with real data
+            if (_user) {
+                const initial = _user.full_name?.charAt(0).toUpperCase() || 'A';
+                document.getElementById('userAvatar').textContent = initial;
+                document.getElementById('userName').textContent = _user.full_name || _user.email || 'Utilisateur';
+            }
+            if (_orgData) {
+                document.getElementById('welcomeName').textContent = _orgData.commercial_name || _orgData.legal_name || 'Entreprise';
+            }
+            if (me?.staff_roles?.length > 0) {
+                document.getElementById('navAdminLink').style.display = 'inline-flex';
+                _isStaffNoOrg = !membership;
+            }
+            renderDashboard();
+            renderSubscriptionPage();
+            renderCompany();
+            renderSupport();
+            Object.keys(SERVICE_PAGES).forEach(renderServicePage);
+            renderProject();
+            renderCloser();
+            renderProjectSwitcher(membership);
+            renderAccount();
+            if (new URLSearchParams(window.location.search).get('notice') === 'invitation_accepted' && membership) {
+                showPaymentBanner('success', 'Bienvenue dans l\'équipe de ' + membership.organization_name + '.');
+            }
+            // Lien des e-mails Closer 3.0 : dashboard.html#closer
+            const hashPage = window.location.hash.slice(1);
+            if (['closer', 'google', 'analytics', 'compte'].includes(hashPage)) switchPage(hashPage);
+            handlePaymentReturn();
+        } catch (e) {
+            console.error('[D360] Dashboard init error:', e);
+        }
+    })();
+
+    // ── Price formatter ──
+    function formatPrice(priceObj, fallbackCurrency) {
+        if (!priceObj || priceObj.amount == null) return '—';
+        const amount = priceObj.amount;
+        const cur = priceObj.currency || fallbackCurrency || 'XOF';
+        if (cur === 'EUR') {
+            const decimals = amount % 100 === 0 ? 0 : 2;
+            return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: 2 }).format(amount / 100) + ' € HT';
+        }
+        return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA HT';
+    }
+
+    // ── Load catalog for subscription page ──
+    let _catalogData = null;
+    async function loadCatalogForDashboard() {
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/catalog', { credentials: 'include' });
+            if (res.ok) _catalogData = await res.json();
+        } catch (_) {}
+    }
+
+    // ── Rubriques alimentées par les vraies données (aucune donnée de démonstration) ──
+    // Contact de l'équipe, affiché dans Support (WhatsApp : à renseigner quand le numéro est connu)
+    const BENILAB_CONTACT = { email: 'clientele@bemedia-ai.online', whatsapp: '+2290140540876' };
+    let _billing = null;
+
+    async function loadBilling() {
+        _billing = null;
+        if (!_orgId || !_isOwner) return;
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/billing', { credentials: 'include' });
+            if (res.ok) _billing = await res.json();
+        } catch (_) {}
+    }
+
+    function sectionTitle(text) {
+        return h('h3', { style: 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin:2rem 0 1rem;', text });
+    }
+
+    // Mon entreprise : fiche et Passport réels
+    const PASSPORT_LABELS = {
+        WEBSITE: 'Site web', DOMAIN: 'Nom de domaine', HOSTING: 'Hébergement', EMAIL: 'E-mail professionnel',
+        GOOGLE_BUSINESS: 'Google Business', FACEBOOK: 'Facebook', INSTAGRAM: 'Instagram', TIKTOK: 'TikTok',
+        LINKEDIN: 'LinkedIn', WHATSAPP: 'WhatsApp Business', SEO: 'Référencement', ADS: 'Publicité',
+        EMAILING: 'E-mailing', CRM: 'Suivi des prospects', CONVERSION: 'Conversion', ANALYTICS: "Mesure d'audience",
+    };
+    const PASSPORT_STATUS = {
+        ACTIVE: ['Actif', 'badge-success'], IN_PROGRESS: ['En cours', 'badge-warning'], NOT_CONFIGURED: ['À mettre en place', 'badge-muted'],
+        PAUSED: ['En pause', 'badge-muted'], ERROR: ['Problème', 'badge-error'], EXPIRED: ['Expiré', 'badge-error'],
+    };
+    function renderCompany() {
+        const root = document.getElementById('companyRoot');
+        if (!root) return;
+        root.textContent = '';
+        if (!_orgData) {
+            root.appendChild(h('div', { class: 'card', text: "Faites votre diagnostic pour créer la fiche de votre entreprise." }));
+            return;
+        }
+        const o = _orgData;
+        const rows = [
+            ['Nom commercial', o.commercial_name], ['Raison sociale', o.legal_name], ['Secteur', o.sector],
+            ['Activité', o.description], ['Ville', o.city], ['Adresse', o.address], ['Téléphone', o.phone],
+            ['WhatsApp', o.whatsapp], ['E-mail', o.email], ['Site web', o.website],
+        ];
+        const sheet = h('div', { class: 'card' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:0.75rem;flex-wrap:wrap;' }, [
+                h('h3', { text: 'Fiche entreprise' }),
+                _isOwner ? h('button', { class: 'btn btn-outline btn-sm', text: 'Modifier la fiche', onclick: () => sheet.replaceWith(companyForm()) }) : null,
+            ]),
+            ...rows.map(([label, value]) => h('div', { class: 'passport-field' }, [
+                h('div', { class: 'passport-field-label', text: label }),
+                h('div', { class: 'passport-field-value', text: value || '—' }),
+            ])),
+        ]);
+        root.appendChild(sheet);
+        root.appendChild(sectionTitle('Mon Passport digital'));
+        const items = passportData?.items || [];
+        if (!items.length) {
+            root.appendChild(h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Votre Passport sera rempli à partir de votre diagnostic.' }));
+            return;
+        }
+        root.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;' },
+            items.map(item => {
+                const [label, css] = PASSPORT_STATUS[item.status] || [item.status, 'badge-muted'];
+                return h('div', { class: 'card', style: 'padding:0.9rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;' }, [
+                    h('span', { style: 'font-size:14px;', text: PASSPORT_LABELS[item.key] || item.key }),
+                    h('span', { class: 'badge ' + css, text: label }),
+                ]);
+            })));
+    }
+
+    // Fiche entreprise modifiable (responsable) : champ vidé = valeur effacée
+    const COMPANY_FIELDS = [
+        ['commercial_name', 'Nom commercial', 'text', true], ['legal_name', 'Raison sociale', 'text'],
+        ['description', 'Activité', 'textarea'], ['city', 'Ville', 'text'], ['address', 'Adresse', 'text'],
+        ['phone', 'Téléphone', 'tel'], ['whatsapp', 'WhatsApp', 'tel'], ['email', "E-mail de l'entreprise", 'email'],
+        ['website', 'Site web (https://…)', 'url'],
+    ];
+    function companyForm() {
+        const o = _orgData || {};
+        const inputs = {};
+        const msg = h('div', { style: 'font-size:13px;min-height:18px;margin-top:0.5rem;' });
+        const card = h('div', { class: 'card' }, [h('h3', { style: 'margin-bottom:1rem;', text: 'Modifier la fiche entreprise' })]);
+        COMPANY_FIELDS.forEach(([key, label, type]) => {
+            const control = type === 'textarea'
+                ? h('textarea', { class: 'form-input', rows: '3', maxlength: '2000', style: 'resize:vertical;' })
+                : h('input', { class: 'form-input', type, maxlength: key === 'email' ? '320' : '300' });
+            control.value = o[key] || '';
+            inputs[key] = control;
+            card.appendChild(h('div', { class: 'form-group', style: 'margin-bottom:0.75rem;' }, [h('label', { class: 'form-label', text: label }), control]));
+        });
+        const back = () => renderCompany();
+        card.append(h('div', { style: 'display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;' }, [
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer', onclick: async () => {
+                const changes = {};
+                for (const [key, , type, required] of COMPANY_FIELDS) {
+                    let value = inputs[key].value.trim();
+                    if (type === 'tel' && value) value = normalizeNumber(value);
+                    if (required && !value) { msg.style.color = 'var(--error)'; msg.textContent = 'Le nom commercial est obligatoire.'; return; }
+                    if ((value || null) !== (o[key] || null)) changes[key] = value || null;
+                }
+                if (!Object.keys(changes).length) { back(); return; }
+                try {
+                    _orgData = await sendJson('PATCH', '/orgs/' + _orgId, changes);
+                    document.getElementById('welcomeName').textContent = _orgData.commercial_name;
+                    back();
+                } catch (e) {
+                    const fields = (e.errors || []).map(x => String(x.field || '').split('.').pop()).filter(Boolean);
+                    const labels = fields.map(f => (COMPANY_FIELDS.find(c => c[0] === f) || [f, f])[1]);
+                    msg.style.color = 'var(--error)';
+                    msg.textContent = labels.length ? 'À corriger : ' + labels.join(', ') + ' (téléphone au format +229…, site commençant par https://).' : e.message;
+                }
+            } }),
+            h('button', { class: 'btn btn-ghost btn-sm', text: 'Annuler', onclick: back }),
+        ]), msg);
+        return card;
+    }
+
+    // Services : état réel selon l'offre du client (le serveur reste seul juge des droits)
+    const SERVICE_PAGES = {
+        google: { title: 'Google Business', keys: ['GOOGLE_BUSINESS_MANAGEMENT', 'GOOGLE_BUSINESS_MONITORING'], offer: 'DIGITAL_ESSENTIAL',
+            what: 'Votre fiche Google tenue à jour : horaires, photos, actualités et réponses aux avis.' },
+        reseaux: { title: 'Réseaux sociaux', keys: ['SOCIAL_MANAGEMENT'], offer: 'DIGITAL_GROWTH',
+            what: 'Vos pages Facebook et Instagram animées chaque semaine par notre équipe.' },
+        contenus: { title: 'Contenus', keys: ['CONTENT_MONTHLY_LIMIT'], offer: 'DIGITAL_ESSENTIAL',
+            what: 'Des publications, visuels et vidéos courtes créés pour vous chaque mois.' },
+        prospects: { title: 'Prospects', keys: ['LEAD_TRACKING'], offer: 'DIGITAL_GROWTH',
+            what: 'Les demandes de vos clients (site, WhatsApp, réseaux) réunies et suivies au même endroit.' },
+        publicite: { title: 'Publicité', keys: ['ADS_MANAGEMENT'], offer: 'DIGITAL_PERFORMANCE',
+            what: 'Vos campagnes Facebook, Instagram et Google pilotées pour attirer de nouveaux clients (budget publicitaire séparé).' },
+        conversion: { title: 'Conversion', keys: ['CONVERSION_OPTIMIZATION'], offer: 'DIGITAL_PERFORMANCE',
+            what: 'Pages de destination, formulaires et e-mails pour transformer les visiteurs en clients.' },
+        analytics: { title: 'Statistiques', keys: ['ADVANCED_REPORTING', 'MONTHLY_REPORT'], offer: 'DIGITAL_GROWTH',
+            what: 'Un rapport clair chaque mois : visites, demandes reçues et résultats de vos actions.' },
+    };
+    function entitlementValue(key) {
+        return (entitlementsData?.entitlements || []).find(item => item.key === key)?.value;
+    }
+    function isGranted(value) {
+        return value === true || value === 'UNLIMITED' || (typeof value === 'number' && value > 0);
+    }
+    function renderServicePage(pageKey) {
+        renderServiceOffer(pageKey);
+        appendTracking(pageKey);
+    }
+
+    // ── Suivi des résultats : mise en place Google Business et rapports mensuels ──
+    let _performance = null;
+    const TRACKED_CHANNELS = { google: 'GOOGLE_BUSINESS', analytics: 'WEBSITE' };
+    const monthName = period => new Date(period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    function metricValue(definition, value) {
+        if (value === undefined || value === null) return '—';
+        return definition.kind === 'rating'
+            ? value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' / 5'
+            : new Intl.NumberFormat('fr-FR').format(value);
+    }
+    function changeBadge(change) {
+        if (!change) return null;
+        const text = change.points !== null && change.points !== undefined
+            ? (change.points > 0 ? '+' : '') + change.points.toLocaleString('fr-FR') + ' pt'
+            : (change.percent > 0 ? '+' : '') + change.percent + ' %';
+        const color = change.good === true ? 'var(--success)' : change.good === false ? 'var(--error)' : 'var(--text-muted)';
+        return h('div', { style: 'font-size:12px;font-weight:600;color:' + color + ';margin-top:2px;', text: text + ' vs mois précédent' });
+    }
+
+    function googleSetupCard(setup, managerEmail) {
+        const steps = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:0.5rem;margin:1rem 0;' },
+            setup.steps.map((step, index) => h('div', {
+                style: 'padding:0.75rem;border-radius:var(--radius-md);border:1px solid ' + (step.done ? 'var(--accent)' : 'var(--border)') + ';font-size:13px;',
+            }, [
+                h('div', { style: 'font-weight:700;color:' + (step.done ? 'var(--accent)' : 'var(--text-muted)') + ';', text: (step.done ? '✓ ' : (index + 1) + '. ') }),
+                h('div', { text: step.label }),
+            ])));
+        const card = h('div', { class: 'card', style: 'margin-top:1.5rem;' }, [h('h3', { text: 'Mise en place de votre fiche Google' }), steps]);
+        if (setup.note) card.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-bottom:1rem;', text: setup.note }));
+        if (['NOT_STARTED', 'PROFILE_CREATED'].includes(setup.status)) {
+            card.appendChild(h('div', { style: 'font-size:14px;color:var(--text-secondary);' }, [
+                h('p', { style: 'font-weight:600;margin-bottom:0.5rem;', text: 'Ce que vous avez à faire : donner l\'accès à BENILAB' }),
+                h('ol', { style: 'margin:0 0 0 1.2rem;line-height:1.8;' }, [
+                    'Ouvrez Google Maps ou Google, connecté au compte qui gère votre fiche.',
+                    'Ouvrez votre fiche, puis Menu (⋮) → « Paramètres de la fiche » → « Personnes et accès ».',
+                    'Cliquez sur « Ajouter », saisissez ' + managerEmail + ' et choisissez le rôle « Gestionnaire ».',
+                    'Prévenez votre conseiller : il confirme l\'accès et prend le relais.',
+                ].map(text => h('li', { text }))),
+                h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:0.75rem;', text: 'Pas encore de fiche ? Votre conseiller la crée avec les informations de votre entreprise ; vous n\'aurez qu\'à confirmer le code que Google vous enverra.' }),
+            ]));
+        }
+        if (setup.profile_url) {
+            card.appendChild(h('a', { class: 'btn btn-outline btn-sm', style: 'margin-top:1rem;', href: setup.profile_url, target: '_blank', rel: 'noopener', text: 'Voir ma fiche Google' }));
+        }
+        return card;
+    }
+
+    function reportCard(channel, title) {
+        const [latest, ...older] = channel.reports;
+        const defs = channel.definitions.filter(d => latest.metrics[d.key] !== undefined);
+        const card = h('div', { class: 'card', style: 'margin-top:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: title + ' : ' + monthName(latest.period) }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Chiffres relevés par votre conseiller, comparés au mois précédent.' }),
+            h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:0.75rem;' },
+                defs.map(d => h('div', { style: 'padding:0.9rem;border:1px solid var(--border);border-radius:var(--radius-md);min-width:0;' }, [
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);', text: d.label }),
+                    h('div', { style: 'font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent);', text: metricValue(d, latest.metrics[d.key]) }),
+                    changeBadge(latest.changes[d.key]),
+                ]))),
+        ]);
+        if ((latest.top_searches || []).length) {
+            card.appendChild(h('p', { style: 'font-size:13px;margin-top:1rem;', text: 'Recherches qui vous ont trouvé : ' + latest.top_searches.join(' · ') }));
+        }
+        if (latest.note) {
+            card.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-top:1rem;display:block;' }, [h('strong', { text: 'Le mot de votre conseiller : ' }), h('span', { text: latest.note })]));
+        }
+        if (older.length) {
+            const columns = channel.definitions.filter(d => channel.reports.some(r => r.metrics[d.key] !== undefined));
+            card.appendChild(h('h4', { style: 'font-size:13px;margin:1.5rem 0 0.5rem;', text: 'Historique' }));
+            card.appendChild(h('div', { style: 'overflow-x:auto;' }, h('table', { style: 'width:100%;font-size:12px;border-collapse:collapse;' }, [
+                h('thead', {}, h('tr', {}, ['Mois', ...columns.map(d => d.label)].map(label => h('th', { style: 'text-align:left;padding:6px;color:var(--text-muted);white-space:nowrap;', text: label })))),
+                h('tbody', {}, channel.reports.map(r => h('tr', { style: 'border-top:1px solid var(--border);' },
+                    [monthName(r.period), ...columns.map(d => metricValue(d, r.metrics[d.key]))].map(value => h('td', { style: 'padding:6px;white-space:nowrap;', text: value }))))),
+            ])));
+        }
+        return card;
+    }
+
+    function appendTracking(pageKey) {
+        const channelKey = TRACKED_CHANNELS[pageKey];
+        const root = document.querySelector('[data-service-root="' + pageKey + '"]');
+        if (!channelKey || !root || !_performance) return;
+        const granted = SERVICE_PAGES[pageKey].keys.some(key => isGranted(entitlementValue(key)));
+        if (pageKey === 'google' && granted) root.appendChild(googleSetupCard(_performance.google_setup, _performance.manager_email));
+        const channel = _performance.channels[channelKey];
+        if (channel.reports.length) {
+            root.appendChild(reportCard(channel, pageKey === 'google' ? 'Votre fiche Google' : 'Votre site web'));
+        } else if (granted) {
+            root.appendChild(h('div', { class: 'card', style: 'margin-top:1.5rem;' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Vos résultats mensuels' }),
+                h('p', { style: 'font-size:14px;color:var(--text-muted);', text: 'Votre premier rapport arrivera au début du mois prochain : vous serez prévenu par e-mail.' }),
+            ]));
+        }
+    }
+
+    function renderServiceOffer(pageKey) {
+        const root = document.querySelector('[data-service-root="' + pageKey + '"]');
+        const config = SERVICE_PAGES[pageKey];
+        if (!root || !config) return;
+        root.textContent = '';
+        const grantedKey = config.keys.find(key => isGranted(entitlementValue(key)));
+        if (grantedKey) {
+            const monthly = entitlementValue('CONTENT_MONTHLY_LIMIT');
+            root.appendChild(h('div', { class: 'card' }, [
+                h('span', { class: 'badge badge-success', style: 'margin-bottom:0.75rem;', text: 'Inclus dans votre offre' }),
+                h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0.75rem 0;', text: config.what }),
+                pageKey === 'contenus' && typeof monthly === 'number'
+                    ? h('p', { style: 'font-size:14px;font-weight:600;', text: monthly + ' contenus par mois sont prévus dans votre offre.' }) : null,
+                h('p', { style: 'font-size:13px;color:var(--text-muted);',
+                    text: 'Votre conseiller BENILAB met ce service en place avec vous. Les résultats s\'afficheront ici au fur et à mesure.' }),
+            ]));
+            return;
+        }
+        const info = productInfo(config.offer);
+        const card = h('div', { class: 'card' }, [
+            h('span', { class: 'badge badge-muted', style: 'margin-bottom:0.75rem;', text: 'Non inclus dans votre offre' }),
+            h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0.75rem 0;', text: config.what }),
+            h('p', { style: 'font-size:14px;', text: 'Disponible à partir de l\'offre ' + info.name + (info.price ? ' (' + info.price + ')' : '') + '.' }),
+        ]);
+        if (_isOwner && _orgId) {
+            const pending = _purchaseRequests.find(p => p.product_code === config.offer && (p.status === 'NEW' || p.status === 'CONTACTED'));
+            card.appendChild(pending
+                ? h('p', { style: 'font-size:13px;color:var(--accent);margin-top:0.75rem;', text: 'Votre demande ' + info.name + ' est en cours : un conseiller vous contacte.' })
+                : h('button', { class: 'btn btn-primary btn-sm', style: 'margin-top:0.75rem;', text: 'Je veux démarrer',
+                    onclick: () => showPurchaseModalForProduct(config.offer, null, info.name, info.price) }));
+        }
+        root.appendChild(card);
+    }
+
+    // Support : vrais moyens de contact
+    function renderSupport() {
+        const root = document.getElementById('supportRoot');
+        if (!root) return;
+        root.textContent = '';
+        const contact = h('div', { class: 'card' }, [
+            h('h3', { style: 'margin-bottom:1rem;', text: '💬 Nous contacter' }),
+            h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:0.25rem;' }, ['E-mail : ', h('a', { href: 'mailto:' + BENILAB_CONTACT.email, text: BENILAB_CONTACT.email })]),
+            h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:1rem;', text: 'WhatsApp : +229 01 40 54 08 76' }),
+        ]);
+        if (BENILAB_CONTACT.whatsapp) {
+            contact.appendChild(h('a', { class: 'btn btn-outline', href: 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, ''), target: '_blank', rel: 'noopener', text: 'Écrire sur WhatsApp' }));
+        }
+        root.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;' }, [
+            h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:1rem;', text: '📅 Prendre rendez-vous' }),
+                h('p', { style: 'font-size:14px;color:var(--text-muted);margin-bottom:1.5rem;', text: 'Réservez un créneau avec notre équipe.' }),
+                h('a', { class: 'btn btn-primary', href: 'https://calendly.com/benilabservices/45min', target: '_blank', rel: 'noopener', text: 'Voir les créneaux' }),
+            ]),
+            contact,
+        ]));
+    }
+
+    // Offre ponctuelle (Start) déjà payée : elle ne se rachète pas
+    function isPurchased(code) {
+        return (_billing?.payments || []).some(pay => pay.product_code === code)
+            || _purchaseRequests.some(pr => pr.product_code === code && pr.status === 'WON');
+    }
+    function followSiteButton(style) {
+        return h('button', { class: 'btn btn-sm btn-primary', style: style || '', text: 'Suivre mon site', onclick: () => switchPage('site') });
+    }
+
+    // Mon abonnement : offres en cours, échéance, reçus, puis les offres disponibles
+    function offerButton(p) {
+        if (!_isOwner) return h('div', { style: 'font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;', text: 'Demandez au responsable' });
+        if ((p.price?.period || 'NONE') === 'NONE' && isPurchased(p.code)) {
+            return p.code === 'DIGITAL_START'
+                ? followSiteButton('margin-top:0.5rem;width:100%;')
+                : h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Déjà acquise' });
+        }
+        const pr = _purchaseRequests.find(item => item.product_code === p.code && (item.status === 'NEW' || item.status === 'CONTACTED'));
+        if (pr) return h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Demande envoyée le ' + new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) });
+        const price = p.price ? formatPrice(p.price, p.price.currency) : '';
+        return h('button', { class: 'btn btn-sm btn-primary', style: 'margin-top:0.5rem;width:100%;', text: 'Je veux démarrer',
+            onclick: () => showPurchaseModalForProduct(p.code, null, p.name || p.code, price) });
+    }
+    function renderSubscriptionPage() {
+        const container = document.getElementById('subscriptionContent');
+        if (!container) return;
+        container.textContent = '';
+        const subscriptions = _billing?.subscriptions || [];
+        const activeCodes = subscriptions.filter(s => s.status !== 'EXPIRED').map(s => s.product_code);
+        if (subscriptions.length) {
+            subscriptions.forEach(sub => {
+                const due = new Date(sub.covers_until).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                const [label, css] = sub.status === 'EXPIRED' ? ['Expiré', 'badge-error'] : sub.status === 'EXPIRING' ? ['Échéance proche', 'badge-warning'] : ['Actif', 'badge-success'];
+                container.appendChild(h('div', { class: 'card', style: 'margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;' }, [
+                    h('div', {}, [h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: 'Votre offre' }), h('div', { style: 'font-size:1.4rem;font-weight:700;', text: sub.product_name })]),
+                    h('div', { style: 'text-align:right;' }, [
+                        h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: sub.status === 'EXPIRED' ? 'Expiré le' : "Payé jusqu'au" }),
+                        h('div', { style: 'font-weight:600;', text: due }),
+                        h('span', { class: 'badge ' + css, style: 'margin-top:0.5rem;', text: label }),
+                        sub.status !== 'ACTIVE' && _isOwner && _billing?.online_payment_available
+                            ? h('div', {}, h('button', { class: 'btn btn-primary btn-sm', style: 'margin-top:0.75rem;', text: 'Renouveler en ligne',
+                                onclick: () => startOnlinePayment(sub.product_code) }))
+                            : null,
+                    ]),
+                ]));
+            });
+            if (subscriptions.some(s => s.status !== 'ACTIVE')) {
+                container.appendChild(h('div', { class: 'alert alert-accent', text: _billing?.online_payment_available
+                    ? 'Renouvelez en ligne en un clic (mobile money ou carte), ou contactez votre conseiller. Le mois payé s\'ajoute à votre échéance.'
+                    : 'Pour renouveler, contactez votre conseiller : votre abonnement est prolongé dès réception du paiement.' }));
+            }
+        } else if (!_isOwner && _orgId) {
+            container.appendChild(h('p', { style: 'color:var(--text-muted);', text: "Seul le responsable de l'entreprise peut consulter l'abonnement et les paiements." }));
+        } else {
+            container.appendChild(h('div', { class: 'empty-state', style: 'padding:2rem;' }, [
+                h('div', { class: 'empty-state-icon', text: '💳' }),
+                h('h3', { text: 'Aucun abonnement en cours' }),
+                h('p', { text: 'Choisissez un accompagnement mensuel ci-dessous.' }),
+            ]));
+        }
+
+        container.appendChild(sectionTitle('Nos offres'));
+        container.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;' },
+            (_catalogData?.products || []).map(p => {
+                const current = activeCodes.includes(p.code);
+                const period = p.price?.period === 'MONTH' ? '/ mois' : p.price?.period === 'YEAR' ? '/ an' : 'Paiement unique';
+                return h('div', { class: 'card', style: 'text-align:center;' + (current ? 'border-color:var(--accent);' : '') }, [
+                    h('div', { style: 'font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;', text: p.name }),
+                    h('div', { style: 'font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--accent);', text: p.price ? formatPrice(p.price, p.price.currency) : '—' }),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);margin-top:4px;', text: period }),
+                    current ? h('div', { style: 'font-size:12px;color:var(--accent);margin-top:0.5rem;', text: 'Votre offre actuelle' }) : offerButton(p),
+                ]);
+            })));
+
+        container.appendChild(sectionTitle('Mes paiements'));
+        const payments = _billing?.payments || [];
+        if (!payments.length) {
+            container.appendChild(h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Aucun paiement pour le moment.' }));
+            return;
+        }
+        const methods = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement', CASH: 'Espèces', CARTFLOX: 'Paiement en ligne' };
+        container.appendChild(h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+            h('table', { style: 'width:100%;font-size:13px;border-collapse:collapse;' }, [
+                h('thead', {}, h('tr', {}, ['Date', 'Reçu', 'Offre', 'Montant', 'Moyen', 'Référence'].map(label => h('th', { style: 'text-align:left;padding:8px;color:var(--text-muted);', text: label })))),
+                h('tbody', {}, payments.map(pay => h('tr', { style: 'border-top:1px solid var(--border);' }, [
+                    new Date(pay.received_on + 'T12:00:00').toLocaleDateString('fr-FR'), pay.receipt_number, pay.product_name,
+                    formatPrice({ amount: pay.amount, currency: pay.currency }, pay.currency), methods[pay.method] || pay.method, pay.reference || '—',
+                ].map(value => h('td', { style: 'padding:8px;', text: value }))))),
+            ]),
+        ]));
+        container.appendChild(h('p', { style: 'font-size:12px;color:var(--text-muted);margin-top:0.5rem;', text: 'Chaque reçu vous a aussi été envoyé par e-mail.' }));
+    }
+
+    function h(tag, props = {}, children = []) {
+        const el = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+            if (key === 'style') el.style.cssText = value;
+            else if (key === 'text') el.textContent = value;
+            else if (key.startsWith('on')) el[key] = value;
+            else el.setAttribute(key, value);
+        });
+        (Array.isArray(children) ? children : [children]).forEach(child => {
+            if (child) el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+        });
+        return el;
+    }
+
+    async function sendJson(method, path, body) {
+        const send = () => fetch(D360_API_BASE + path, {
+            method,
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        if (!_csrfToken) await getCsrf();
+        let res = await send();
+        if (res.status === 403) {
+            const problem = await res.clone().json().catch(() => null);
+            if (problem?.code === 'CSRF_FAILED') { await getCsrf(); res = await send(); }
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+            const err = new Error(data?.detail || 'Une erreur est survenue.');
+            err.code = data?.code;
+            err.errors = data?.errors || [];
+            throw err;
+        }
+        return data;
+    }
+
+    async function loadProject() {
+        _project = null;
+        if (_orgId) {
+            try {
+                const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/website-project', { credentials: 'include' });
+                if (res.ok) _project = await res.json();
+            } catch (_) {}
+        }
+        renderProject();
+    }
+
+    const PROJECT_STEPS = [
+        ['BRIEF_PENDING', 'Brief'],
+        ['IN_PRODUCTION', 'Réalisation'],
+        ['CLIENT_REVIEW', 'Relecture'],
+        ['APPROVED', 'Validation'],
+        ['LIVE', 'En ligne'],
+    ];
+    const FIELD_LABELS = {
+        business_name: "Nom de l'entreprise", activity: 'Votre activité', services: 'Au moins un service',
+        phone: 'Téléphone', template: 'Modèle', palette: 'Couleurs', has_logo: 'Logo (oui ou non)',
+    };
+
+    function frenchDate(iso) {
+        return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    }
+
+    function projectStepper(status) {
+        const order = PROJECT_STEPS.map(step => step[0]);
+        const current = order.indexOf(status === 'REVISION' ? 'CLIENT_REVIEW' : status);
+        return h('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;' },
+            PROJECT_STEPS.map(([key, label], index) => h('span', {
+                class: 'badge ' + (index < current ? 'badge-success' : index === current ? 'badge-accent' : 'badge-muted'),
+                text: (index + 1) + '. ' + label,
+            })));
+    }
+
+    function renderProject() {
+        const root = document.getElementById('projectRoot');
+        if (!root) return;
+        root.textContent = '';
+        if (!_project && isPurchased('DIGITAL_START')) {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre projet de site est en cours de création' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;margin-bottom:1rem;', text: "Votre paiement est bien reçu. Votre espace projet s'ouvre dans un instant : vous pourrez y remplir le brief de votre site." }),
+                h('button', { class: 'btn btn-primary btn-sm', text: 'Actualiser', onclick: loadProject }),
+            ]));
+            return;
+        }
+        if (!_project) {
+            const card = h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: "Vous n'avez pas encore de site" }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;margin-bottom:1rem;',
+                    text: "Avec l'offre Start, la conception de votre site est offerte grâce à l'IA : vous ne payez que le nom de domaine, l'hébergement et la mise en ligne." }),
+            ]);
+            if (_isOwner) {
+                const info = productInfo('DIGITAL_START');
+                card.appendChild(h('button', { class: 'btn btn-primary btn-sm', text: 'Je veux démarrer',
+                    onclick: () => showPurchaseModalForProduct('DIGITAL_START', null, info.name, info.price) }));
+            }
+            root.appendChild(card);
+            return;
+        }
+        const p = _project;
+        root.appendChild(projectStepper(p.status));
+        if (p.status === 'BRIEF_PENDING') {
+            root.appendChild(p.available_actions.includes('EDIT_BRIEF') ? briefForm(p)
+                : h('div', { class: 'alert alert-accent', text: 'Le responsable de votre entreprise remplit actuellement le brief du site.' }));
+        } else if (p.status === 'IN_PRODUCTION') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre site est en préparation' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;',
+                    text: 'Nous réalisons votre site à partir de votre brief. Vous recevrez la première version au plus tard le ' + frenchDate(p.due_on) + '.' }),
+            ]));
+            root.appendChild(briefSummary(p));
+        } else if (p.status === 'CLIENT_REVIEW') {
+            root.appendChild(reviewPanel(p));
+        } else if (p.status === 'REVISION') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.5rem;', text: 'Vos corrections sont en cours' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:14px;', text: 'Nous appliquons vos corrections et vous prévenons dès que la nouvelle version est prête.' }),
+            ]));
+        } else if (p.status === 'APPROVED') {
+            root.appendChild(h('div', { class: 'alert alert-success', text: 'Merci pour votre validation ! Nous mettons votre site en ligne sur votre nom de domaine.' }));
+        } else if (p.status === 'LIVE') {
+            root.appendChild(h('div', { class: 'card' }, [
+                h('h3', { style: 'margin-bottom:0.75rem;', text: 'Votre site est en ligne 🎉' }),
+                h('a', { class: 'btn btn-primary btn-sm', href: p.live_url, target: '_blank', rel: 'noopener', text: 'Voir mon site' }),
+            ]));
+        }
+    }
+
+    function briefSummary(p) {
+        const b = p.brief || {};
+        const template = p.offer.templates.find(t => t.key === b.template);
+        const palette = p.offer.palettes.find(t => t.key === b.palette);
+        const rows = [
+            ['Entreprise', b.business_name], ['Modèle', template?.name], ['Couleurs', palette?.name],
+            ['Services', (b.services || []).map(s => s.name).join(', ')], ['Domaine souhaité', b.desired_domain],
+        ];
+        return h('div', { class: 'card', style: 'margin-top:1rem;' }, [
+            h('h3', { style: 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem;', text: 'Votre brief' }),
+            ...rows.filter(row => row[1]).map(([label, value]) => h('div', { style: 'display:flex;justify-content:space-between;gap:1rem;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;' }, [
+                h('span', { style: 'color:var(--text-muted);', text: label }), h('span', { text: value }),
+            ])),
+        ]);
+    }
+
+    function field(label, input, hint) {
+        return h('div', { class: 'form-group' }, [
+            h('label', { class: 'form-label', text: label }), input,
+            hint ? h('div', { style: 'font-size:11px;color:var(--text-muted);margin-top:4px;', text: hint }) : null,
+        ]);
+    }
+    function textInput(name, value, attrs = {}) {
+        return h('input', { class: 'form-input', name, value: value || '', ...attrs });
+    }
+    function choiceGrid(name, choices, selected) {
+        return h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0.75rem;' },
+            choices.map(choice => {
+                const radio = h('input', { type: 'radio', name, value: choice.key });
+                radio.checked = choice.key === selected;
+                return h('label', { class: 'card', style: 'cursor:pointer;padding:0.9rem;display:block;' }, [
+                    h('div', { style: 'display:flex;gap:0.5rem;align-items:center;font-weight:600;' }, [radio, choice.name]),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);margin-top:4px;', text: choice.description }),
+                ]);
+            }));
+    }
+
+    function briefForm(p) {
+        const b = p.brief || {};
+        const offer = p.offer;
+        const form = h('form', { class: 'card', id: 'briefForm', onsubmit: event => event.preventDefault() });
+        form.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-bottom:1.25rem;', text: offer.pitch }));
+        form.appendChild(h('h3', { style: 'margin-bottom:1rem;', text: 'Votre brief' }));
+        form.appendChild(field("Nom de l'entreprise", textInput('business_name', b.business_name, { maxlength: '80' })));
+        const activity = h('textarea', { class: 'form-input', name: 'activity', rows: '3', maxlength: '500',
+            placeholder: 'Ce que vous faites, pour qui, ce qui vous distingue. Nous rédigeons les textes à partir de cela.' });
+        activity.value = b.activity || '';
+        form.appendChild(field('Votre activité', activity));
+
+        const services = h('div', { id: 'briefServices' });
+        const addService = (service = {}) => {
+            if (services.children.length >= offer.max_services) return;
+            const row = h('div', { style: 'display:grid;grid-template-columns:1fr 2fr auto;gap:0.5rem;margin-bottom:0.5rem;' }, [
+                h('input', { class: 'form-input', 'data-service': 'name', placeholder: 'Service', maxlength: '80', value: service.name || '' }),
+                h('input', { class: 'form-input', 'data-service': 'description', placeholder: 'Courte description (facultatif)', maxlength: '200', value: service.description || '' }),
+                h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '✕', onclick: () => row.remove() }),
+            ]);
+            services.appendChild(row);
+        };
+        (b.services && b.services.length ? b.services : [{}]).forEach(addService);
+        form.appendChild(field('Vos services (' + offer.max_services + ' au maximum)', services));
+        form.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-sm', style: 'margin:-0.5rem 0 1.25rem;', text: '+ Ajouter un service', onclick: () => addService() }));
+
+        const grid = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 1rem;' }, [
+            field('Ville', textInput('city', b.city, { maxlength: '100' })),
+            field('Adresse', textInput('address', b.address, { maxlength: '200' })),
+            field('Téléphone', textInput('phone', b.phone, { type: 'tel', placeholder: '+2250700000000' })),
+            field('WhatsApp', textInput('whatsapp', b.whatsapp, { type: 'tel', placeholder: '+2250500000000' })),
+            field('E-mail affiché sur le site', textInput('email', b.email, { type: 'email' })),
+            field('Horaires', textInput('opening_hours', b.opening_hours, { placeholder: 'Lun-Sam 8h-19h', maxlength: '300' })),
+            field('Facebook', textInput('facebook', b.facebook, { placeholder: 'https://facebook.com/…' })),
+            field('Instagram', textInput('instagram', b.instagram, { placeholder: 'https://instagram.com/…' })),
+            field('TikTok', textInput('tiktok', b.tiktok, { placeholder: 'https://tiktok.com/@…' })),
+            field('Nom de domaine souhaité', textInput('desired_domain', b.desired_domain, { placeholder: 'monentreprise.ci' }), 'Sans « www » ni « https ». Nous vérifions sa disponibilité.'),
+        ]);
+        form.appendChild(grid);
+
+        form.appendChild(field('Modèle de site', choiceGrid('template', offer.templates, b.template)));
+        form.appendChild(field('Couleurs', choiceGrid('palette', offer.palettes, b.palette)));
+        const logoYes = h('input', { type: 'radio', name: 'has_logo', value: 'true' });
+        const logoNo = h('input', { type: 'radio', name: 'has_logo', value: 'false' });
+        logoYes.checked = b.has_logo === true;
+        logoNo.checked = b.has_logo === false;
+        form.appendChild(field('Avez-vous un logo ?', h('div', { style: 'display:flex;gap:1.5rem;' }, [
+            h('label', {}, [logoYes, ' Oui, je l\'enverrai sur WhatsApp']), h('label', {}, [logoNo, ' Non, utilisez le nom de mon entreprise']),
+        ])));
+
+        const scope = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1.5rem 0 1rem;' }, [
+            h('div', { class: 'card' }, [h('strong', { text: 'Inclus dans votre offre' }),
+                h('ul', { style: 'margin:0.5rem 0 0 1.1rem;font-size:13px;color:var(--text-secondary);' }, offer.included.map(item => h('li', { text: item })))]),
+            h('div', { class: 'card' }, [h('strong', { text: 'Non inclus' }),
+                h('ul', { style: 'margin:0.5rem 0 0 1.1rem;font-size:13px;color:var(--text-secondary);' }, offer.not_included.map(item => h('li', { text: item })))]),
+        ]);
+        form.appendChild(scope);
+        const accept = h('input', { type: 'checkbox', id: 'briefAcceptScope' });
+        form.appendChild(h('label', { style: 'display:flex;gap:0.5rem;font-size:13px;margin-bottom:1rem;' }, [accept,
+            "J'ai lu ce qui est inclus et ce qui ne l'est pas. Je comprends que le brief ne pourra plus être modifié une fois la réalisation lancée."]));
+        const message = h('div', { id: 'briefMessage', style: 'font-size:13px;margin-bottom:1rem;min-height:18px;' });
+        form.appendChild(message);
+        form.appendChild(h('div', { style: 'display:flex;gap:1rem;flex-wrap:wrap;' }, [
+            h('button', { type: 'button', class: 'btn btn-outline', text: 'Enregistrer le brouillon', onclick: () => saveBrief(false) }),
+            h('button', { type: 'button', class: 'btn btn-primary', text: 'Lancer la réalisation', onclick: () => saveBrief(true) }),
+        ]));
+        return form;
+    }
+
+    function readBrief() {
+        const form = document.getElementById('briefForm');
+        const value = name => form.querySelector('[name="' + name + '"]')?.value.trim() || null;
+        const checked = name => form.querySelector('input[name="' + name + '"]:checked')?.value || null;
+        const phone = name => { const raw = value(name); return raw ? normalizeNumber(raw) : null; };
+        const services = [...form.querySelectorAll('#briefServices > div')].map(row => ({
+            name: row.querySelector('[data-service="name"]').value.trim(),
+            description: row.querySelector('[data-service="description"]').value.trim(),
+        })).filter(service => service.name);
+        const logo = checked('has_logo');
+        const brief = {
+            business_name: value('business_name'), activity: value('activity'), services,
+            city: value('city'), address: value('address'), phone: phone('phone'), whatsapp: phone('whatsapp'),
+            email: value('email'), opening_hours: value('opening_hours'), facebook: value('facebook'),
+            instagram: value('instagram'), tiktok: value('tiktok'),
+            desired_domain: value('desired_domain')?.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '').toLowerCase() || null,
+            template: checked('template'), palette: checked('palette'), has_logo: logo === null ? null : logo === 'true',
+        };
+        Object.keys(brief).forEach(key => { if (brief[key] === null) delete brief[key]; });
+        return brief;
+    }
+
+    function explainError(err) {
+        const fields = (err.errors || []).map(item => item.field || item.reason).filter(Boolean);
+        if (err.code === 'TRANSITION_GUARD_FAILED') {
+            const missing = (_project?.missing_fields || []).map(name => FIELD_LABELS[name] || name);
+            return 'Brief incomplet : ' + (missing.join(', ') || (err.errors || []).map(e => e.reason).join(', ')) + '.';
+        }
+        return err.message + (fields.length ? ' (' + fields.join(', ') + ')' : '');
+    }
+
+    async function saveBrief(launch) {
+        const message = document.getElementById('briefMessage');
+        message.style.color = 'var(--error)';
+        if (launch && !document.getElementById('briefAcceptScope').checked) {
+            message.textContent = 'Cochez la case pour confirmer que vous avez lu ce qui est inclus.';
+            return;
+        }
+        showD360Loading();
+        try {
+            _project = await sendJson('PUT', '/orgs/' + _orgId + '/website-project/brief', readBrief());
+            if (launch) {
+                _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/submit', { accept_scope: true });
+                renderProject();
+                return;
+            }
+            message.style.color = 'var(--success)';
+            message.textContent = 'Brouillon enregistré.' + (_project.missing_fields.length
+                ? ' Il reste à compléter : ' + _project.missing_fields.map(name => FIELD_LABELS[name] || name).join(', ') + '.' : ' Votre brief est complet.');
+        } catch (err) {
+            message.textContent = explainError(err);
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    function reviewPanel(p) {
+        const panel = h('div', { class: 'card' }, [
+            h('h3', { style: 'margin-bottom:0.5rem;', text: 'Votre site est prêt : à vous de le relire' }),
+            h('a', { class: 'btn btn-primary btn-sm', style: 'margin:0.5rem 0 1.25rem;', href: p.preview_url, target: '_blank', rel: 'noopener', text: 'Voir mon site' }),
+        ]);
+        const message = h('div', { style: 'font-size:13px;margin:0.75rem 0;min-height:18px;color:var(--error);' });
+        if (p.available_actions.includes('APPROVED')) {
+            panel.appendChild(h('button', { class: 'btn btn-primary', text: 'Je valide mon site', onclick: async () => {
+                if (!confirm('Valider votre site ? Nous le mettrons ensuite en ligne sur votre nom de domaine.')) return;
+                showD360Loading();
+                try { _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/approve'); renderProject(); }
+                catch (err) { message.textContent = explainError(err); }
+                finally { hideD360Loading(); }
+            } }));
+        }
+        if (!p.available_actions.includes('REVISION')) {
+            panel.appendChild(h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:1rem;', text: 'La série de corrections incluse dans votre offre a été utilisée.' }));
+            panel.appendChild(message);
+            return panel;
+        }
+        const categories = p.offer.revision_categories;
+        const list = h('div');
+        const addItem = () => {
+            if (list.children.length >= 10) return;
+            const row = h('div', { style: 'display:grid;grid-template-columns:170px 140px 1fr auto;gap:0.5rem;margin-bottom:0.5rem;' }, [
+                h('select', { class: 'form-input', 'data-revision': 'category' }, Object.entries(categories).map(([key, label]) => h('option', { value: key, text: label }))),
+                h('select', { class: 'form-input', 'data-revision': 'page' }, p.offer.pages.map(page => h('option', { value: page, text: page }))),
+                h('input', { class: 'form-input', 'data-revision': 'text', maxlength: '500', placeholder: 'Ce qu\'il faut corriger' }),
+                h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '✕', onclick: () => row.remove() }),
+            ]);
+            list.appendChild(row);
+        };
+        addItem();
+        panel.appendChild(h('h4', { style: 'margin:1.5rem 0 0.25rem;', text: 'Demander mes corrections' }));
+        panel.appendChild(h('p', { style: 'font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;',
+            text: 'Une seule série, limitée au contenu : textes, photos, coordonnées, horaires. Le modèle, les couleurs et les pages restent ceux de votre brief.' }));
+        panel.appendChild(list);
+        panel.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-sm', text: '+ Ajouter une correction', onclick: addItem }));
+        panel.appendChild(message);
+        panel.appendChild(h('button', { class: 'btn btn-outline', text: 'Envoyer mes corrections', onclick: async () => {
+            const items = [...list.children].map(row => ({
+                category: row.querySelector('[data-revision="category"]').value,
+                page: row.querySelector('[data-revision="page"]').value,
+                text: row.querySelector('[data-revision="text"]').value.trim(),
+            })).filter(item => item.text.length >= 3);
+            if (!items.length) { message.textContent = 'Décrivez au moins une correction (3 caractères minimum).'; return; }
+            if (!confirm('Envoyer ces ' + items.length + ' correction(s) ? Votre offre comprend une seule série de corrections.')) return;
+            showD360Loading();
+            try { _project = await sendJson('POST', '/orgs/' + _orgId + '/website-project/revision', { items }); renderProject(); }
+            catch (err) { message.textContent = explainError(err); }
+            finally { hideD360Loading(); }
+        } }));
+        return panel;
+    }
+
+    // ── « Je veux démarrer » ──
+    function productInfo(code) {
+        const product = (_catalogData?.products || []).find(p => p.code === code);
+        return {
+            name: product?.name || code,
+            price: product?.price ? formatPrice(product.price, product.price.currency) : '',
+        };
+    }
+    function planCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;';
+        return card;
+    }
+    function offerCard(code, items) {
+        const info = productInfo(code);
+        const card = planCard();
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;';
+        title.textContent = 'Offre ' + info.name + (info.price ? ' — ' + info.price : '');
+        card.appendChild(title);
+        const list = document.createElement('ul');
+        list.style.cssText = 'margin:0 0 0.75rem 1.1rem;padding:0;font-size:13px;color:var(--text-secondary);';
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item.recommended_action || item.reason || '';
+            list.appendChild(li);
+        });
+        card.appendChild(list);
+        card.appendChild(offerAction(code, items[0]));
+        return card;
+    }
+    function offerAction(code, firstItem) {
+        if (!_isOwner) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:12px;color:var(--text-muted);font-style:italic;';
+            msg.textContent = 'Demandez au responsable de votre entreprise';
+            return msg;
+        }
+        // Liste triée de la plus récente à la plus ancienne ; une demande perdue n'en bloque pas une nouvelle
+        const pr = _purchaseRequests.find(p => p.product_code === code && p.status !== 'LOST');
+        if (!pr) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-primary btn-sm';
+            btn.textContent = 'Je veux démarrer';
+            btn.onclick = () => showPurchaseModal(firstItem);
+            return btn;
+        }
+        const status = document.createElement('div');
+        status.style.cssText = 'font-size:13px;font-weight:500;color:var(--accent);';
+        const date = new Date(pr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
+        if (pr.status === 'WON' && code === 'DIGITAL_START') {
+            const follow = document.createElement('button');
+            follow.className = 'btn btn-primary btn-sm';
+            follow.textContent = 'Suivre mon site';
+            follow.onclick = () => switchPage('site');
+            return follow;
+        }
+        if (pr.status === 'WON') {
+            status.textContent = "Offre en cours d'activation";
+        } else if (pr.status === 'CONTACTED') {
+            status.textContent = 'Un conseiller vous a contacté au sujet de cette offre';
+        } else {
+            status.textContent = 'Couvert par votre demande ' + productInfo(code).name + ' du ' + date;
+        }
+        return status;
+    }
+    function recommendationCard(item) {
+        const card = planCard();
+        const text = document.createElement('p');
+        text.style.cssText = 'font-size:13px;color:var(--text-secondary);margin:0;';
+        text.textContent = item.recommended_action || item.reason || '';
+        card.appendChild(text);
+        return card;
+    }
+
+    function knownNumber(channel) {
+        const org = _orgData || {};
+        const user = _meData?.user || {};
+        const order = channel === 'WHATSAPP' ? [org.whatsapp, org.phone, user.phone] : [org.phone, org.whatsapp, user.phone];
+        return order.find(number => number) || '';
+    }
+    function onPurchaseChannelChange() {
+        const channel = document.getElementById('purchaseChannel').value;
+        const needsNumber = channel !== 'EMAIL';
+        document.getElementById('purchaseNumberGroup').style.display = needsNumber ? '' : 'none';
+        document.getElementById('purchaseNumberError').textContent = '';
+        if (needsNumber) {
+            document.getElementById('purchaseNumberLabel').textContent = channel === 'WHATSAPP' ? 'Numéro WhatsApp' : 'Numéro de téléphone';
+            document.getElementById('purchaseNumber').value = knownNumber(channel);
+        }
+    }
+    function showPurchaseModal(item) {
+        const info = productInfo(item.product_code);
+        showPurchaseModalForProduct(item.product_code, item.id, info.name, info.price);
+    }
+    function showPurchaseModalForProduct(productCode, planItemId, name, price) {
+        if (productCode === 'DIGITAL_START' && isPurchased(productCode)) { switchPage('site'); return; }
+        _pendingPurchase = { product_code: productCode, plan_item_id: planItemId || null };
+        const modal = document.getElementById('purchaseModal');
+        if (!modal) return;
+        document.getElementById('purchaseProductName').textContent = price ? name + ' — ' + price : name;
+        document.getElementById('purchaseMsg').value = '';
+        document.getElementById('purchaseChannel').value = 'WHATSAPP';
+        document.getElementById('purchaseError').textContent = '';
+        document.getElementById('purchaseForm').style.display = '';
+        document.getElementById('purchaseOnline').style.display = _billing?.online_payment_available ? '' : 'none';
+        document.getElementById('purchaseDone').style.display = 'none';
+        onPurchaseChannelChange();
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closePurchaseModal() {
+        const modal = document.getElementById('purchaseModal');
+        if (modal) modal.classList.remove('open');
+        document.body.style.overflow = '';
+        _pendingPurchase = null;
+    }
+    // « 07 00 00 00 00 » ou « 00225… » → format international attendu par l'API (+2250700000000)
+    function normalizeNumber(raw) {
+        const compact = raw.replace(/[^\d+]/g, '');
+        return compact.startsWith('00') ? '+' + compact.slice(2) : compact;
+    }
+    async function reloadPurchaseRequests() {
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', { credentials: 'include' });
+            if (res.ok) _purchaseRequests = (await res.json())?.data || [];
+        } catch (_) {}
+    }
+    async function postPurchaseRequest(body) {
+        const send = () => fetch(D360_API_BASE + '/orgs/' + _orgId + '/purchase-requests', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: JSON.stringify(body),
+        });
+        if (!_csrfToken) await getCsrf();
+        let res = await send();
+        // fetch ne lève pas d'erreur sur un 403 : jeton expiré → on en redemande un, une seule fois
+        if (res.status === 403) {
+            const problem = await res.clone().json().catch(() => null);
+            if (problem?.code === 'CSRF_FAILED') {
+                await getCsrf();
+                res = await send();
+            }
+        }
+        return res;
+    }
+    async function submitPurchaseRequest() {
+        const errorEl = document.getElementById('purchaseError');
+        const numberErrorEl = document.getElementById('purchaseNumberError');
+        errorEl.textContent = '';
+        numberErrorEl.textContent = '';
+        if (!_pendingPurchase || !_orgId) return;
+        const channel = document.getElementById('purchaseChannel').value;
+        const body = {
+            product_code: _pendingPurchase.product_code,
+            plan_item_id: _pendingPurchase.plan_item_id,
+            channel,
+            message: document.getElementById('purchaseMsg').value.trim() || null,
+        };
+        if (channel !== 'EMAIL') {
+            const number = normalizeNumber(document.getElementById('purchaseNumber').value.trim());
+            if (!/^\+[1-9]\d{6,14}$/.test(number)) {
+                numberErrorEl.textContent = 'Indiquez votre numéro au format international, par exemple +2250700000000.';
+                return;
+            }
+            body.contact_number = number;
+        }
+        showD360Loading();
+        try {
+            const res = await postPurchaseRequest(body);
+            if (!res.ok) {
+                const problem = await res.json().catch(() => null);
+                const target = problem?.code === 'CONTACT_NUMBER_REQUIRED' ? numberErrorEl : errorEl;
+                target.textContent = problem?.detail || 'Une erreur est survenue. Réessayez.';
+                return;
+            }
+            const created = await res.json();
+            await reloadPurchaseRequests();
+            document.getElementById('purchaseForm').style.display = 'none';
+            document.getElementById('purchaseOnline').style.display = 'none';
+            document.getElementById('purchaseDoneText').textContent = channel === 'EMAIL'
+                ? 'Demande envoyée. Un conseiller vous contacte sous 24 h par e-mail.'
+                : 'Demande envoyée. Un conseiller vous contacte sous 24 h au ' + (created.contact_number || body.contact_number) + '.';
+            document.getElementById('purchaseDone').style.display = '';
+            renderDashboard();
+            renderSubscriptionPage();
+        } catch (_) {
+            errorEl.textContent = 'Serveur injoignable. Réessayez dans un instant.';
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    // ── Projets : un compte, plusieurs entreprises, chacune avec ses diagnostics ──
+    let _memberships = [];
+    const ROLE_NAMES = { CLIENT_OWNER: 'Responsable', CLIENT_MEMBER: 'Membre' };
+    function readStoredProject() { try { return localStorage.getItem('d360_org'); } catch (_) { return null; } }
+    function storeProject(id) { try { localStorage.setItem('d360_org', id); } catch (_) {} }
+    function openProject(id) { storeProject(id); window.location.href = 'dashboard.html'; }
+    function startNewProject() {
+        try {
+            localStorage.setItem('d360_diag_target', 'new');
+            localStorage.removeItem('d360_diag_id');
+            localStorage.removeItem('d360_diag_token');
+        } catch (_) {}
+        window.location.href = 'index.html#diagnostic';
+    }
+    // Tout lien « diagnostic » de l'espace vise le projet affiché : le résultat y sera rattaché
+    document.addEventListener('click', event => {
+        const link = event.target.closest && event.target.closest('a[href="index.html#diagnostic"]');
+        if (!link) return;
+        try {
+            localStorage.setItem('d360_diag_target', _orgId || 'new');
+            localStorage.removeItem('d360_diag_id');
+            localStorage.removeItem('d360_diag_token');
+        } catch (_) {}
+    });
+
+    function renderProjectSwitcher(current) {
+        const root = document.getElementById('projectSwitcher');
+        if (!root) return;
+        root.textContent = '';
+        if (current) document.getElementById('userRole').textContent = ROLE_NAMES[current.role] || 'Client';
+        if (!_memberships.length) return;
+        const label = h('div', { style: 'font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;', text: 'Projet' });
+        const select = h('select', { class: 'form-input', 'aria-label': 'Projet affiché', style: 'width:100%;padding:6px 8px;font-size:13px;' },
+            _memberships.map(m => {
+                const option = h('option', { value: m.organization_id, text: m.organization_name });
+                if (current && m.organization_id === current.organization_id) option.selected = true;
+                return option;
+            }).concat([h('option', { value: '__new__', text: '+ Nouveau projet' })]));
+        select.onchange = () => (select.value === '__new__' ? startNewProject() : openProject(select.value));
+        root.append(label, select);
+    }
+
+    const PASSWORD_REASONS = {
+        too_short: 'au moins 10 caractères', too_long: '128 caractères maximum',
+        too_common: 'pas un mot de passe trop courant', same_as_email: "différent de l'e-mail",
+        single_character: 'pas un seul caractère répété',
+    };
+    function feedback() { return h('div', { style: 'font-size:13px;min-height:18px;margin-top:0.5rem;' }); }
+    function say(el, text, ok) { el.style.color = ok ? 'var(--success)' : 'var(--error)'; el.textContent = text; }
+    function field(label, control) {
+        return h('div', { class: 'form-group', style: 'margin-bottom:0.75rem;' }, [h('label', { class: 'form-label', text: label }), control]);
+    }
+    function textInput(attrs, value) {
+        const el = h('input', { class: 'form-input', style: 'max-width:360px;', ...attrs });
+        if (value) el.value = value;
+        return el;
+    }
+
+    function profileCard() {
+        const user = _meData?.user || {};
+        const name = textInput({ type: 'text', maxlength: '200', autocomplete: 'name' }, user.full_name);
+        const phone = textInput({ type: 'tel', placeholder: '+2290100000000', autocomplete: 'tel' }, user.phone);
+        const msg = feedback();
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:1rem;', text: 'Mes informations' }),
+            field('Nom complet', name), field('Téléphone (format international)', phone),
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer', onclick: async () => {
+                const number = normalizeNumber(phone.value.trim());
+                if (number && !/^\+[1-9]\d{6,14}$/.test(number)) { say(msg, 'Téléphone au format international, par exemple +2290100000000.'); return; }
+                try {
+                    const updated = await sendJson('PATCH', '/me', { full_name: name.value.trim(), phone: number });
+                    _meData.user = updated;
+                    document.getElementById('userName').textContent = updated.full_name;
+                    say(msg, 'Informations enregistrées.', true);
+                } catch (e) { say(msg, e.message); }
+            } }),
+            msg,
+        ]);
+    }
+
+    function emailCard() {
+        const email = textInput({ type: 'email', autocomplete: 'email' }, _meData?.user?.email);
+        const password = textInput({ type: 'password', autocomplete: 'current-password' });
+        const msg = feedback();
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: 'Adresse e-mail de connexion' }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: "C'est l'adresse qui sert à vous connecter et à recevoir vos reçus. L'ancienne adresse est prévenue du changement." }),
+            field('Nouvelle adresse e-mail', email), field('Mot de passe actuel (pour confirmer)', password),
+            h('button', { class: 'btn btn-primary btn-sm', text: "Changer l'e-mail", onclick: async () => {
+                const value = email.value.trim();
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) { say(msg, 'Indiquez une adresse e-mail valide.'); return; }
+                if (!password.value) { say(msg, 'Saisissez votre mot de passe actuel pour confirmer.'); return; }
+                try {
+                    const updated = await sendJson('POST', '/me/email', { new_email: value, current_password: password.value });
+                    _meData.user = updated;
+                    password.value = '';
+                    email.value = updated.email;
+                    say(msg, 'Adresse modifiée : connectez-vous désormais avec ' + updated.email + '.', true);
+                } catch (e) { say(msg, e.message); }
+            } }),
+            msg,
+        ]);
+    }
+
+    function passwordCard() {
+        const current = textInput({ type: 'password', autocomplete: 'current-password' });
+        const fresh = textInput({ type: 'password', autocomplete: 'new-password' });
+        const again = textInput({ type: 'password', autocomplete: 'new-password' });
+        const msg = feedback();
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:1rem;', text: 'Mot de passe' }),
+            field('Mot de passe actuel', current), field('Nouveau mot de passe (10 caractères minimum)', fresh), field('Confirmer le nouveau mot de passe', again),
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Changer le mot de passe', onclick: async () => {
+                if (fresh.value !== again.value) { say(msg, 'Les deux nouveaux mots de passe ne sont pas identiques.'); return; }
+                try {
+                    await sendJson('POST', '/me/password', { current_password: current.value, new_password: fresh.value });
+                    current.value = fresh.value = again.value = '';
+                    say(msg, 'Mot de passe changé. Vos autres appareils ont été déconnectés.', true);
+                } catch (e) {
+                    say(msg, e.code === 'WEAK_PASSWORD'
+                        ? 'Mot de passe trop faible : ' + (e.errors || []).map(x => PASSWORD_REASONS[x.reason] || x.reason).join(', ') + '.'
+                        : e.message);
+                }
+            } }),
+            msg,
+        ]);
+    }
+
+    async function fetchList(path) {
+        try {
+            const res = await fetch(D360_API_BASE + path, { credentials: 'include' });
+            return res.ok ? ((await res.json()).data || []) : [];
+        } catch (_) { return []; }
+    }
+
+    async function teamCard() {
+        const org = _memberships.find(m => m.organization_id === _orgId);
+        const card = h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: 'Mon équipe' }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Projet : ' + (org?.organization_name || '') }),
+        ]);
+        const msg = feedback();
+        const refresh = () => teamCard().then(next => card.replaceWith(next));
+        const members = await fetchList('/orgs/' + _orgId + '/members');
+        const invitations = _isOwner ? await fetchList('/orgs/' + _orgId + '/invitations') : [];
+        const myId = _meData?.user?.id;
+        members.forEach(m => {
+            const action = _isOwner && m.user_id !== myId
+                ? h('button', { class: 'btn btn-ghost btn-sm', text: 'Retirer', onclick: async () => {
+                    if (!confirm('Retirer ' + m.full_name + ' de l\'équipe ? Cette personne n\'aura plus accès à ce projet.')) return;
+                    try { await sendJson('DELETE', '/orgs/' + _orgId + '/members/' + m.user_id); refresh(); } catch (e) { say(msg, e.message); }
+                } })
+                : h('span', { style: 'font-size:12px;color:var(--text-muted);', text: m.user_id === myId ? 'Vous' : '' });
+            card.appendChild(h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:8px 0;border-top:1px solid var(--border);flex-wrap:wrap;' }, [
+                h('div', { style: 'min-width:0;' }, [
+                    h('div', { style: 'font-weight:600;font-size:14px;', text: m.full_name }),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);overflow-wrap:anywhere;', text: m.email + ' · ' + (ROLE_NAMES[m.role] || m.role) }),
+                ]),
+                action,
+            ]));
+        });
+        invitations.forEach(inv => {
+            card.appendChild(h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:8px 0;border-top:1px dashed var(--border);flex-wrap:wrap;' }, [
+                h('div', { style: 'min-width:0;font-size:13px;color:var(--text-muted);overflow-wrap:anywhere;', text: inv.email + ' · ' + (ROLE_NAMES[inv.role] || inv.role) + ' · invitation envoyée' }),
+                h('div', { style: 'display:flex;gap:0.5rem;' }, [
+                    h('button', { class: 'btn btn-ghost btn-sm', text: 'Renvoyer', onclick: async () => {
+                        try { await sendJson('POST', '/orgs/' + _orgId + '/invitations', { email: inv.email, role: inv.role }); say(msg, 'Invitation renvoyée à ' + inv.email + '.', true); } catch (e) { say(msg, e.message); }
+                    } }),
+                    h('button', { class: 'btn btn-ghost btn-sm', text: 'Annuler', onclick: async () => {
+                        try { await sendJson('DELETE', '/orgs/' + _orgId + '/invitations/' + inv.id); refresh(); } catch (e) { say(msg, e.message); }
+                    } }),
+                ]),
+            ]));
+        });
+        if (_isOwner) {
+            const email = textInput({ type: 'email', placeholder: 'collegue@entreprise.com', autocomplete: 'off' });
+            const role = h('select', { class: 'form-input', style: 'max-width:360px;' }, [
+                h('option', { value: 'CLIENT_MEMBER', text: 'Membre : consulte l\'espace' }),
+                h('option', { value: 'CLIENT_OWNER', text: 'Responsable : peut acheter et tout gérer' }),
+            ]);
+            card.append(
+                h('h4', { style: 'font-size:13px;margin:1.25rem 0 0.75rem;', text: 'Inviter un membre' }),
+                field('E-mail', email), field('Rôle', role),
+                h('button', { class: 'btn btn-primary btn-sm', text: 'Envoyer l\'invitation', onclick: async () => {
+                    if (!email.value.trim()) { say(msg, 'Indiquez l\'e-mail de la personne à inviter.'); return; }
+                    try {
+                        await sendJson('POST', '/orgs/' + _orgId + '/invitations', { email: email.value.trim(), role: role.value });
+                        say(msg, 'Invitation envoyée : la personne reçoit un lien valable 7 jours.', true);
+                        setTimeout(refresh, 1500);
+                    } catch (e) { say(msg, e.message); }
+                } }),
+            );
+        } else {
+            card.appendChild(h('p', { style: 'font-size:13px;color:var(--text-muted);margin-top:1rem;', text: 'Seul un responsable du projet peut inviter ou retirer des membres.' }));
+        }
+        card.appendChild(msg);
+        return card;
+    }
+
+    function projectsCard() {
+        return h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('h3', { style: 'margin-bottom:0.25rem;', text: 'Mes projets' }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Chaque projet a son propre diagnostic, son plan d\'action, ses offres et ses paiements.' }),
+            ...(_memberships.map(m => h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:8px 0;border-top:1px solid var(--border);' }, [
+                h('div', { style: 'min-width:0;' }, [
+                    h('div', { style: 'font-weight:600;font-size:14px;overflow-wrap:anywhere;', text: m.organization_name }),
+                    h('div', { style: 'font-size:12px;color:var(--text-muted);', text: ROLE_NAMES[m.role] || m.role }),
+                ]),
+                m.organization_id === _orgId
+                    ? h('span', { class: 'badge badge-success', text: 'Affiché' })
+                    : h('button', { class: 'btn btn-outline btn-sm', text: 'Ouvrir', onclick: () => openProject(m.organization_id) }),
+            ]))),
+            h('button', { class: 'btn btn-primary btn-sm', style: 'margin-top:1rem;', text: '+ Nouveau projet (nouveau diagnostic)', onclick: startNewProject }),
+        ]);
+    }
+
+    async function renderAccount() {
+        const root = document.getElementById('accountRoot');
+        if (!root || !_meData?.user) return;
+        root.textContent = '';
+        root.append(profileCard(), emailCard(), passwordCard());
+        if (_orgId) root.appendChild(await teamCard());
+        root.appendChild(projectsCard());
+    }
+
+    // ── Closer 3.0 : apporteur d'affaires (calculs faits par le serveur) ──
+    let _closerSpace = null;
+    const PAYOUT_LABELS = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement bancaire' };
+    const CLOSER_TERMS = [
+        '20 % du montant HT de chaque paiement des clients que vous apportez, quelle que soit l\'offre.',
+        'Pendant les 12 premiers mois de chaque client (renouvellements compris).',
+        'Le 1er de chaque mois, vous recevez le relevé du mois écoulé ; nous vous versons le montant dans les jours qui suivent.',
+        'Un client est rattaché à vous s\'il crée son espace avec votre lien ou votre code. Pas d\'auto-parrainage.',
+    ];
+
+    async function loadCloser() {
+        _closerSpace = null;
+        try {
+            const res = await fetch(D360_API_BASE + '/me/closer', { credentials: 'include' });
+            if (res.ok) _closerSpace = await res.json();
+        } catch (_) {}
+    }
+
+    function closerMoney(items) {
+        return items && items.length ? items.map(item => formatPrice({ amount: item.amount ?? item.total_amount, currency: item.currency }, item.currency)).join(' + ') : '0 FCFA';
+    }
+
+    function payoutFields(method, account) {
+        const select = h('select', { class: 'form-input', id: 'closerPayoutMethod', style: 'max-width:260px;' },
+            Object.entries(PAYOUT_LABELS).map(([value, label]) => {
+                const option = h('option', { value, text: label });
+                if (value === method) option.selected = true;
+                return option;
+            }));
+        const input = h('input', { class: 'form-input', id: 'closerPayoutAccount', type: 'text', maxlength: '64', placeholder: '+22997000000 ou IBAN', style: 'max-width:260px;' });
+        input.value = account || '';
+        return h('div', { style: 'display:grid;gap:0.75rem;margin:1rem 0;' }, [
+            h('label', { class: 'form-label', for: 'closerPayoutMethod', text: 'Recevoir mes commissions par' }), select,
+            h('label', { class: 'form-label', for: 'closerPayoutAccount', text: 'Numéro mobile money ou coordonnées bancaires' }), input,
+        ]);
+    }
+
+    function readPayout() {
+        return {
+            payout_method: document.getElementById('closerPayoutMethod').value,
+            payout_account: document.getElementById('closerPayoutAccount').value.trim(),
+        };
+    }
+
+    async function submitCloser(method, body, errorEl) {
+        errorEl.textContent = '';
+        if ((body.payout_account || '').length < 6) { errorEl.textContent = 'Indiquez le numéro ou le compte où recevoir vos commissions.'; return; }
+        showD360Loading();
+        try {
+            _closerSpace = await sendJson(method, '/me/closer', body);
+            renderCloser();
+        } catch (e) {
+            errorEl.textContent = e.message || 'Une erreur est survenue. Réessayez.';
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    function closerStat(label, value) {
+        return h('div', { class: 'card', style: 'text-align:center;min-width:0;padding:1rem;' }, [
+            h('div', { class: 'label', style: 'margin-bottom:0.5rem;', text: label }),
+            h('div', { style: 'font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--accent);overflow-wrap:anywhere;', text: value }),
+        ]);
+    }
+
+    function closerTable(headers, rows) {
+        return h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+            h('table', { style: 'width:100%;font-size:13px;border-collapse:collapse;' }, [
+                h('thead', {}, h('tr', {}, headers.map(label => h('th', { style: 'text-align:left;padding:8px;color:var(--text-muted);', text: label })))),
+                h('tbody', {}, rows.map(cells => h('tr', { style: 'border-top:1px solid var(--border);' }, cells.map(value => h('td', { style: 'padding:8px;', text: value }))))),
+            ]),
+        ]);
+    }
+
+    function renderCloser() {
+        const root = document.getElementById('closerRoot');
+        if (!root) return;
+        root.textContent = '';
+        const space = _closerSpace;
+        const terms = h('ul', { style: 'margin:0.75rem 0 0 1.1rem;padding:0;font-size:14px;color:var(--text-secondary);line-height:1.7;' }, CLOSER_TERMS.map(text => h('li', { text })));
+        if (!space) {
+            root.appendChild(h('p', { style: 'color:var(--text-muted);', text: 'Programme momentanément indisponible. Réessayez plus tard.' }));
+            return;
+        }
+        if (!space.closer) {
+            const card = h('div', { class: 'card' }, [h('h3', { text: 'Devenez apporteur d\'affaires BENILAB' }), terms]);
+            if (!space.eligible) {
+                card.appendChild(h('div', { class: 'alert alert-accent', style: 'margin-top:1.25rem;', text: 'Le programme Closer 3.0 est réservé aux clients qui ont déjà payé une offre Digital360. Il s\'ouvrira ici dès votre premier paiement.' }));
+                root.appendChild(card);
+                return;
+            }
+            const error = h('div', { style: 'color:var(--error);font-size:13px;min-height:18px;' });
+            const accept = h('input', { type: 'checkbox', id: 'closerAccept' });
+            card.appendChild(payoutFields('MTN_MOMO', ''));
+            card.appendChild(h('label', { style: 'display:flex;gap:0.5rem;align-items:flex-start;font-size:13px;margin-bottom:1rem;', for: 'closerAccept' }, [accept, h('span', { text: 'J\'accepte les conditions du programme Closer 3.0 ci-dessus.' })]));
+            card.appendChild(error);
+            card.appendChild(h('button', { class: 'btn btn-primary', text: 'Devenir Closer 3.0', onclick: () => {
+                if (!accept.checked) { error.textContent = 'Cochez la case pour accepter les conditions.'; return; }
+                submitCloser('POST', { ...readPayout(), accept_terms: true }, error);
+            } }));
+            root.appendChild(card);
+            return;
+        }
+
+        const closer = space.closer;
+        if (closer.status === 'SUSPENDED') {
+            root.appendChild(h('div', { class: 'alert alert-error', style: 'margin-bottom:1.5rem;', text: 'Votre compte Closer est suspendu : votre code n\'est plus accepté et vous ne gagnez plus de commission. Contactez l\'équipe BENILAB.' }));
+        }
+        const copied = h('span', { style: 'font-size:12px;color:var(--accent);margin-left:0.5rem;' });
+        const shareText = 'Je vous recommande Digital360 de BENILAB pour développer votre présence en ligne. Faites votre diagnostic gratuit : ' + closer.referral_link;
+        root.appendChild(h('div', { class: 'card', style: 'margin-bottom:1.5rem;' }, [
+            h('div', { class: 'label', style: 'margin-bottom:0.5rem;', text: 'Votre lien de parrainage' }),
+            h('div', { style: 'font-family:monospace;font-size:14px;word-break:break-all;margin-bottom:0.5rem;', text: closer.referral_link }),
+            h('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;' }, ['Ou votre code : ', h('strong', { text: closer.code })]),
+            h('div', { style: 'display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;' }, [
+                h('button', { class: 'btn btn-primary btn-sm', text: 'Copier le lien', onclick: async () => {
+                    try { await navigator.clipboard.writeText(closer.referral_link); copied.textContent = 'Lien copié'; } catch (_) { copied.textContent = 'Copiez le lien ci-dessus'; }
+                } }),
+                h('a', { class: 'btn btn-outline btn-sm', href: 'https://wa.me/?text=' + encodeURIComponent(shareText), target: '_blank', rel: 'noopener', text: 'Partager sur WhatsApp' }),
+                copied,
+            ]),
+        ]));
+
+        const paid = space.statements.filter(s => s.status === 'PAID');
+        const due = space.statements.filter(s => s.status === 'DUE');
+        root.appendChild(h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:0.75rem;margin-bottom:1.5rem;' }, [
+            closerStat('Clients apportés', String(space.referrals.length)),
+            closerStat('Gagné ce mois-ci', closerMoney(space.pending)),
+            closerStat('À recevoir', closerMoney(due)),
+            closerStat('Déjà reçu', closerMoney(paid)),
+        ]));
+
+        root.appendChild(sectionTitle('Mes clients apportés'));
+        root.appendChild(space.referrals.length
+            ? closerTable(['Client', 'Inscrit le', 'Commissions'], space.referrals.map(r => [
+                r.organization_name, new Date(r.joined_at).toLocaleDateString('fr-FR'), formatPrice({ amount: r.commissions_total, currency: 'XOF' }, 'XOF')]))
+            : h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Aucun client pour le moment : partagez votre lien pour commencer.' }));
+
+        root.appendChild(sectionTitle('Mes relevés mensuels'));
+        root.appendChild(space.statements.length
+            ? closerTable(['Mois', 'Paiements', 'Montant', 'État'], space.statements.map(s => [
+                new Date(s.period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+                String(s.commission_count),
+                formatPrice({ amount: s.total_amount, currency: s.currency }, s.currency),
+                s.status === 'PAID' ? 'Versé le ' + new Date(s.paid_on + 'T12:00:00').toLocaleDateString('fr-FR') + (s.payout_reference ? ' (réf. ' + s.payout_reference + ')' : '') : 'À verser',
+            ]))
+            : h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Votre premier relevé arrivera le 1er du mois qui suit vos premières commissions.' }));
+
+        root.appendChild(sectionTitle('Compte de versement'));
+        const error = h('div', { style: 'color:var(--error);font-size:13px;min-height:18px;' });
+        root.appendChild(h('div', { class: 'card' }, [
+            payoutFields(closer.payout_method, closer.payout_account),
+            error,
+            h('button', { class: 'btn btn-outline btn-sm', text: 'Enregistrer', onclick: () => submitCloser('PATCH', readPayout(), error) }),
+        ]));
+        root.appendChild(sectionTitle('Conditions du programme'));
+        root.appendChild(h('div', { class: 'card' }, [terms]));
+    }
+
+    // ── Paiement en ligne (Cartflox) ──
+    async function startOnlinePayment(productCode) {
+        const code = productCode || _pendingPurchase?.product_code;
+        if (!code || !_orgId) return;
+        const modalOpen = document.getElementById('purchaseModal')?.classList.contains('open');
+        const errorEl = document.getElementById('purchaseError');
+        if (errorEl) errorEl.textContent = '';
+        showD360Loading();
+        try {
+            const checkout = await sendJson('POST', '/orgs/' + _orgId + '/checkouts', { product_code: code });
+            // Page de paiement Cartflox renvoyée par notre API ; jamais autre chose qu'une adresse https
+            if (!/^https:\/\//.test(checkout?.checkout_url || '')) throw new Error('Page de paiement indisponible. Réessayez.');
+            window.location.href = checkout.checkout_url;
+        } catch (e) {
+            hideD360Loading();
+            const message = e.message || 'Le paiement en ligne est indisponible. Réessayez dans un instant.';
+            if (modalOpen && errorEl) errorEl.textContent = message;
+            else showPaymentBanner('error', message);
+        }
+    }
+
+    function showPaymentBanner(kind, text, action) {
+        document.getElementById('paymentBanner')?.remove();
+        const content = document.querySelector('.dash-content');
+        if (!content) return;
+        content.prepend(h('div', { id: 'paymentBanner', class: 'alert alert-' + kind,
+            style: 'margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;' },
+            [h('span', { text }), action || null]));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function refreshAfterPayment() {
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/entitlements', { credentials: 'include' });
+            if (res.ok) entitlementsData = await res.json();
+        } catch (_) {}
+        try {
+            const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/action-plan', { credentials: 'include' });
+            if (res.ok) actionPlanData = await res.json();
+        } catch (_) {}
+        await reloadPurchaseRequests();
+        await loadProject();
+        await loadBilling();
+        renderDashboard();
+        renderSubscriptionPage();
+        Object.keys(SERVICE_PAGES).forEach(renderServicePage);
+    }
+
+    // Retour de Cartflox sur dashboard.html?paiement={id} : le serveur vérifie le paiement
+    // auprès de Cartflox et active l'offre ; on rappelle quelques fois si l'opérateur tarde
+    async function handlePaymentReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const checkoutId = params.get('paiement');
+        if (!checkoutId || !_orgId) return;
+        const cancelled = params.has('annule');
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+        showPaymentBanner('accent', 'Vérification de votre paiement…');
+        const retry = productCode => h('button', { class: 'btn btn-sm btn-primary', text: 'Réessayer le paiement', onclick: () => startOnlinePayment(productCode) });
+        for (let attempt = 0; attempt < 12; attempt++) {
+            let checkout = null;
+            try {
+                const res = await fetch(D360_API_BASE + '/orgs/' + _orgId + '/checkouts/' + encodeURIComponent(checkoutId), { credentials: 'include' });
+                if (res.status === 404) { showPaymentBanner('error', 'Paiement introuvable.'); return; }
+                if (res.ok) checkout = await res.json();
+            } catch (_) {}
+            if (checkout?.status === 'PAID') {
+                showPaymentBanner('success', 'Paiement confirmé : votre offre ' + checkout.product_name + ' est active. Reçu n° '
+                    + checkout.receipt_number + ', envoyé aussi par e-mail.');
+                await refreshAfterPayment();
+                return;
+            }
+            if (checkout && checkout.status !== 'PENDING') {
+                showPaymentBanner('error', 'Le paiement de l\'offre ' + checkout.product_name + ' n\'a pas abouti : aucun montant n\'a été encaissé.', retry(checkout.product_code));
+                return;
+            }
+            if (checkout && cancelled) {
+                showPaymentBanner('accent', 'Paiement annulé. Vous pouvez le reprendre quand vous voulez.', retry(checkout.product_code));
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+        showPaymentBanner('accent', 'Votre paiement est en cours de confirmation par l\'opérateur. Votre offre s\'activera automatiquement et vous recevrez votre reçu par e-mail.');
+    }
+
+    // ── Logout ──
+    async function handleLogout() {
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: csrfHeaders(),
+            });
+            if (res.status === 204) {
+                window.location.href = 'index.html';
+            } else {
+                alert('Déconnexion impossible (HTTP ' + res.status + '). Veuillez rafraîchir la page.');
+            }
+        } catch (e) {
+            // Si CSRF_FAILED, rafraîchir le jeton et réessayer une fois
+            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
+                try {
+                    await getCsrf();
+                    const res2 = await fetch(D360_API_BASE + '/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: csrfHeaders(),
+                    });
+                    if (res2.status === 204) {
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('Déconnexion impossible (HTTP ' + res2.status + '). Veuillez rafraîchir la page.');
+                    }
+                } catch (_) {
+                    alert('Erreur lors de la déconnexion : ' + e.message);
+                } finally {
+                    hideD360Loading();
+                }
+                return;
+            }
+            alert('Erreur lors de la déconnexion : ' + e.message);
+        } finally {
+            hideD360Loading();
+        }
+    }
+    </script>
+    <!-- ═══ Purchase request modal ═══ -->
+    <div class="modal-overlay" id="purchaseModal">
+        <div class="modal-box" style="max-width:480px;">
+            <button class="modal-close" onclick="closePurchaseModal()">✕</button>
+            <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.25rem;">Je veux démarrer</h2>
+            <p id="purchaseProductName" style="color:var(--text-muted);font-size:14px;margin-bottom:1.5rem;"></p>
+            <div id="purchaseError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
+            <div id="purchaseOnline" style="display:none;margin-bottom:1.5rem;">
+                <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="startOnlinePayment()">Payer en ligne maintenant</button>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;text-align:center;">Mobile money ou carte, paiement sécurisé par Cartflox. Votre offre s'active dès la confirmation du paiement.</p>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:1.25rem;text-align:center;">— ou laissez-nous vos coordonnées, un conseiller vous rappelle —</p>
+            </div>
+            <div id="purchaseForm">
+                <div class="form-group">
+                    <label class="form-label" for="purchaseChannel">Comment souhaitez-vous être contacté ?</label>
+                    <select id="purchaseChannel" class="form-input" style="max-width:300px;" onchange="onPurchaseChannelChange()">
+                        <option value="WHATSAPP">WhatsApp</option>
+                        <option value="PHONE">Téléphone</option>
+                        <option value="EMAIL">Email</option>
+                    </select>
+                </div>
+                <div class="form-group" id="purchaseNumberGroup" style="margin-top:1rem;">
+                    <label class="form-label" for="purchaseNumber" id="purchaseNumberLabel">Numéro WhatsApp</label>
+                    <input type="tel" id="purchaseNumber" class="form-input" style="max-width:300px;" placeholder="+2250700000000" autocomplete="tel">
+                    <div id="purchaseNumberHelp" style="font-size:12px;color:var(--text-muted);margin-top:4px;">Avec l'indicatif du pays : ex. +229 01 90 49 31 32 ou +33 6 12 34 56 78</div>
+                    <div id="purchaseNumberError" style="color:var(--error);font-size:12px;margin-top:4px;"></div>
+                </div>
+                <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label" for="purchaseMsg">Message (facultatif, 1000 caractères max)</label>
+                    <textarea id="purchaseMsg" class="form-input" rows="3" maxlength="1000" placeholder="Ex: rappelez-moi le matin" style="resize:vertical;"></textarea>
+                </div>
+                <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+                    <button class="btn btn-primary" onclick="submitPurchaseRequest()">Envoyer ma demande</button>
+                    <button class="btn btn-ghost" onclick="closePurchaseModal()">Annuler</button>
+                </div>
+            </div>
+            <div id="purchaseDone" style="display:none;">
+                <div class="alert alert-success" id="purchaseDoneText" style="margin-bottom:1rem;"></div>
+                <button class="btn btn-primary" onclick="closePurchaseModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

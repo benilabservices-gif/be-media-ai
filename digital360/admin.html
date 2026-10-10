@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — BENILAB Digital360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .admin-page{display:none}.admin-page.active{display:block}
+        .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+        .kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+        .kpi-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--accent)}
+        .kpi-label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:4px}
+        .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+        .kpi-change{font-size:11px;margin-top:4px}
+        .kpi-change.up{color:var(--success)}.kpi-change.down{color:var(--error)}
+        .admin-table{width:100%;border-collapse:collapse}
+        .admin-table th,.admin-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+        .admin-table th{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);font-weight:600;background:var(--bg-tertiary)}
+        .admin-table td{color:var(--text-secondary)}
+        .admin-table tr:hover td{background:rgba(127,181,168,0.02)}
+        .admin-table .client-name{font-weight:600;color:var(--text-primary)}
+        .filter-bar{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center}
+        .filter-input{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none;min-width:180px}
+        .filter-input:focus{border-color:var(--accent)}
+        .filter-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a95a0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+        .admin-sidebar{width:260px;background:var(--bg-secondary);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:200;transition:transform 0.4s cubic-bezier(0.16,1,0.3,1)}
+        .admin-sidebar-header{padding:20px 16px;border-bottom:1px solid var(--border)}
+        .admin-sidebar-logo{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+        .admin-sidebar-logo em{font-style:italic;color:var(--accent);font-family:'Playfair Display',serif}
+        .admin-sidebar-logo span{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:2px}
+        .admin-sidebar-nav{padding:12px}
+        .admin-nav-section{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);padding:12px 8px 6px}
+        .admin-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-md);font-size:13px;color:var(--text-secondary);transition:all 0.3s;cursor:pointer}
+        .admin-nav-item:hover{background:var(--bg-tertiary);color:var(--text-primary)}
+        .admin-nav-item.active{background:rgba(127,181,168,0.1);color:var(--accent)}
+        .admin-nav-item .nav-icon{font-size:15px;width:18px;text-align:center}
+        .admin-main{flex:1;margin-left:260px;min-height:100vh;background:var(--bg-primary)}
+        .admin-topbar{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 2rem;display:flex;justify-content:space-between;align-items:center}
+        .admin-content{padding:2rem}
+        .dash-hamburger{display:none;background:none;border:1px solid var(--border);color:var(--text-primary);width:40px;height:40px;border-radius:var(--radius-sm);font-size:18px}
+        .reveal{opacity:0;transform:translateY(40px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+        .reveal.active{opacity:1;transform:translateY(0)}
+        .delay-1{transition-delay:0.1s}.delay-2{transition-delay:0.2s}
+        .page-header{margin-bottom:2rem}.page-header h1{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400;margin-bottom:0.25rem}.page-header p{color:var(--text-muted);font-size:14px}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-primary)}::-webkit-scrollbar-thumb{background:rgba(127,181,168,0.2);border-radius:3px}
+        @media(max-width:1024px){.admin-sidebar{transform:translateX(-100%)}.admin-sidebar.open{transform:translateX(0)}.admin-main{margin-left:0}.dash-hamburger{display:flex;align-items:center;justify-content:center}}
+        @media(max-width:768px){.admin-content{padding:1.5rem}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:640px){.admin-topbar{padding:10px 1rem;gap:0.5rem}#adminUserName{display:none}.admin-topbar .btn{padding:6px 10px;font-size:12px}.admin-content{padding:1rem}.kpi-grid{grid-template-columns:1fr}}
+        .loading-row{text-align:center;padding:2rem;color:var(--text-muted);font-size:13px}
+        .error-row{text-align:center;padding:2rem;color:var(--error);font-size:13px}
+        .empty-row{text-align:center;padding:2rem;color:var(--text-muted);font-size:13px}
+        /* Prospects : tableau compact sur grand écran, une carte par prospect sur mobile */
+        .prospects-table td{vertical-align:middle}
+        .prospects-table td.cell-email{word-break:break-all;min-width:160px}
+        .prospects-table td.cell-actions{white-space:nowrap}
+        .prospects-table td.cell-actions .btn{display:block;margin-top:2px}
+        @media(max-width:900px){
+            .prospects-card{background:none;border:none;padding:0;overflow:visible!important}
+            .prospects-table thead{display:none}
+            .prospects-table,.prospects-table tbody{display:block}
+            .prospects-table tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:12px}
+            .prospects-table td{display:block;padding:0;border:none;font-size:13px;min-width:0}
+            .prospects-table td::before{content:attr(data-label);display:block;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)}
+            .prospects-table td.client-name{grid-column:1/-1;font-size:15px;padding-bottom:4px}
+            .prospects-table td.client-name::before{content:none}
+            .prospects-table td.cell-email,.prospects-table td.cell-actions{grid-column:1/-1;min-width:0}
+            .prospects-table td.cell-actions{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+            .prospects-table td.cell-actions::before{content:none}
+            .prospects-table td.cell-actions .btn{display:inline-flex;margin-top:0}
+            .prospects-table td.cell-empty{display:none}
+        }
+        .org-detail{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1.5rem}
+        @media(max-width:768px){.org-detail{grid-template-columns:1fr}}
+        .staff-form{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem}
+        .staff-form select{min-width:140px}
+        .audit-actions{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+        .btn-revoke{background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;cursor:pointer;transition:var(--transition)}
+        .btn-revoke:hover{border-color:var(--error);color:var(--error)}
+        .btn-revoke:disabled{opacity:0.3;cursor:not-allowed}
+        .kpi-section-title{font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin:2rem 0 0.75rem}
+        .btn-loadmore{margin-top:1rem;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px 20px;border-radius:var(--radius-md);font-size:12px;cursor:pointer;transition:var(--transition)}
+        .btn-loadmore:hover{border-color:var(--accent);color:var(--accent)}
+    </style>
+</head>
+<body>
+    <div id="d360-loading-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,10,15,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+        <div style="text-align:center">
+            <div style="width:36px;height:36px;border:3px solid rgba(127,181,168,0.2);border-top-color:#7fb5a8;border-radius:50%;animation:d360spin .8s linear infinite;margin:0 auto 1rem;"></div>
+            <div style="color:#c8c4d0;font-size:14px;font-weight:500;">Connexion au serveur…</div>
+        </div>
+    </div>
+    <style>@keyframes d360spin{to{transform:rotate(360deg)}}</style>
+    <div class="noise"></div>
+    <div style="display:flex;min-height:100vh;">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-sidebar-header">
+                <div class="admin-sidebar-logo">BENILAB <em>Digital360</em><span>Administration</span></div>
+            </div>
+            <nav class="admin-sidebar-nav">
+                <div class="admin-nav-section">Vue générale</div>
+                <div class="admin-nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-icon">&#9776;</span> Indicateurs</div>
+                <div class="admin-nav-section">Gestion</div>
+                <div class="admin-nav-item" data-page="entreprises" onclick="switchPage('entreprises')"><span class="nav-icon">&#128187;</span> Entreprises</div>
+                <div class="admin-nav-item" data-page="prospects" onclick="switchPage('prospects')"><span class="nav-icon">&#128203;</span> Prospects</div>
+                <div class="admin-nav-item" data-page="demandes" id="navItemDemandes" style="display:none;" onclick="switchPage('demandes')"><span class="nav-icon">&#128200;</span> Demandes</div>
+                <div class="admin-nav-item" data-page="projets" id="navItemProjets" style="display:none;" onclick="switchPage('projets')"><span class="nav-icon">&#127760;</span> Projets de site</div>
+                <div class="admin-nav-item" data-page="abonnements" id="navItemAbonnements" style="display:none;" onclick="switchPage('abonnements')"><span class="nav-icon">&#128257;</span> Abonnements</div>
+                <div class="admin-nav-item" data-page="closers" id="navItemClosers" style="display:none;" onclick="switchPage('closers')"><span class="nav-icon">&#129309;</span> Closers 3.0</div>
+                <div class="admin-nav-section" id="navSectionTeam" style="display:none;">Organisation</div>
+                <div class="admin-nav-item" data-page="equipe" id="navItemEquipe" style="display:none;" onclick="switchPage('equipe')"><span class="nav-icon">&#128104;&#65039;</span> Équipe</div>
+                <div class="admin-nav-item" data-page="audit" id="navItemAudit" style="display:none;" onclick="switchPage('audit')"><span class="nav-icon">&#128196;</span> Journal d'audit</div>
+                <div style="padding:12px;border-top:1px solid var(--border);margin-top:1rem;">
+                    <a href="dashboard.html" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">← Espace Client</a>
+                    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="handleLogoutAdmin()">Déconnexion</button>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="dash-hamburger" onclick="document.getElementById('adminSidebar').classList.toggle('open')">&#9776;</button>
+                    <div style="font-size:1.1rem;font-weight:600;" id="adminTitle">Indicateurs</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <span style="font-size:13px;color:var(--text-muted);" id="adminUserName">—</span>
+                    <a href="index.html" class="btn btn-ghost btn-sm">← Accueil</a>
+                    <button class="btn btn-ghost btn-sm" onclick="handleLogoutAdmin()">Déconnexion</button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- INDIQUEURS -->
+                <div class="admin-page active" id="admin-dashboard">
+                    <div class="page-header"><h1>Indicateurs</h1><p>Vue d'ensemble de l'activité BENILAB.</p></div>
+                    <div id="dashboardLoading" class="loading-row">Chargement des indicateurs…</div>
+                    <div id="dashboardError" class="error-row" style="display:none;"></div>
+                    <div id="dashboardContent" style="display:none;">
+                        <h2 class="kpi-section-title">Ventes</h2>
+                        <div class="kpi-grid reveal">
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesNew" style="color:var(--warning);">—</div><div class="kpi-label">Demandes à traiter</div><div class="kpi-sub">Nouvelles, personne n'a encore rappelé</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesContacted">—</div><div class="kpi-label">En discussion</div><div class="kpi-sub">Client contacté, vente pas encore conclue</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesWon" style="color:var(--success);">—</div><div class="kpi-label">Ventes gagnées</div><div class="kpi-sub" id="kpiSalesWonSub"></div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiSalesWinRate">—</div><div class="kpi-label">Taux de transformation</div><div class="kpi-sub">Ventes gagnées / demandes closes</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiRevenue30" style="font-size:1.4rem;">—</div><div class="kpi-label">Chiffre d'affaires, 30 jours</div><div class="kpi-sub" id="kpiRevenueTotal"></div></div>
+                            <div class="kpi-card" style="cursor:pointer;" onclick="switchPage('abonnements')"><div class="kpi-value" id="kpiRenewalsDue" style="color:var(--warning);">—</div><div class="kpi-label">Abonnements à renouveler</div><div class="kpi-sub">Échéance proche ou dépassée</div></div>
+                        </div>
+                        <h2 class="kpi-section-title">Acquisition</h2>
+                        <div class="kpi-grid reveal delay-1">
+                            <div class="kpi-card"><div class="kpi-value" id="kpiDiagnosticsNotClaimed" style="color:var(--warning);">—</div><div class="kpi-label">Prospects à relancer</div><div class="kpi-sub">Diagnostic terminé, pas de compte</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiDiagnosticsInProgress">—</div><div class="kpi-label">Diagnostics en cours</div><div class="kpi-sub">Commencés, pas encore terminés</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiDiag7d">—</div><div class="kpi-label">Diagnostics terminés, 7 jours</div><div class="kpi-sub" id="kpiDiag24h"></div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiConversionRate">—</div><div class="kpi-label">Diagnostic → compte</div><div class="kpi-sub" id="kpiDiagnosticsClaimed"></div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiAvgScore">—</div><div class="kpi-label">Digital Score moyen</div><div class="kpi-sub">Sur 100</div></div>
+                        </div>
+                        <h2 class="kpi-section-title">Base clients</h2>
+                        <div class="kpi-grid reveal delay-1">
+                            <div class="kpi-card"><div class="kpi-value" id="kpiOrgsActive" style="color:var(--success);">—</div><div class="kpi-label">Clients actifs</div><div class="kpi-sub">Au moins une offre achetée</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiOrgsLead">—</div><div class="kpi-label">Entreprises prospects</div><div class="kpi-sub">Inscrites, pas encore clientes</div></div>
+                            <div class="kpi-card"><div class="kpi-value" id="kpiUsersTotal">—</div><div class="kpi-label">Comptes</div><div class="kpi-sub" id="kpiUsersLast7"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABONNEMENTS -->
+                <div class="admin-page" id="admin-abonnements">
+                    <div class="page-header"><h1>Abonnements</h1><p>Abonnements payés hors ligne : échéances et renouvellements. Le client et l'équipe sont prévenus 5 jours avant l'échéance.</p></div>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="subscriptionStatusFilter" onchange="loadSubscriptions()">
+                            <option value="">Tous</option>
+                            <option value="EXPIRING">Échéance dans moins de 5 jours</option>
+                            <option value="EXPIRED">Expirés</option>
+                            <option value="ACTIVE">Actifs</option>
+                        </select>
+                    </div>
+                    <div id="subscriptionLoading" class="loading-row" style="display:none;">Chargement des abonnements…</div>
+                    <div id="subscriptionError" class="error-row" style="display:none;"></div>
+                    <div id="subscriptionEmpty" class="empty-row" style="display:none;">Aucun abonnement.</div>
+                    <div id="subscriptionContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Entreprise</th><th>Offre</th><th>Échéance</th><th>Statut</th><th>Dernier paiement</th><th></th></tr></thead>
+                                <tbody id="subscriptionTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLOSERS 3.0 -->
+                <div class="admin-page" id="admin-closers">
+                    <div class="page-header"><h1>Closers 3.0</h1><p>Apporteurs d'affaires : 20 % des paiements de leurs clients pendant 12 mois. Le relevé du mois écoulé est créé le 1er de chaque mois ; versez puis marquez-le comme versé.</p></div>
+                    <div class="kpi-grid" style="margin-bottom:1.5rem;">
+                        <div class="kpi-card"><div class="kpi-value" id="kpiClosersDue" style="color:var(--warning);">—</div><div class="kpi-label">À verser</div><div class="kpi-sub">Relevés non versés</div></div>
+                        <div class="kpi-card"><div class="kpi-value" id="kpiClosersCount">—</div><div class="kpi-label">Closers</div><div class="kpi-sub" id="kpiClosersActive"></div></div>
+                    </div>
+                    <h3 style="margin:1.5rem 0 0.75rem;">Relevés</h3>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="statementStatusFilter" onchange="loadStatements()">
+                            <option value="DUE">À verser</option>
+                            <option value="PAID">Versés</option>
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                    <div id="statementLoading" class="loading-row" style="display:none;">Chargement des relevés…</div>
+                    <div id="statementError" class="error-row" style="display:none;"></div>
+                    <div id="statementEmpty" class="empty-row" style="display:none;">Aucun relevé.</div>
+                    <div id="statementContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Mois</th><th>Closer</th><th>Montant</th><th>Verser sur</th><th>État</th><th></th></tr></thead>
+                                <tbody id="statementTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <h3 style="margin:2rem 0 0.75rem;">Closers</h3>
+                    <div id="closerLoading" class="loading-row" style="display:none;">Chargement des closers…</div>
+                    <div id="closerError" class="error-row" style="display:none;"></div>
+                    <div id="closerEmpty" class="empty-row" style="display:none;">Aucun closer pour le moment.</div>
+                    <div id="closerContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Closer</th><th>Code</th><th>Clients</th><th>Gagné</th><th>À verser</th><th>Versé</th><th>Compte</th><th>Statut</th></tr></thead>
+                                <tbody id="closerTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROJETS -->
+                <div class="admin-page" id="admin-projets">
+                    <div class="page-header"><h1>Projets de site</h1><p>Réalisation des sites Digital Start, du brief à la mise en ligne.</p></div>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="projectStatusFilter" onchange="loadProjects()">
+                            <option value="">Toutes les étapes</option>
+                            <option value="BRIEF_PENDING">Brief à remplir (client)</option>
+                            <option value="IN_PRODUCTION" selected>À produire</option>
+                            <option value="CLIENT_REVIEW">En relecture (client)</option>
+                            <option value="REVISION">Corrections à faire</option>
+                            <option value="APPROVED">Validé, à mettre en ligne</option>
+                            <option value="LIVE">En ligne</option>
+                            <option value="CANCELLED">Annulé</option>
+                        </select>
+                    </div>
+                    <div id="projectLoading" class="loading-row" style="display:none;">Chargement des projets…</div>
+                    <div id="projectError" class="error-row" style="display:none;"></div>
+                    <div id="projectEmpty" class="empty-row" style="display:none;">Aucun projet à cette étape.</div>
+                    <div id="projectContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Créé le</th><th>Entreprise</th><th>Étape</th><th>Livraison promise</th><th></th></tr></thead>
+                                <tbody id="projectTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="projectLoadMore" style="display:none;" onclick="loadProjects(true)">Charger plus</button>
+                    </div>
+                    <div id="projectDetail" class="card" style="display:none;margin-top:1.5rem;"></div>
+                </div>
+
+                <!-- ENTREPRISES -->
+                <div class="admin-page" id="admin-entreprises">
+                    <div class="page-header"><h1>Entreprises</h1><p>Liste de toutes les organisations clientes.</p></div>
+                    <div class="filter-bar" id="orgFilters">
+                        <input type="text" class="filter-input" id="orgSearch" placeholder="Rechercher…" oninput="resetOrgPagination()">
+                        <select class="filter-input form-select filter-select" id="orgStatusFilter" onchange="resetOrgPagination()">
+                            <option value="">Tous les statuts</option>
+                            <option value="LEAD">Lead</option>
+                            <option value="ACTIVE">Actif</option>
+                            <option value="SUSPENDED">Suspendu</option>
+                            <option value="CHURNED">Churné</option>
+                        </select>
+                    </div>
+                    <div id="orgLoading" class="loading-row">Chargement des entreprises…</div>
+                    <div id="orgError" class="error-row" style="display:none;"></div>
+                    <div id="orgEmpty" class="empty-row" style="display:none;">Aucune entreprise trouvée.</div>
+                    <div id="orgContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Entreprise</th><th>Secteur</th><th>Ville</th><th>Statut</th><th>Date création</th><th></th></tr></thead>
+                                <tbody id="orgTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="orgLoadMore" style="display:none;" onclick="loadOrgs()">Charger plus</button>
+                    </div>
+                    <!-- Détail entreprise -->
+                    <div id="orgDetailPanel" style="display:none;margin-top:2rem;">
+                        <button class="btn btn-ghost btn-sm" onclick="closeOrgDetail()" style="margin-bottom:1rem;">← Retour à la liste</button>
+                        <div id="orgDetailLoading" class="loading-row">Chargement…</div>
+                        <div id="orgDetailError" class="error-row" style="display:none;"></div>
+                        <div id="orgDetailContent" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- PROSPECTS -->
+                <div class="admin-page" id="admin-prospects">
+                    <div class="page-header"><h1>Prospects</h1><p>Diagnostics complétés et candidats captés.</p></div>
+                    <div id="orphanBar" class="card" style="display:none;margin-bottom:1rem;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;"></div>
+                    <div id="diagLoading" class="loading-row">Chargement des prospects…</div>
+                    <div id="diagError" class="error-row" style="display:none;"></div>
+                    <div id="diagEmpty" class="empty-row" style="display:none;">Aucun prospect trouvé.</div>
+                    <div id="diagContent" style="display:none;">
+                        <div class="card prospects-card" style="overflow-x:auto;">
+                            <table class="admin-table prospects-table">
+                                <thead><tr><th>Entreprise</th><th>Secteur</th><th>Ville</th><th>Pays</th><th>Téléphone</th><th>Email</th><th>Score</th><th>Statut</th><th>Date</th><th>Fiche</th></tr></thead>
+                                <tbody id="diagTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="diagLoadMore" style="display:none;" onclick="loadDiagnostics()">Charger plus</button>
+                    </div>
+                </div>
+
+                <!-- EQUIPE -->
+                <div class="admin-page" id="admin-equipe">
+                    <div class="page-header"><h1>Équipe</h1><p>Gestion des membres et des rôles RBAC.</p></div>
+                    <div class="staff-form" id="staffForm">
+                        <input type="email" class="filter-input" id="staffEmail" placeholder="Email du membre" style="min-width:240px;">
+                        <select class="filter-input form-select filter-select" id="staffRole">
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="MANAGER">MANAGER</option>
+                            <option value="CONTENT_MANAGER">CONTENT_MANAGER</option>
+                            <option value="DEVELOPER">DEVELOPER</option>
+                            <option value="FINANCE">FINANCE</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="addStaffMember()">Ajouter</button>
+                    </div>
+                    <div id="staffLoading" class="loading-row">Chargement de l'équipe…</div>
+                    <div id="staffError" class="error-row" style="display:none;"></div>
+                    <div id="staffEmpty" class="empty-row" style="display:none;">Aucun membre dans l'équipe.</div>
+                    <div id="staffContent" style="display:none;">
+                        <div class="card">
+                            <div id="staffList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JOURNAL D'AUDIT -->
+                <div class="admin-page" id="admin-audit">
+                    <div class="page-header"><h1>Journal d'audit</h1><p>Historique des actions effectuées sur la plateforme.</p></div>
+                    <div class="audit-actions">
+                        <input type="text" class="filter-input" id="auditFilterAction" placeholder="Filtrer par action…">
+                        <input type="text" class="filter-input" id="auditFilterEntity" placeholder="Filtrer par entité…">
+                        <button class="btn btn-ghost btn-sm" onclick="loadAuditLogs()">Filtrer</button>
+                    </div>
+                    <div id="auditLoading" class="loading-row">Chargement du journal…</div>
+                    <div id="auditError" class="error-row" style="display:none;"></div>
+                    <div id="auditEmpty" class="empty-row" style="display:none;">Aucune entrée dans le journal.</div>
+                    <div id="auditContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Date</th><th>Acteur</th><th>Action</th><th>Entité</th><th>Ancienne valeur</th><th>Nouvelle valeur</th><th>IP</th></tr></thead>
+                                <tbody id="auditTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="auditLoadMore" style="display:none;" onclick="loadAuditLogs(true)">Charger plus</button>
+                    </div>
+                </div>
+
+                <!-- DEMANDES D'ACHAT -->
+                <div class="admin-page" id="admin-demandes">
+                    <div class="page-header"><h1>Demandes d'achat</h1><p>Suivi des « Je veux démarrer » des clients.</p></div>
+                    <div class="filter-bar">
+                        <select class="filter-input form-select filter-select" id="demandeStatusFilter" onchange="resetDemandePagination()">
+                            <option value="">Tous les statuts</option>
+                            <option value="NEW">Nouvelle</option>
+                            <option value="CONTACTED">Contactée</option>
+                            <option value="WON">Gagnée</option>
+                            <option value="LOST">Perdue</option>
+                        </select>
+                        <button class="btn btn-ghost btn-sm" onclick="loadPurchaseRequests()">Filtrer</button>
+                    </div>
+                    <div id="demandeLoading" class="loading-row">Chargement des demandes…</div>
+                    <div id="demandeError" class="error-row" style="display:none;"></div>
+                    <div id="demandeEmpty" class="empty-row" style="display:none;">Aucune demande trouvée.</div>
+                    <div id="demandeContent" style="display:none;">
+                        <div class="card" style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Date</th><th>Entreprise</th><th>Contact</th><th>Produit</th><th>Prix</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+                                <tbody id="demandeTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn-loadmore" id="demandeLoadMore" style="display:none;" onclick="loadPurchaseRequests(true)">Charger plus</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // ── Configuration ──
+    const D360_API_BASE = window.D360_API_BASE
+        || (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8000/api/v1' : '/api/v1');
+    let _csrfToken = '';
+
+    async function getCsrf() {
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/auth/csrf', { credentials: 'include' });
+            if (!res.ok) throw new Error('CSRF failed: ' + res.status);
+            const data = await res.json();
+            _csrfToken = data.csrf_token || '';
+        } catch (e) {
+            console.error('[D360] CSRF error:', e);
+        } finally { hideD360Loading(); }
+    }
+    function showD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'flex';
+    }
+    function hideD360Loading() {
+        const el = document.getElementById('d360-loading-overlay');
+        if (el) el.style.display = 'none';
+    }
+
+    function csrfHeaders() {
+        return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
+    }
+
+    async function apiFetch(path, options = {}) {
+        const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes((options.method || 'GET').toUpperCase());
+        if (isMutating && !_csrfToken) {
+            showD360Loading();
+            await getCsrf().catch(() => {});
+            hideD360Loading();
+        }
+        // Auto-stringify object bodies (avoids [object Object] in request payload)
+        if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+            options.body = JSON.stringify(options.body);
+        }
+        const bodyText = await fetch(D360_API_BASE + path, {
+            credentials: 'include',
+            ...options,
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders(), ...(options.headers || {}) },
+        }).then(async r => {
+            const text = await r.text();
+            if (!r.ok) {
+                let problem = null;
+                const ct = r.headers.get('content-type') || '';
+                if (text && ct.includes('application/problem+json')) {
+                    try { problem = JSON.parse(text); } catch (_) {}
+                }
+                const err = new Error(problem?.detail || 'HTTP ' + r.status);
+                err.status = r.status;
+                err.code = problem?.code;
+                err.detail = problem?.detail;
+                err.errors = problem?.errors;
+                throw err;
+            }
+            return text;
+        });
+        if (!bodyText) return null;
+        try { return JSON.parse(bodyText); } catch (_) { return bodyText; }
+    }
+
+    // ── Auth guard ──
+    async function checkAuth() {
+        let me = null;
+        try {
+            me = await apiFetch('/me');
+        } catch (e) {
+            if (e?.code === 'UNAUTHENTICATED' || e?.code === 'SESSION_EXPIRED' || e?.status === 401) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            throw e;
+        }
+        if (!me?.staff_roles || me.staff_roles.length === 0) {
+            window.location.href = 'dashboard.html';
+            return null;
+        }
+        return me;
+    }
+
+    // ── State ──
+    let _me = null;
+    let _myUserId = null;
+
+    // Org list state
+    let _orgCursor = null;
+    let _orgHasMore = false;
+    let _orgData = [];
+
+    // Diagnostics state
+    let _diagCursor = null;
+    let _diagHasMore = false;
+    let _diagData = [];
+
+    // Audit state
+    let _auditCursor = null;
+    let _auditHasMore = false;
+    let _auditData = [];
+
+    // Purchase requests state
+    let _demandeCursor = null;
+    let _demandeHasMore = false;
+
+    // ── Page navigation ──
+    const pageTitles = {
+        dashboard: 'Indicateurs',
+        entreprises: 'Entreprises',
+        prospects: 'Prospects',
+        equipe: 'Équipe',
+        audit: 'Journal d\'audit',
+        demandes: 'Demandes',
+        projets: 'Projets de site',
+        abonnements: 'Abonnements',
+        closers: 'Closers 3.0',
+    };
+
+    function switchPage(id) {
+        document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+        const pg = document.getElementById('admin-' + id);
+        if (pg) pg.classList.add('active');
+        document.querySelectorAll('.admin-nav-item').forEach(n => n.classList.remove('active'));
+        const ni = document.querySelector('.admin-nav-item[data-page="' + id + '"]');
+        if (ni) ni.classList.add('active');
+        const titleEl = document.getElementById('adminTitle');
+        if (titleEl) titleEl.textContent = pageTitles[id] || id;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('adminSidebar').classList.remove('open');
+        setTimeout(() => {
+            document.querySelectorAll('#admin-' + id + ' .reveal').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight * 0.9) el.classList.add('active');
+            });
+        }, 100);
+    }
+
+    // ── Helpers ──
+    function setStatus(loadingId, errorId, contentId, emptyId, isLoading, isError, isEmpty) {
+        document.getElementById(loadingId).style.display = isLoading ? '' : 'none';
+        const errEl = document.getElementById(errorId); errEl.style.display = isError ? '' : 'none';
+        if (errEl) errEl.textContent = '';
+        const contentEl = document.getElementById(contentId); if (contentEl) contentEl.style.display = isLoading || isError ? 'none' : '';
+        const emptyEl = document.getElementById(emptyId); if (emptyEl) emptyEl.style.display = isEmpty ? '' : 'none';
+    }
+
+    function formatDateTime(iso) {
+        if (!iso) return '—';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        } catch (_) { return iso; }
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+        catch (_) { return iso; }
+    }
+
+    function orgStatusLabel(status) {
+        const map = { LEAD: 'badge-muted', ACTIVE: 'badge-success', SUSPENDED: 'badge-warning', CHURNED: 'badge-error' };
+        return map[status] || 'badge-muted';
+    }
+
+    function orgStatusText(status) {
+        const map = { LEAD: 'Lead', ACTIVE: 'Actif', SUSPENDED: 'Suspendu', CHURNED: 'Churné' };
+        return map[status] || status || '—';
+    }
+
+    function diagStatusText(status) {
+        const map = { IN_PROGRESS: 'En cours', COMPLETED: 'Terminé', CLAIMED: 'Rattaché' };
+        return map[status] || status || '—';
+    }
+
+    // ── Dashboard (Indicateurs) ──
+    async function loadDashboard() {
+        setStatus('dashboardLoading', 'dashboardError', 'dashboardContent', null, true, false, false);
+        try {
+            const data = await apiFetch('/admin/dashboard');
+            const diag = data.diagnostics || {};
+            const orgs = data.organizations_by_status || {};
+            const users = data.users || {};
+
+            const sales = data.sales || {};
+            const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+            const percent = rate => rate != null ? (rate * 100).toFixed(1).replace('.', ',') + ' %' : '—';
+            // Une ligne par devise : on n'additionne jamais des FCFA et des euros
+            const revenue = (key) => (sales.revenue || [])
+                .filter(entry => entry[key] > 0)
+                .map(entry => formatPriceAdmin({ amount: entry[key], currency: entry.currency, period: 'NONE' }))
+                .join(' + ') || '0';
+
+            el('kpiSalesNew', sales.new ?? '—');
+            el('kpiSalesContacted', sales.contacted ?? '—');
+            el('kpiSalesWon', sales.won ?? '—');
+            el('kpiSalesWonSub', sales.won_last_30_days != null ? sales.won_last_30_days + ' sur les 30 derniers jours' : '');
+            el('kpiSalesWinRate', percent(sales.win_rate));
+            el('kpiRenewalsDue', sales.renewals_due ?? '—');
+            el('kpiRevenue30', revenue('last_30_days'));
+            el('kpiRevenueTotal', 'Depuis le début : ' + revenue('total'));
+
+            el('kpiDiagnosticsNotClaimed', diag.completed_not_claimed ?? '—');
+            el('kpiDiagnosticsInProgress', diag.in_progress ?? '—');
+            el('kpiDiag7d', diag.completed_last_7_days ?? '—');
+            el('kpiDiag24h', diag.completed_last_24h != null ? diag.completed_last_24h + ' dans les dernières 24 h' : '');
+            el('kpiConversionRate', percent(diag.conversion_rate));
+            el('kpiDiagnosticsClaimed', diag.claimed != null ? diag.claimed + ' diagnostics devenus un compte' : '');
+            el('kpiAvgScore', diag.average_score != null ? diag.average_score.toFixed(1).replace('.', ',') : '—');
+
+            el('kpiOrgsActive', orgs.ACTIVE ?? 0);
+            el('kpiOrgsLead', orgs.LEAD ?? 0);
+            el('kpiUsersTotal', users.total ?? '—');
+            el('kpiUsersLast7', users.created_last_7_days != null ? users.created_last_7_days + ' créés cette semaine' : '');
+
+            setStatus('dashboardLoading', 'dashboardError', 'dashboardContent', null, false, false, false);
+        } catch (e) {
+            setStatus('dashboardLoading', 'dashboardError', 'dashboardContent', null, false, true, false);
+            document.getElementById('dashboardError').textContent = 'Erreur lors du chargement : ' + (e.detail || e.message);
+        }
+    }
+
+    // ── Organizations ──
+    async function loadOrgs(append) {
+        if (!append) {
+            _orgCursor = null;
+            _orgData = [];
+            _orgHasMore = false;
+            document.getElementById('orgTableBody').innerHTML = '';
+        }
+        setStatus('orgLoading', 'orgError', 'orgContent', 'orgEmpty', true, false, false);
+        try {
+            const params = {};
+            const q = document.getElementById('orgSearch')?.value;
+            const s = document.getElementById('orgStatusFilter')?.value;
+            if (q) params.q = q;
+            if (s) params.status = s;
+            if (_orgCursor) params.cursor = _orgCursor;
+            params.limit = 25;
+            const qs = new URLSearchParams(params).toString();
+            const data = await apiFetch('/admin/organizations?' + qs);
+            const list = data.data || [];
+            const page = data.page || {};
+
+            _orgData = append ? _orgData.concat(list) : list;
+            _orgCursor = page.next_cursor || null;
+            _orgHasMore = page.has_more || false;
+
+            if (!append) {
+                document.getElementById('orgTableBody').innerHTML = '';
+                list.forEach(org => appendOrgRow(org));
+            } else {
+                list.forEach(org => appendOrgRow(org));
+            }
+
+            const isData = _orgData.length > 0;
+            const isMore = _orgHasMore;
+            const loadMoreBtn = document.getElementById('orgLoadMore');
+            if (loadMoreBtn) loadMoreBtn.style.display = isMore ? '' : 'none';
+
+            setStatus('orgLoading', 'orgError', 'orgContent', 'orgEmpty', false, false, !isData);
+        } catch (e) {
+            setStatus('orgLoading', 'orgError', 'orgContent', 'orgEmpty', false, true, false);
+            document.getElementById('orgError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function resetOrgPagination() {
+        loadOrgs(false);
+    }
+
+    function appendOrgRow(org) {
+        const tbody = document.getElementById('orgTableBody');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => openOrgDetail(org.id);
+
+        const tdName = document.createElement('td');
+        tdName.className = 'client-name';
+        tdName.textContent = org.commercial_name || org.legal_name || '—';
+        tr.appendChild(tdName);
+
+        const tdSector = document.createElement('td');
+        tdSector.textContent = org.sector || '—';
+        tr.appendChild(tdSector);
+
+        const tdCity = document.createElement('td');
+        tdCity.textContent = org.city || '—';
+        tr.appendChild(tdCity);
+
+        const tdStatus = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + orgStatusLabel(org.status);
+        badge.textContent = orgStatusText(org.status);
+        tdStatus.appendChild(badge);
+        tr.appendChild(tdStatus);
+
+        const tdDate = document.createElement('td');
+        tdDate.textContent = formatDate(org.created_at);
+        tr.appendChild(tdDate);
+
+        const tdAction = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-ghost btn-sm';
+        btn.textContent = 'Voir';
+        btn.onclick = (e) => { e.stopPropagation(); openOrgDetail(org.id); };
+        tdAction.appendChild(btn);
+        if ((_me?.staff_permissions || []).includes('organization:delete')) {
+            const del = document.createElement('button');
+            del.className = 'btn btn-ghost btn-sm';
+            del.style.cssText = 'color:var(--error);margin-left:0.25rem;';
+            del.textContent = 'Supprimer';
+            del.onclick = (e) => { e.stopPropagation(); openDeleteOrgDialog(org, tr); };
+            tdAction.appendChild(del);
+        }
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+    }
+
+    async function openOrgDetail(orgId) {
+        const panel = document.getElementById('orgDetailPanel');
+        panel.style.display = '';
+        document.getElementById('orgContent').style.display = 'none';
+        setStatus('orgDetailLoading', 'orgDetailError', 'orgDetailContent', null, true, false, false);
+        try {
+            const data = await apiFetch('/admin/organizations/' + orgId + '/overview');
+            setStatus('orgDetailLoading', 'orgDetailError', 'orgDetailContent', null, false, false, false);
+            renderOrgDetail(data);
+        } catch (e) {
+            setStatus('orgDetailLoading', 'orgDetailError', 'orgDetailContent', null, false, true, false);
+            document.getElementById('orgDetailError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function closeOrgDetail() {
+        document.getElementById('orgDetailPanel').style.display = 'none';
+        document.getElementById('orgContent').style.display = '';
+    }
+
+    function renderOrgDetail(data) {
+        const container = document.getElementById('orgDetailContent');
+        container.innerHTML = '';
+
+        const org = data.organization || {};
+        const members = data.members || [];
+        const diagnostics = data.diagnostics;
+        const passport = data.passport;
+        const entitlements = data.entitlements || [];
+
+        const mainDiv = document.createElement('div');
+        mainDiv.className = 'org-detail';
+
+        // Left column: organization info
+        const leftCol = document.createElement('div');
+        leftCol.className = 'card';
+
+        const h2 = document.createElement('h3');
+        h2.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;';
+        h2.textContent = 'Informations';
+        leftCol.appendChild(h2);
+
+        const fields = [
+            ['Nom commercial', org.commercial_name],
+            ['Nom légal', org.legal_name],
+            ['Secteur', org.sector],
+            ['Sous-secteur', org.sub_sector],
+            ['Description', org.description],
+            ['Pays', org.country],
+            ['Ville', org.city],
+            ['Adresse', org.address],
+            ['Téléphone', org.phone],
+            ['WhatsApp', org.whatsapp],
+            ['Email', org.email],
+            ['Site web', org.website],
+            ['Statut', org.status],
+            ['Créé le', formatDate(org.created_at)],
+        ];
+        fields.forEach(([label, value]) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;';
+            const lbl = document.createElement('span');
+            lbl.style.cssText = 'color:var(--text-muted);';
+            lbl.textContent = label;
+            const val = document.createElement('span');
+            val.style.cssText = 'color:var(--text-primary);font-weight:500;';
+            val.textContent = value || '—';
+            row.appendChild(lbl);
+            row.appendChild(val);
+            leftCol.appendChild(row);
+        });
+        mainDiv.appendChild(leftCol);
+
+        // Right column: members
+        const rightCol = document.createElement('div');
+        rightCol.className = 'card';
+        const memH2 = document.createElement('h3');
+        memH2.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;';
+        memH2.textContent = 'Membres (' + members.length + ')';
+        rightCol.appendChild(memH2);
+
+        if (members.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.style.padding = '1.5rem';
+            empty.innerHTML = '<div style="font-size:1.5rem;opacity:0.4;margin-bottom:0.5rem;">&#128104;&#65039;</div><p style="color:var(--text-muted);font-size:13px;">Aucun membre</p>';
+            rightCol.appendChild(empty);
+        } else {
+            members.forEach(m => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:1rem;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;';
+                const avatar = document.createElement('div');
+                avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-warm));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--text-inverse);flex-shrink:0;';
+                avatar.textContent = (m.full_name || m.email || '?').charAt(0).toUpperCase();
+                const info = document.createElement('div');
+                info.style.cssText = 'flex:1;';
+                const nameSpan = document.createElement('div');
+                nameSpan.style.cssText = 'font-weight:600;color:var(--text-primary);';
+                nameSpan.textContent = m.full_name || m.email;
+                const emailSpan = document.createElement('div');
+                emailSpan.style.cssText = 'font-size:11px;color:var(--text-muted);';
+                emailSpan.textContent = m.email;
+                info.appendChild(nameSpan);
+                info.appendChild(emailSpan);
+                const roleBadge = document.createElement('span');
+                roleBadge.className = 'badge badge-accent';
+                roleBadge.textContent = m.role;
+                row.appendChild(avatar);
+                row.appendChild(info);
+                row.appendChild(roleBadge);
+                rightCol.appendChild(row);
+            });
+        }
+        mainDiv.appendChild(rightCol);
+
+        // Diagnostics section
+        const diagSection = document.createElement('div');
+        diagSection.className = 'card';
+        diagSection.style.marginTop = '1.5rem';
+        const diagH2 = document.createElement('h3');
+        diagH2.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;';
+        if (diagnostics === null) {
+            diagH2.textContent = 'Diagnostics — Accès réservé';
+        } else {
+            diagH2.textContent = 'Diagnostics (' + (diagnostics?.length || 0) + ')';
+        }
+        diagSection.appendChild(diagH2);
+        if (diagnostics === null) {
+            const restricted = document.createElement('div');
+            restricted.className = 'empty-state';
+            restricted.style.padding = '1.5rem';
+            restricted.innerHTML = '<div style="font-size:1.5rem;opacity:0.4;margin-bottom:0.5rem;">&#128274;</div><p style="color:var(--text-muted);font-size:13px;">Accès réservé</p>';
+            diagSection.appendChild(restricted);
+        } else if (diagnostics.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.style.padding = '1.5rem';
+            empty.innerHTML = '<div style="font-size:1.5rem;opacity:0.4;margin-bottom:0.5rem;">&#128203;</div><p style="color:var(--text-muted);font-size:13px;">Aucun diagnostic</p>';
+            diagSection.appendChild(empty);
+        } else {
+            diagnostics.forEach(d => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;';
+                const left = document.createElement('span');
+                left.style.color = 'var(--text-secondary)';
+                left.textContent = (d.completed_at ? formatDate(d.completed_at) : '—') + ' · ' + diagStatusText(d.status);
+                const scoreVal = d.score?.total;
+                const right = document.createElement('span');
+                right.style.cssText = 'color:var(--accent);font-weight:600;';
+                right.textContent = scoreVal != null ? scoreVal + '/100' : '—';
+                row.appendChild(left);
+                row.appendChild(right);
+                diagSection.appendChild(row);
+            });
+        }
+        mainDiv.appendChild(diagSection);
+
+        // Passport section
+        const passSection = document.createElement('div');
+        passSection.className = 'card';
+        passSection.style.marginTop = '1.5rem';
+        const passH2 = document.createElement('h3');
+        passH2.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;';
+        if (passport === null) {
+            passH2.textContent = 'Passport digital — Accès réservé';
+        } else {
+            passH2.textContent = 'Passport digital (' + (passport?.length || 0) + ')';
+        }
+        passSection.appendChild(passH2);
+        if (passport === null) {
+            const restricted = document.createElement('div');
+            restricted.className = 'empty-state';
+            restricted.style.padding = '1.5rem';
+            restricted.innerHTML = '<div style="font-size:1.5rem;opacity:0.4;margin-bottom:0.5rem;">&#128274;</div><p style="color:var(--text-muted);font-size:13px;">Accès réservé</p>';
+            passSection.appendChild(restricted);
+        } else if (passport.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.style.padding = '1.5rem';
+            empty.innerHTML = '<div style="font-size:1.5rem;opacity:0.4;margin-bottom:0.5rem;">&#128196;</div><p style="color:var(--text-muted);font-size:13px;">Aucun élément dans le passport</p>';
+            passSection.appendChild(empty);
+        } else {
+            passport.forEach(p => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;';
+                const left = document.createElement('span');
+                left.style.color = 'var(--text-secondary)';
+                left.textContent = p.key;
+                const right = document.createElement('span');
+                right.style.cssText = 'color:var(--text-primary);font-weight:500;';
+                right.textContent = p.status || '—';
+                row.appendChild(left);
+                row.appendChild(right);
+                passSection.appendChild(row);
+            });
+        }
+        mainDiv.appendChild(passSection);
+
+        // Entitlements section
+        const entSection = document.createElement('div');
+        entSection.className = 'card';
+        entSection.style.marginTop = '1.5rem';
+        const entH2 = document.createElement('h3');
+        entH2.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;';
+        entH2.textContent = 'Droits (' + entitlements.length + ')';
+        entSection.appendChild(entH2);
+        if (entitlements.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.style.padding = '1.5rem';
+            empty.innerHTML = '<div style="font-size:1.5rem;opacity:0.4;margin-bottom:0.5rem;">&#128273;</div><p style="color:var(--text-muted);font-size:13px;">Aucun droit configuré</p>';
+            entSection.appendChild(empty);
+        } else {
+            entitlements.forEach(e => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;';
+                const left = document.createElement('span');
+                left.style.color = 'var(--text-secondary)';
+                left.textContent = e.key;
+                const right = document.createElement('span');
+                right.style.cssText = 'color:var(--text-primary);font-weight:500;';
+                right.textContent = e.value != null ? String(e.value) : '—';
+                row.appendChild(left);
+                row.appendChild(right);
+                entSection.appendChild(row);
+            });
+        }
+        mainDiv.appendChild(entSection);
+
+        container.appendChild(mainDiv);
+        if ((_me?.staff_permissions || []).includes('order:create')) container.appendChild(directSaleCard(org));
+        if ((_me?.staff_permissions || []).includes('closer:manage')) container.appendChild(closerAttachCard(org));
+        container.appendChild(trackingCard(org));
+    }
+
+    // ── Diagnostics (Prospects) ──
+    async function loadDiagnostics(append) {
+        if (!append) {
+            _diagCursor = null;
+            _diagData = [];
+            _diagHasMore = false;
+            document.getElementById('diagTableBody').innerHTML = '';
+        }
+        setStatus('diagLoading', 'diagError', 'diagContent', 'diagEmpty', true, false, false);
+        try {
+            const params = { limit: 25 };
+            if (_diagCursor) params.cursor = _diagCursor;
+            const qs = new URLSearchParams(params).toString();
+            const data = await apiFetch('/admin/diagnostics?' + qs);
+            const list = data.data || [];
+            const page = data.page || {};
+
+            _diagData = append ? _diagData.concat(list) : list;
+            _diagCursor = page.next_cursor || null;
+            _diagHasMore = page.has_more || false;
+
+            if (!append) {
+                document.getElementById('diagTableBody').innerHTML = '';
+                list.forEach(d => appendDiagRow(d));
+            } else {
+                list.forEach(d => appendDiagRow(d));
+            }
+
+            const loadMoreBtn = document.getElementById('diagLoadMore');
+            if (loadMoreBtn) loadMoreBtn.style.display = _diagHasMore ? '' : 'none';
+
+            setStatus('diagLoading', 'diagError', 'diagContent', 'diagEmpty', false, false, _diagData.length === 0);
+        } catch (e) {
+            setStatus('diagLoading', 'diagError', 'diagContent', 'diagEmpty', false, true, false);
+            document.getElementById('diagError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function appendDiagRow(d) {
+        const tbody = document.getElementById('diagTableBody');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+
+        // data-label : intitulé de la colonne, affiché au-dessus de la valeur en vue carte (mobile)
+        const cell = (label, value, className) => {
+            const td = document.createElement('td');
+            td.dataset.label = label;
+            td.textContent = value || '—';
+            // Sur mobile, une case vide est masquée plutôt que d'afficher « — »
+            td.className = (className || '') + (value ? '' : ' cell-empty');
+            tr.appendChild(td);
+            return td;
+        };
+        const tdCompany = cell('Entreprise', d.company, 'client-name');
+        tdCompany.classList.remove('cell-empty');
+        cell('Secteur', d.sector);
+        cell('Ville', d.city);
+        cell('Pays', d.country);
+        cell('Téléphone', d.phone);
+        cell('Email', d.email, 'cell-email');
+
+        const tdScore = document.createElement('td');
+        tdScore.dataset.label = 'Score';
+        tdScore.style.cssText = 'font-weight:600;color:' + (d.total_score >= 60 ? 'var(--accent)' : d.total_score >= 40 ? 'var(--warning)' : 'var(--error)');
+        tdScore.textContent = d.total_score != null ? d.total_score : '—';
+        tr.appendChild(tdScore);
+
+        const tdStatus = document.createElement('td');
+        tdStatus.dataset.label = 'Statut';
+        const badge = document.createElement('span');
+        const statusMap = { IN_PROGRESS: 'badge-muted', COMPLETED: 'badge-warning', CLAIMED: 'badge-success' };
+        badge.className = 'badge ' + (statusMap[d.status] || 'badge-muted');
+        badge.textContent = diagStatusText(d.status);
+        tdStatus.appendChild(badge);
+        tr.appendChild(tdStatus);
+
+        cell('Date', d.completed_at ? formatDate(d.completed_at) : '');
+
+        // Fiche entreprise : lien vers la fiche, sinon prospect supprimable (ADMIN)
+        const tdOrg = document.createElement('td');
+        tdOrg.className = 'cell-actions';
+        if (d.organization_id) {
+            const open = document.createElement('button');
+            open.className = 'btn btn-ghost btn-sm';
+            open.textContent = 'Voir la fiche';
+            open.onclick = () => { switchPage('entreprises'); openOrgDetail(d.organization_id); };
+            tdOrg.appendChild(open);
+        } else {
+            const none = document.createElement('span');
+            none.style.cssText = 'font-size:12px;color:var(--text-muted);margin-right:0.25rem;';
+            none.textContent = 'Aucune';
+            tdOrg.appendChild(none);
+            if ((_me?.staff_permissions || []).includes('organization:delete')) {
+                const del = document.createElement('button');
+                del.className = 'btn btn-ghost btn-sm';
+                del.style.color = 'var(--error)';
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    if (!confirm('Supprimer définitivement le prospect « ' + (d.company || 'sans nom') + ' » ?')) return;
+                    try {
+                        await apiFetch('/admin/diagnostics/' + d.id, { method: 'DELETE' });
+                        tr.remove();
+                        loadOrphanBar();
+                    } catch (e) { alert(e.detail || e.message); }
+                };
+                tdOrg.appendChild(del);
+            }
+        }
+        tr.appendChild(tdOrg);
+
+        tbody.appendChild(tr);
+    }
+
+    // Prospects sans fiche entreprise : suppression en masse (ADMIN), confirmée par « SUPPRIMER »
+    async function loadOrphanBar() {
+        const bar = document.getElementById('orphanBar');
+        if (!bar || !(_me?.staff_permissions || []).includes('organization:delete')) return;
+        let info;
+        try { info = await apiFetch('/admin/diagnostics/orphans'); } catch (_) { return; }
+        bar.innerHTML = '';
+        const text = document.createElement('div');
+        text.style.cssText = 'font-size:14px;';
+        text.textContent = info.deletable + ' prospect(s) sans fiche entreprise depuis plus de 24 h'
+            + (info.recent_kept ? ' (' + info.recent_kept + ' plus récent(s) épargné(s) : inscription peut-être en cours)' : '') + '.';
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm';
+        btn.style.cssText = 'background:var(--error);color:#fff;border-color:var(--error);';
+        btn.textContent = 'Supprimer les ' + info.deletable + ' prospect(s) sans fiche';
+        btn.disabled = info.deletable === 0;
+        btn.style.opacity = info.deletable === 0 ? '0.4' : '1';
+        btn.onclick = async () => {
+            const typed = prompt('Suppression définitive de ' + info.deletable + ' prospect(s) sans fiche entreprise.\nTapez SUPPRIMER pour confirmer :');
+            if (typed === null) return;
+            try {
+                const result = await apiFetch('/admin/diagnostics/purge-orphans', { method: 'POST', body: { confirm: typed } });
+                alert(result.deleted + ' prospect(s) supprimé(s).');
+                loadDiagnostics(false);
+                loadOrphanBar();
+                loadDashboard();
+            } catch (e) { alert(e.detail || e.message); }
+        };
+        bar.append(text, btn);
+        bar.style.display = 'flex';
+    }
+
+    // ── Staff (Équipe) ──
+    async function loadStaff() {
+        setStatus('staffLoading', 'staffError', 'staffContent', 'staffEmpty', true, false, false);
+        try {
+            const data = await apiFetch('/admin/staff');
+            const list = data.data || [];
+            if (list.length === 0) {
+                setStatus('staffLoading', 'staffError', 'staffContent', 'staffEmpty', false, false, true);
+                return;
+            }
+            setStatus('staffLoading', 'staffError', 'staffContent', 'staffEmpty', false, false, false);
+            renderStaff(list);
+        } catch (e) {
+            setStatus('staffLoading', 'staffError', 'staffContent', 'staffEmpty', false, true, false);
+            document.getElementById('staffError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function renderStaff(list) {
+        const container = document.getElementById('staffList');
+        container.innerHTML = '';
+        list.forEach(member => {
+            const card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:0.5rem;';
+
+            const avatar = document.createElement('div');
+            avatar.style.cssText = 'width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-warm));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--text-inverse);flex-shrink:0;';
+            avatar.textContent = (member.full_name || member.email || '?').charAt(0).toUpperCase();
+
+            const info = document.createElement('div');
+            info.style.cssText = 'flex:1;';
+            const nameSpan = document.createElement('div');
+            nameSpan.style.cssText = 'font-weight:600;color:var(--text-primary);';
+            nameSpan.textContent = member.full_name || member.email;
+            const emailSpan = document.createElement('div');
+            emailSpan.style.cssText = 'font-size:12px;color:var(--text-muted);';
+            emailSpan.textContent = member.email;
+            const lastLogin = document.createElement('div');
+            lastLogin.style.cssText = 'font-size:11px;color:var(--text-muted);';
+            lastLogin.textContent = member.last_login_at ? 'Dernière connexion : ' + formatDateTime(member.last_login_at) : 'Jamais connecté';
+            info.appendChild(nameSpan);
+            info.appendChild(emailSpan);
+            info.appendChild(lastLogin);
+
+            const rolesContainer = document.createElement('div');
+            rolesContainer.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;';
+
+            (member.roles || []).forEach(role => {
+                const roleRow = document.createElement('div');
+                roleRow.style.cssText = 'display:flex;align-items:center;gap:6px;';
+                const roleBadge = document.createElement('span');
+                roleBadge.className = 'badge badge-accent';
+                roleBadge.textContent = role;
+                roleRow.appendChild(roleBadge);
+
+                const isSelf = member.user_id === _myUserId && role === 'ADMIN';
+                const revokeBtn = document.createElement('button');
+                revokeBtn.className = 'btn-revoke';
+                revokeBtn.textContent = 'Retirer';
+                revokeBtn.disabled = isSelf;
+                revokeBtn.title = isSelf ? 'Vous ne pouvez pas vous retirer vous-même' : 'Retirer le rôle ' + role;
+                revokeBtn.onclick = async () => {
+                    try {
+                        await apiFetch('/admin/staff/' + member.user_id + '/roles/' + role, { method: 'DELETE' });
+                        loadStaff();
+                    } catch (e) {
+                        alert('Erreur : ' + (e.detail || e.message));
+                    }
+                };
+                roleRow.appendChild(revokeBtn);
+                rolesContainer.appendChild(roleRow);
+            });
+
+            card.appendChild(avatar);
+            card.appendChild(info);
+            card.appendChild(rolesContainer);
+            container.appendChild(card);
+        });
+    }
+
+    async function addStaffMember() {
+        const emailInput = document.getElementById('staffEmail');
+        const roleSelect = document.getElementById('staffRole');
+        const email = emailInput?.value?.trim();
+        const role = roleSelect?.value;
+        if (!email || !role) { alert('Veuillez remplir l\'email et sélectionner un rôle.'); return; }
+        try {
+            await apiFetch('/admin/staff', {
+                method: 'POST',
+                body: JSON.stringify({ email, role }),
+            });
+            emailInput.value = '';
+            loadStaff();
+        } catch (e) {
+            if (e?.code === 'NOT_FOUND') {
+                alert('Cette personne doit d\'abord créer son compte.');
+            } else {
+                alert('Erreur : ' + (e.detail || e.message));
+            }
+        }
+    }
+
+    // ── Audit Logs ──
+    async function loadAuditLogs(append) {
+        if (!append) {
+            _auditCursor = null;
+            _auditData = [];
+            _auditHasMore = false;
+            document.getElementById('auditTableBody').innerHTML = '';
+        }
+        setStatus('auditLoading', 'auditError', 'auditContent', 'auditEmpty', true, false, false);
+        try {
+            const params = { limit: 25 };
+            const actionFilter = document.getElementById('auditFilterAction')?.value?.trim();
+            const entityFilter = document.getElementById('auditFilterEntity')?.value?.trim();
+            if (actionFilter) params.action = actionFilter;
+            if (entityFilter) params.entity_type = entityFilter;
+            if (_auditCursor) params.cursor = _auditCursor;
+            const qs = new URLSearchParams(params).toString();
+            const data = await apiFetch('/admin/audit-logs?' + qs);
+            const list = data.data || [];
+            const page = data.page || {};
+
+            _auditData = append ? _auditData.concat(list) : list;
+            _auditCursor = page.next_cursor || null;
+            _auditHasMore = page.has_more || false;
+
+            if (!append) {
+                document.getElementById('auditTableBody').innerHTML = '';
+                list.forEach(log => appendAuditRow(log));
+            } else {
+                list.forEach(log => appendAuditRow(log));
+            }
+
+            const loadMoreBtn = document.getElementById('auditLoadMore');
+            if (loadMoreBtn) loadMoreBtn.style.display = _auditHasMore ? '' : 'none';
+
+            setStatus('auditLoading', 'auditError', 'auditContent', 'auditEmpty', false, false, _auditData.length === 0);
+        } catch (e) {
+            setStatus('auditLoading', 'auditError', 'auditContent', 'auditEmpty', false, true, false);
+            document.getElementById('auditError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function appendAuditRow(log) {
+        const tbody = document.getElementById('auditTableBody');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+
+        const tdDate = document.createElement('td');
+        tdDate.textContent = formatDateTime(log.occurred_at);
+        tr.appendChild(tdDate);
+
+        const tdActor = document.createElement('td');
+        tdActor.textContent = log.actor_label || log.actor_type || '—';
+        tr.appendChild(tdActor);
+
+        const tdAction = document.createElement('td');
+        tdAction.textContent = log.action || '—';
+        tr.appendChild(tdAction);
+
+        const tdEntity = document.createElement('td');
+        tdEntity.textContent = (log.entity_type || '') + (log.entity_id ? '#' + log.entity_id.slice(0, 8) : '');
+        tr.appendChild(tdEntity);
+
+        const tdOld = document.createElement('td');
+        tdOld.style.cssText = 'font-size:12px;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        tdOld.title = log.old_value != null ? JSON.stringify(log.old_value) : '';
+        tdOld.textContent = log.old_value != null ? JSON.stringify(log.old_value) : '—';
+        tr.appendChild(tdOld);
+
+        const tdNew = document.createElement('td');
+        tdNew.style.cssText = 'font-size:12px;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        tdNew.title = log.new_value != null ? JSON.stringify(log.new_value) : '';
+        tdNew.textContent = log.new_value != null ? JSON.stringify(log.new_value) : '—';
+        tr.appendChild(tdNew);
+
+        const tdIp = document.createElement('td');
+        tdIp.textContent = log.ip || '—';
+        tr.appendChild(tdIp);
+
+        tbody.appendChild(tr);
+    }
+
+    // ── Purchase requests ──
+
+    function resetDemandePagination() {
+        _demandeCursor = null;
+        _demandeHasMore = false;
+        loadPurchaseRequests(false);
+    }
+
+    async function loadPurchaseRequests(append) {
+        if (!append) {
+            _demandeCursor = null;
+            _demandeHasMore = false;
+            document.getElementById('demandeTableBody').innerHTML = '';
+        }
+        setStatus('demandeLoading', 'demandeError', 'demandeContent', 'demandeEmpty', true, false, false);
+        try {
+            const params = { limit: 25 };
+            const statusFilter = document.getElementById('demandeStatusFilter')?.value;
+            if (statusFilter) params.status = statusFilter;
+            if (_demandeCursor) params.cursor = _demandeCursor;
+            const qs = new URLSearchParams(params).toString();
+            const data = await apiFetch('/admin/purchase-requests?' + qs);
+            const list = data.data || [];
+            const page = data.page || {};
+            if (!append) document.getElementById('demandeTableBody').innerHTML = '';
+            list.forEach(row => appendDemandeRow(row));
+            _demandeCursor = page.next_cursor || null;
+            _demandeHasMore = page.has_more || false;
+            const loadMoreBtn = document.getElementById('demandeLoadMore');
+            if (loadMoreBtn) loadMoreBtn.style.display = _demandeHasMore ? '' : 'none';
+            setStatus('demandeLoading', 'demandeError', 'demandeContent', 'demandeEmpty', false, false, list.length === 0 && !append);
+        } catch (e) {
+            setStatus('demandeLoading', 'demandeError', 'demandeContent', 'demandeEmpty', false, true, false);
+            document.getElementById('demandeError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    // Contact à rappeler : le numéro de la demande en premier, cliquable (WhatsApp, appel ou e-mail)
+    function contactCell(req) {
+        const td = document.createElement('td');
+        td.style.cssText = 'font-size:12px;line-height:1.5;';
+        const name = document.createElement('div');
+        name.style.cssText = 'font-weight:600;color:var(--text-primary);';
+        name.textContent = req.requested_by_name || '—';
+        td.appendChild(name);
+
+        const link = document.createElement('a');
+        link.style.cssText = 'color:var(--accent);';
+        const number = req.contact_number || '';
+        if (req.channel === 'WHATSAPP' && number) {
+            link.href = 'https://wa.me/' + number.replace(/\D/g, '');
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = 'WhatsApp ' + number;
+        } else if (req.channel === 'PHONE' && number) {
+            link.href = 'tel:' + number;
+            link.textContent = 'Appeler ' + number;
+        } else if (req.requested_by_email) {
+            link.href = 'mailto:' + encodeURIComponent(req.requested_by_email);
+            link.textContent = 'E-mail ' + req.requested_by_email;
+        }
+        if (link.textContent) {
+            const line = document.createElement('div');
+            line.appendChild(link);
+            td.appendChild(line);
+        }
+        if (req.channel !== 'EMAIL' && req.requested_by_email) {
+            const email = document.createElement('div');
+            email.style.color = 'var(--text-muted)';
+            email.textContent = req.requested_by_email;
+            td.appendChild(email);
+        }
+        if (req.message) {
+            const message = document.createElement('div');
+            message.style.cssText = 'color:var(--text-secondary);font-style:italic;max-width:220px;';
+            message.textContent = '« ' + req.message + ' »';
+            td.appendChild(message);
+        }
+        return td;
+    }
+
+    function appendDemandeRow(req) {
+        const tbody = document.getElementById('demandeTableBody');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+
+        const tdDate = document.createElement('td');
+        tdDate.textContent = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        tr.appendChild(tdDate);
+
+        const tdOrg = document.createElement('td');
+        tdOrg.textContent = req.organization_name || '—';
+        tr.appendChild(tdOrg);
+
+        tr.appendChild(contactCell(req));
+
+        const tdProduct = document.createElement('td');
+        tdProduct.textContent = req.product_name || req.product_code || '—';
+        tr.appendChild(tdProduct);
+
+        const tdPrice = document.createElement('td');
+        tdPrice.textContent = req.price != null ? formatPriceAdmin(req.price) : '—';
+        tr.appendChild(tdPrice);
+
+        const tdStatus = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = 'badge ' + ({ NEW: 'badge-warning', CONTACTED: 'badge-info', WON: 'badge-success', LOST: 'badge-muted' }[req.status] || 'badge-muted');
+        statusBadge.textContent = { NEW: 'Nouvelle', CONTACTED: 'Contactée', WON: 'Gagnée', LOST: 'Perdue' }[req.status] || req.status;
+        tdStatus.appendChild(statusBadge);
+        if (req.payment) {
+            const paid = document.createElement('div');
+            paid.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:4px;';
+            paid.textContent = paymentSummary(req.payment);
+            tdStatus.appendChild(paid);
+            // Paiement en double (avant le contrôle anti-doublon) : annulable par ADMIN et FINANCE
+            if (req.status === 'WON' && (_me?.staff_permissions || []).includes('payment:refund')) {
+                const voidBtn = document.createElement('button');
+                voidBtn.className = 'btn btn-ghost btn-sm';
+                voidBtn.style.cssText = 'color:var(--error);font-size:11px;padding:2px 6px;margin-top:4px;';
+                voidBtn.textContent = 'Annuler (doublon)';
+                voidBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const reason = prompt('Annuler ce paiement en double de ' + (req.organization_name || 'ce client') + ' ?\nLe paiement est retiré du chiffre d\'affaires et la demande est close.\n\nMotif (obligatoire) :');
+                    if (reason === null) return;
+                    if (reason.trim().length < 3) { alert('Indiquez un motif (3 caractères minimum).'); return; }
+                    try {
+                        await apiFetch('/admin/purchase-requests/' + req.id + '/void-duplicate', { method: 'POST', body: { reason: reason.trim() } });
+                        alert('Paiement en double annulé.');
+                        loadPurchaseRequests(false);
+                        loadDashboard();
+                    } catch (err) { alert(err.detail || err.message); }
+                };
+                tdStatus.appendChild(voidBtn);
+            }
+        }
+        tr.appendChild(tdStatus);
+
+        const tdNote = document.createElement('td');
+        const noteInput = document.createElement('input');
+        noteInput.type = 'text';
+        noteInput.className = 'filter-input';
+        noteInput.style.cssText = 'width:120px;font-size:12px;padding:6px 8px;';
+        noteInput.value = req.staff_note || '';
+        noteInput.placeholder = 'Note…';
+        noteInput.title = 'Double-cliquez pour enregistrer';
+        noteInput.onblur = async () => {
+            const note = noteInput.value.trim();
+            try {
+                await apiFetch('/admin/purchase-requests/' + req.id, {
+                    method: 'PATCH',
+                    body: { staff_note: note },
+                });
+            } catch (e) {
+                alert('Erreur sauvegarde note : ' + (e.detail || e.message));
+                noteInput.value = req.staff_note || '';
+            }
+        };
+        tdNote.appendChild(noteInput);
+        tr.appendChild(tdNote);
+
+        const tdActions = document.createElement('td');
+        tdActions.style.cssText = 'white-space:nowrap;';
+
+        if (req.status === 'NEW') {
+            const contactBtn = document.createElement('button');
+            contactBtn.className = 'btn-revoke';
+            contactBtn.textContent = 'Marquer contacté';
+            contactBtn.onclick = async () => {
+                try {
+                    showD360Loading();
+                    await apiFetch('/admin/purchase-requests/' + req.id, {
+                        method: 'PATCH',
+                        body: { status: 'CONTACTED' },
+                    });
+                    loadPurchaseRequests(false);
+                } catch (e) {
+                    alert('Erreur : ' + (e.detail || e.message));
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            tdActions.appendChild(contactBtn);
+        }
+
+        if (req.status === 'NEW' || req.status === 'CONTACTED') {
+            const wonBtn = document.createElement('button');
+            wonBtn.className = 'btn-revoke';
+            wonBtn.style.cssText = 'border-color:var(--success);color:var(--success);margin-left:4px;';
+            wonBtn.textContent = 'Gagnée';
+            wonBtn.onclick = () => openPaymentDialog({
+                title: 'Paiement reçu : ' + (req.product_name || req.product_code),
+                subtitle: (req.organization_name || 'Ce client') + " : l'offre sera activée immédiatement et un reçu lui sera envoyé.",
+                priceLabel: req.price ? formatPriceAdmin(req.price) : '',
+                currency: req.price?.currency,
+                onConfirm: async payment => {
+                    await apiFetch('/admin/purchase-requests/' + req.id, { method: 'PATCH', body: { status: 'WON', payment } });
+                    loadPurchaseRequests(false);
+                },
+            });
+            tdActions.appendChild(wonBtn);
+
+            const lostBtn = document.createElement('button');
+            lostBtn.className = 'btn-revoke';
+            lostBtn.style.cssText = 'margin-left:4px;';
+            lostBtn.textContent = 'Perdue';
+            lostBtn.onclick = async () => {
+                try {
+                    showD360Loading();
+                    await apiFetch('/admin/purchase-requests/' + req.id, {
+                        method: 'PATCH',
+                        body: { status: 'LOST' },
+                    });
+                    loadPurchaseRequests(false);
+                } catch (e) {
+                    alert('Erreur : ' + (e.detail || e.message));
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            tdActions.appendChild(lostBtn);
+        }
+
+        tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+    }
+
+    function formatPriceAdmin(priceObj) {
+        if (priceObj == null) return '—';
+        const amt = typeof priceObj === 'object' ? priceObj.amount : priceObj;
+        const cur = typeof priceObj === 'object' ? (priceObj.currency || 'XOF') : 'XOF';
+        if (cur === 'EUR') return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt / 100) + ' € HT';
+        return new Intl.NumberFormat('fr-FR').format(amt) + ' FCFA HT';
+    }
+
+    // ── Paiement manuel : saisie de l'encaissement (Gagnée, vente directe) ──
+    const PAYMENT_METHODS = [
+        ['ORANGE_MONEY', 'Orange Money'], ['MTN_MOMO', 'MTN Mobile Money'], ['MOOV_MONEY', 'Moov Money'],
+        ['WAVE', 'Wave'], ['BANK_TRANSFER', 'Virement bancaire'], ['CASH', 'Espèces'],
+    ];
+    const PAYMENT_METHOD_LABELS = Object.fromEntries(PAYMENT_METHODS);
+
+    // Fenêtre de saisie ; `onConfirm(payment)` renvoie une promesse, l'erreur s'affiche dans la fenêtre
+    function openPaymentDialog({ title, subtitle, priceLabel, currency, extraField, onConfirm, allowAmount = true }) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,10,15,0.75);display:flex;align-items:center;justify-content:center;padding:1rem;';
+        const box = document.createElement('div');
+        box.className = 'card';
+        box.style.cssText = 'max-width:460px;width:100%;';
+        overlay.appendChild(box);
+        const add = (tag, text, css) => { const el = document.createElement(tag); if (text) el.textContent = text; if (css) el.style.cssText = css; box.appendChild(el); return el; };
+        const labelled = (label, input) => {
+            const wrap = add('div', '', 'margin-bottom:0.9rem;');
+            const l = document.createElement('div'); l.textContent = label; l.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:4px;';
+            wrap.appendChild(l); wrap.appendChild(input); return input;
+        };
+        const input = (attrs = {}) => { const el = document.createElement('input'); el.className = 'filter-input'; el.style.width = '100%'; Object.assign(el, attrs); return el; };
+
+        add('h3', title, 'margin-bottom:0.25rem;');
+        if (subtitle) add('p', subtitle, 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;');
+        const extra = extraField ? extraField(labelled) : null;
+        const method = document.createElement('select');
+        method.className = 'filter-input';
+        method.style.width = '100%';
+        PAYMENT_METHODS.forEach(([value, label]) => { const o = document.createElement('option'); o.value = value; o.textContent = label; method.appendChild(o); });
+        labelled('Moyen de paiement', method);
+        const reference = labelled('Référence de la transaction (obligatoire sauf espèces)', input({ placeholder: 'Ex. OM-251003-7781', maxLength: 100 }));
+        const amount = !allowAmount ? { value: '' } : labelled('Montant reçu' + (currency ? ' (' + (currency === 'EUR' ? '€' : 'FCFA') + ', HT)' : ''),
+            input({ type: 'number', min: '0', step: currency === 'EUR' ? '0.01' : '1', placeholder: priceLabel ? 'Laisser vide : ' + priceLabel : 'Laisser vide : prix de l\'offre' }));
+        const received = labelled('Date du paiement', input({ type: 'date', value: new Date().toISOString().slice(0, 10) }));
+        const message = add('div', '', 'font-size:13px;color:var(--error);min-height:18px;margin-bottom:0.5rem;');
+        const buttons = add('div', '', 'display:flex;gap:0.75rem;justify-content:flex-end;');
+        const cancel = document.createElement('button'); cancel.className = 'btn btn-ghost btn-sm'; cancel.textContent = 'Annuler';
+        const confirmBtn = document.createElement('button'); confirmBtn.className = 'btn btn-primary btn-sm'; confirmBtn.textContent = 'Paiement reçu : activer l\'offre';
+        buttons.appendChild(cancel); buttons.appendChild(confirmBtn);
+        cancel.onclick = () => overlay.remove();
+        confirmBtn.onclick = async () => {
+            message.textContent = '';
+            const ref = reference.value.trim();
+            if (method.value !== 'CASH' && !ref) { message.textContent = 'Indiquez la référence de la transaction.'; return; }
+            const payment = { method: method.value, received_on: received.value || undefined };
+            if (ref) payment.reference = ref;
+            if (amount.value !== '') {
+                const value = Number(amount.value);
+                if (!(value >= 0)) { message.textContent = 'Montant invalide.'; return; }
+                // L'API attend l'unité mineure : centimes pour l'euro, francs pour le FCFA
+                payment.amount = currency === 'EUR' ? Math.round(value * 100) : Math.round(value);
+            }
+            confirmBtn.disabled = true;
+            try {
+                await onConfirm(payment, extra);
+                overlay.remove();
+            } catch (e) {
+                message.textContent = (e.detail || e.message) + ((e.errors || []).length ? ' (' + e.errors.map(x => x.field || x.reason).join(', ') + ')' : '');
+                confirmBtn.disabled = false;
+            }
+        };
+        document.body.appendChild(overlay);
+        reference.focus();
+    }
+
+    function paymentSummary(payment) {
+        if (!payment) return '';
+        return (PAYMENT_METHOD_LABELS[payment.method] || payment.method) + ' · ' + formatPriceAdmin(payment)
+            + (payment.reference ? ' · ' + payment.reference : '');
+    }
+
+    let _catalogProducts = null;
+    async function catalogProducts() {
+        if (!_catalogProducts) {
+            const data = await apiFetch('/public/catalog');
+            _catalogProducts = (data.products || []).filter(p => p.available !== false);
+        }
+        return _catalogProducts;
+    }
+
+    // Fiche entreprise : vente encaissée sans demande préalable du client
+    function directSaleCard(org) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginTop = '1.5rem';
+        const title = document.createElement('h3');
+        title.style.cssText = 'font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;';
+        title.textContent = 'Enregistrer une vente';
+        const help = document.createElement('p');
+        help.style.cssText = 'font-size:13px;color:var(--text-muted);margin-bottom:0.75rem;';
+        help.textContent = "Le client a payé sans passer par « Je veux démarrer » (téléphone, agence) : l'offre est activée et un reçu lui est envoyé.";
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-sm';
+        btn.textContent = 'Enregistrer une vente';
+        btn.onclick = async () => {
+            let products;
+            try { products = await catalogProducts(); } catch (e) { alert('Catalogue indisponible : ' + (e.detail || e.message)); return; }
+            openPaymentDialog({
+                title: 'Vente pour ' + (org.commercial_name || 'ce client'),
+                subtitle: "Le prix de l'offre, dans la devise du client, est enregistré comme montant reçu.",
+                allowAmount: false,
+                extraField: labelled => {
+                    const select = document.createElement('select');
+                    select.className = 'filter-input';
+                    select.style.width = '100%';
+                    products.forEach(p => { const o = document.createElement('option'); o.value = p.code; o.textContent = p.name + (p.price ? ' — ' + formatPriceAdmin(p.price) : ''); select.appendChild(o); });
+                    return labelled('Offre vendue', select);
+                },
+                onConfirm: async (payment, select) => {
+                    await apiFetch('/admin/organizations/' + org.id + '/sales', { method: 'POST', body: { product_code: select.value, payment } });
+                    alert('Vente enregistrée : offre activée et reçu envoyé au client.');
+                    openOrgDetail(org.id);
+                },
+            });
+        };
+        card.appendChild(title);
+        card.appendChild(help);
+        card.appendChild(btn);
+        return card;
+    }
+
+    // ── Abonnements : échéances et renouvellement ──
+    async function loadSubscriptions() {
+        setStatus('subscriptionLoading', 'subscriptionError', 'subscriptionContent', 'subscriptionEmpty', true, false, false);
+        try {
+            const status = document.getElementById('subscriptionStatusFilter').value;
+            const data = await apiFetch('/admin/subscriptions' + (status ? '?status=' + status : ''));
+            const tbody = document.getElementById('subscriptionTableBody');
+            tbody.innerHTML = '';
+            (data.data || []).forEach(sub => tbody.appendChild(subscriptionRow(sub)));
+            setStatus('subscriptionLoading', 'subscriptionError', 'subscriptionContent', 'subscriptionEmpty', false, false, !(data.data || []).length);
+        } catch (e) {
+            setStatus('subscriptionLoading', 'subscriptionError', 'subscriptionContent', 'subscriptionEmpty', false, true, false);
+            document.getElementById('subscriptionError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function subscriptionRow(sub) {
+        const tr = document.createElement('tr');
+        const cell = text => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+        cell(sub.organization_name || '—').className = 'client-name';
+        cell(sub.product_name);
+        cell(formatDate(sub.covers_until));
+        const statusTd = document.createElement('td');
+        const badge = document.createElement('span');
+        const days = sub.days_left;
+        if (sub.status === 'EXPIRED') {
+            badge.className = 'badge badge-error';
+            badge.textContent = 'Expiré depuis ' + Math.abs(days) + ' j';
+        } else if (sub.status === 'EXPIRING') {
+            badge.className = 'badge badge-warning';
+            badge.textContent = days <= 0 ? "Expire aujourd'hui" : 'Expire dans ' + days + ' j';
+        } else {
+            badge.className = 'badge badge-success';
+            badge.textContent = 'Actif';
+        }
+        statusTd.appendChild(badge);
+        tr.appendChild(statusTd);
+        cell(paymentSummary(sub.last_payment)).style.cssText = 'font-size:12px;color:var(--text-muted);';
+        const actionTd = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.className = sub.status === 'ACTIVE' ? 'btn btn-ghost btn-sm' : 'btn btn-primary btn-sm';
+        btn.textContent = 'Renouveler';
+        btn.onclick = () => openPaymentDialog({
+            title: 'Renouveler ' + sub.product_name + ' : ' + (sub.organization_name || ''),
+            subtitle: sub.status === 'EXPIRED'
+                ? "L'abonnement repart d'aujourd'hui pour un mois."
+                : "Le mois payé s'ajoute à l'échéance actuelle (" + formatDate(sub.covers_until) + ') : aucun jour perdu.',
+            priceLabel: formatPriceAdmin({ amount: sub.last_payment.amount, currency: sub.last_payment.currency }),
+            currency: sub.last_payment.currency,
+            onConfirm: async payment => {
+                const renewed = await apiFetch('/admin/organizations/' + sub.organization_id + '/renewals', {
+                    method: 'POST', body: { product_code: sub.product_code, payment },
+                });
+                alert('Abonnement renouvelé jusqu\'au ' + formatDate(renewed.covers_until) + '. Un reçu a été envoyé au client.');
+                loadSubscriptions();
+                loadDashboard();
+            },
+        });
+        actionTd.appendChild(btn);
+        tr.appendChild(actionTd);
+        return tr;
+    }
+
+    // ── Suppression définitive d'une entreprise (ADMIN), confirmée en retapant son nom ──
+    async function openDeleteOrgDialog(org, row) {
+        const overlay = el('div', { class: 'modal-overlay open', style: 'z-index:1000;' });
+        const box = el('div', { class: 'modal-box', style: 'max-width:480px;' });
+        const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+        overlay.onclick = e => { if (e.target === overlay) close(); };
+        const msg = el('div', { style: 'font-size:13px;color:var(--error);min-height:18px;margin-top:0.5rem;' });
+        box.append(
+            el('h2', { style: 'font-size:1.25rem;margin-bottom:0.5rem;color:var(--error);', text: 'Supprimer définitivement cette entreprise ?' }),
+            el('p', { style: 'font-weight:600;margin-bottom:1rem;', text: org.commercial_name }),
+        );
+        const details = el('div', { style: 'font-size:13px;color:var(--text-secondary);margin-bottom:1rem;', text: 'Chargement de ce qui sera supprimé…' });
+        box.appendChild(details);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        let preview;
+        try {
+            preview = await apiFetch('/admin/organizations/' + org.id + '/deletion-preview');
+        } catch (e) {
+            details.textContent = 'Impossible de préparer la suppression : ' + (e.detail || e.message);
+            box.appendChild(el('button', { class: 'btn btn-ghost btn-sm', text: 'Fermer', onclick: close }));
+            return;
+        }
+        details.textContent = '';
+        details.append(
+            el('p', { style: 'margin-bottom:0.5rem;', text: 'Cette action est irréversible. Seront supprimés avec l\'entreprise :' }),
+            el('ul', { style: 'margin:0 0 0.75rem 1.2rem;line-height:1.7;' }, [
+                preview.diagnostics + ' diagnostic(s), le Passport et le plan d\'action',
+                preview.purchase_requests + ' demande(s) d\'achat et ' + preview.website_projects + ' projet(s) de site',
+                preview.payments + ' paiement(s) et reçu(s)',
+                preview.prospects + ' autre(s) prospect(s) de cette entreprise (diagnostics non rattachés : même nom, e-mail ou téléphone)',
+                'les suivis Google et site web, les invitations et le rattachement Closer',
+            ].map(text => el('li', { text }))),
+            el('p', { text: preview.members + ' membre(s) perdront l\'accès à cette entreprise ; leurs comptes sont conservés.' }),
+        );
+        const name = el('input', { class: 'form-input', placeholder: preview.commercial_name, autocomplete: 'off', style: 'width:100%;' });
+        box.append(el('label', { style: 'display:block;font-size:13px;margin-bottom:4px;', text: 'Pour confirmer, tapez le nom de l\'entreprise :' }), name);
+        let payments = null;
+        if (preview.payments > 0) {
+            payments = el('input', { type: 'checkbox', id: 'deleteOrgPayments' });
+            box.appendChild(el('label', { style: 'display:flex;gap:0.5rem;align-items:flex-start;font-size:13px;margin-top:0.75rem;color:var(--warning);', for: 'deleteOrgPayments' }, [
+                payments, el('span', { text: 'Je confirme la suppression de ' + preview.payments + ' paiement(s) : ils disparaîtront aussi du chiffre d\'affaires.' }),
+            ]));
+        }
+        const confirmBtn = el('button', { class: 'btn btn-sm', style: 'background:var(--error);color:#fff;border-color:var(--error);', text: 'Supprimer définitivement' });
+        const ready = () => name.value.trim().toLowerCase() === preview.commercial_name.trim().toLowerCase() && (!payments || payments.checked);
+        const refresh = () => { confirmBtn.disabled = !ready(); confirmBtn.style.opacity = ready() ? '1' : '0.4'; };
+        name.oninput = refresh;
+        if (payments) payments.onchange = refresh;
+        refresh();
+        confirmBtn.onclick = async () => {
+            if (!ready()) return;
+            confirmBtn.disabled = true;
+            try {
+                await apiFetch('/admin/organizations/' + org.id + '/delete', { method: 'POST', body: { confirm_name: name.value.trim(), delete_payments: !!(payments && payments.checked) } });
+                close();
+                if (row) row.remove();
+                loadDashboard();
+                alert('« ' + preview.commercial_name + ' » a été supprimée définitivement.');
+            } catch (e) {
+                msg.textContent = e.detail || e.message;
+                refresh();
+            }
+        };
+        box.append(msg, el('div', { style: 'display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1rem;' }, [
+            el('button', { class: 'btn btn-ghost btn-sm', text: 'Annuler', onclick: close }), confirmBtn,
+        ]));
+        name.focus();
+    }
+
+    // ── Suivi Google Business et site web : mise en place et rapports mensuels ──
+    const SETUP_LABELS = {
+        NOT_STARTED: 'Pas commencée', PROFILE_CREATED: 'Fiche créée', ACCESS_GRANTED: 'Accès donné à BENILAB',
+        VERIFIED: 'Fiche validée par Google', ACTIVE: 'Fiche active, gérée par BENILAB',
+    };
+    const CHANNEL_LABELS = { GOOGLE_BUSINESS: 'Google Business', WEBSITE: 'Site web' };
+    function el(tag, props = {}, children = []) {
+        const node = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+            if (key === 'text') node.textContent = value;
+            else if (key === 'style') node.style.cssText = value;
+            else if (key.startsWith('on')) node[key] = value;
+            else node.setAttribute(key, value);
+        });
+        (Array.isArray(children) ? children : [children]).forEach(child => { if (child) node.appendChild(child); });
+        return node;
+    }
+    function previousMonth() {
+        const d = new Date();
+        d.setDate(1);
+        d.setMonth(d.getMonth() - 1);
+        return d.toISOString().slice(0, 7);
+    }
+
+    function trackingCard(org) {
+        const card = el('div', { class: 'card', style: 'margin-top:1.5rem;' }, [el('h3', { text: 'Suivi Google & site web' }), el('p', { style: 'font-size:13px;color:var(--text-muted);', text: 'Chargement…' })]);
+        const canEdit = (_me?.staff_permissions || []).includes('task:manage');
+        const base = '/admin/organizations/' + org.id;
+        const msg = el('div', { style: 'font-size:13px;min-height:18px;margin-top:0.5rem;' });
+        const say = (text, ok) => { msg.style.color = ok ? 'var(--success)' : 'var(--error)'; msg.textContent = text; };
+        const label = (text, control) => el('div', { style: 'margin-bottom:0.6rem;' }, [el('label', { style: 'display:block;font-size:12px;color:var(--text-muted);margin-bottom:3px;', text }), control]);
+
+        function render(data) {
+            card.textContent = '';
+            card.appendChild(el('h3', { style: 'margin-bottom:0.25rem;', text: 'Suivi Google & site web' }));
+            card.appendChild(el('p', { style: 'font-size:13px;color:var(--text-muted);margin-bottom:1rem;', text: 'Le client voit l\'avancement et chaque rapport dans son espace ; il est prévenu par e-mail du premier rapport de chaque mois.' }));
+
+            // Mise en place de la fiche Google
+            const setup = data.google_setup;
+            const status = el('select', { class: 'form-select', style: 'width:100%;' }, Object.entries(SETUP_LABELS).map(([value, text]) => {
+                const option = el('option', { value, text });
+                if (value === setup.status) option.selected = true;
+                return option;
+            }));
+            const url = el('input', { class: 'form-input', placeholder: 'https://maps.google.com/…', style: 'width:100%;' });
+            url.value = setup.profile_url || '';
+            const note = el('textarea', { class: 'form-input', rows: '2', maxlength: '2000', placeholder: 'Message au client (ex. : surveillez le SMS de Google)', style: 'width:100%;' });
+            note.value = setup.note || '';
+            card.append(el('h4', { style: 'font-size:13px;margin-bottom:0.5rem;', text: 'Fiche Google Business' }), label('Étape', status), label('Lien de la fiche', url), label('Message au client', note));
+            if (canEdit) {
+                card.appendChild(el('button', { class: 'btn btn-outline btn-sm', text: 'Enregistrer l\'étape', onclick: async () => {
+                    try {
+                        await apiFetch(base + '/google-setup', { method: 'PUT', body: { status: status.value, profile_url: url.value.trim() || null, note: note.value.trim() || null } });
+                        say('Étape enregistrée : le client la voit dans son espace.', true);
+                    } catch (e) { say(e.detail || e.message); }
+                } }));
+            }
+
+            // Saisie d'un rapport mensuel
+            const channel = el('select', { class: 'form-select', style: 'width:100%;' }, Object.entries(CHANNEL_LABELS).map(([value, text]) => el('option', { value, text })));
+            const month = el('input', { class: 'form-input', type: 'month', style: 'width:100%;' });
+            month.value = previousMonth();
+            const fields = el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 0.75rem;' });
+            const searches = el('input', { class: 'form-input', placeholder: 'coiffeuse cocody, tresses abidjan', style: 'width:100%;' });
+            const searchesRow = label('Recherches qui ont mené à la fiche (5 max, séparées par des virgules)', searches);
+            const reportNote = el('textarea', { class: 'form-input', rows: '2', maxlength: '2000', placeholder: 'Ce qui a été fait ce mois-ci, ce qui est prévu', style: 'width:100%;' });
+            const inputs = {};
+            const buildFields = values => {
+                fields.textContent = '';
+                data.channels[channel.value].definitions.forEach(def => {
+                    const input = el('input', { class: 'form-input', type: 'number', min: def.kind === 'rating' ? '1' : '0', max: def.kind === 'rating' ? '5' : '', step: def.kind === 'rating' ? '0.1' : '1', style: 'width:100%;' });
+                    if (values && values[def.key] !== undefined) input.value = values[def.key];
+                    inputs[def.key] = input;
+                    fields.appendChild(label(def.label, input));
+                });
+                searchesRow.style.display = channel.value === 'GOOGLE_BUSINESS' ? '' : 'none';
+            };
+            channel.onchange = () => buildFields(null);
+            buildFields(null);
+            const fill = (channelKey, report) => {
+                channel.value = channelKey;
+                month.value = report.period.slice(0, 7);
+                buildFields(report.metrics);
+                searches.value = (report.top_searches || []).join(', ');
+                reportNote.value = report.note || '';
+                month.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+            card.append(el('h4', { style: 'font-size:13px;margin:1.5rem 0 0.5rem;', text: 'Rapport mensuel' }),
+                el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;' }, [label('Canal', channel), label('Mois', month)]),
+                fields, searchesRow, label('Commentaire pour le client', reportNote));
+            if (canEdit) {
+                card.appendChild(el('button', { class: 'btn btn-primary btn-sm', text: 'Enregistrer le rapport', onclick: async () => {
+                    if (!month.value) { say('Choisissez le mois du rapport.'); return; }
+                    const metrics = {};
+                    Object.entries(inputs).forEach(([key, input]) => { if (input.value !== '') metrics[key] = Number(input.value); });
+                    if (!Object.keys(metrics).length) { say('Saisissez au moins un chiffre.'); return; }
+                    try {
+                        const updated = await apiFetch(base + '/reports/' + channel.value + '/' + month.value + '-01', { method: 'PUT', body: {
+                            metrics,
+                            top_searches: channel.value === 'GOOGLE_BUSINESS' ? searches.value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 5) : [],
+                            note: reportNote.value.trim() || null,
+                        } });
+                        render(updated);
+                        say('Rapport enregistré : le client le voit dans son espace.', true);
+                    } catch (e) { say((e.detail || e.message) + ((e.errors || []).length ? ' (' + e.errors.map(x => x.field).join(', ') + ')' : '')); }
+                } }));
+            }
+
+            // Rapports déjà saisis
+            Object.entries(CHANNEL_LABELS).forEach(([key, name]) => {
+                const reports = data.channels[key].reports;
+                if (!reports.length) return;
+                card.appendChild(el('h4', { style: 'font-size:13px;margin:1.5rem 0 0.5rem;', text: name + ' : rapports saisis' }));
+                reports.forEach(report => {
+                    const period = new Date(report.period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                    const actions = el('div', { style: 'display:flex;gap:0.5rem;' });
+                    if (canEdit) {
+                        actions.append(
+                            el('button', { class: 'btn btn-ghost btn-sm', text: 'Modifier', onclick: () => fill(key, report) }),
+                            el('button', { class: 'btn btn-ghost btn-sm', text: 'Supprimer', onclick: async () => {
+                                if (!confirm('Supprimer le rapport ' + name + ' de ' + period + ' ? Le client ne le verra plus.')) return;
+                                try { await apiFetch(base + '/reports/' + key + '/' + report.period, { method: 'DELETE' }); render(await apiFetch(base + '/performance')); }
+                                catch (e) { say(e.detail || e.message); }
+                            } }),
+                        );
+                    }
+                    card.appendChild(el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:6px 0;border-top:1px solid var(--border);font-size:13px;' }, [
+                        el('span', { text: period + ' · ' + Object.keys(report.metrics).length + ' indicateur(s)' }), actions,
+                    ]));
+                });
+            });
+            card.appendChild(msg);
+        }
+
+        apiFetch(base + '/performance').then(render).catch(e => { card.lastChild.textContent = 'Suivi indisponible : ' + (e.detail || e.message); });
+        return card;
+    }
+
+    // ── Closers 3.0 : relevés, versements, suspension, rattachement ──
+    const PAYOUT_LABELS = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement bancaire' };
+    const canManageClosers = () => (_me?.staff_permissions || []).includes('closer:manage');
+    const sumLabel = items => items && items.length ? items.map(item => formatPriceAdmin(item)).join(' + ') : '—';
+    const monthLabel = period => new Date(period + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+    function tableRow(values) {
+        const tr = document.createElement('tr');
+        values.forEach(value => {
+            const td = document.createElement('td');
+            if (value instanceof Node) td.appendChild(value); else td.textContent = value ?? '—';
+            tr.appendChild(td);
+        });
+        return tr;
+    }
+
+    async function loadClosers() {
+        setStatus('closerLoading', 'closerError', 'closerContent', 'closerEmpty', true, false, false);
+        try {
+            const data = await apiFetch('/admin/closers');
+            const rows = data.data || [];
+            document.getElementById('kpiClosersDue').textContent = sumLabel(data.due_total);
+            document.getElementById('kpiClosersCount').textContent = rows.length;
+            document.getElementById('kpiClosersActive').textContent = rows.filter(c => c.status === 'ACTIVE').length + ' actif(s)';
+            const tbody = document.getElementById('closerTableBody');
+            tbody.innerHTML = '';
+            rows.forEach(closer => {
+                const name = document.createElement('div');
+                name.className = 'client-name';
+                name.textContent = closer.full_name;
+                const email = document.createElement('div');
+                email.style.cssText = 'font-size:12px;color:var(--text-muted);';
+                email.textContent = closer.email;
+                const who = document.createElement('div');
+                who.append(name, email);
+                const status = document.createElement('div');
+                const badge = document.createElement('span');
+                badge.className = closer.status === 'ACTIVE' ? 'badge badge-success' : 'badge badge-error';
+                badge.textContent = closer.status === 'ACTIVE' ? 'Actif' : 'Suspendu';
+                status.appendChild(badge);
+                if (canManageClosers()) {
+                    const toggle = document.createElement('button');
+                    toggle.className = 'btn btn-ghost btn-sm';
+                    toggle.style.marginLeft = '0.5rem';
+                    const next = closer.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+                    toggle.textContent = next === 'SUSPENDED' ? 'Suspendre' : 'Réactiver';
+                    toggle.onclick = async () => {
+                        if (next === 'SUSPENDED' && !confirm('Suspendre ' + closer.full_name + ' ? Son code ne sera plus accepté et il ne gagnera plus de commission.')) return;
+                        try { await apiFetch('/admin/closers/' + closer.id, { method: 'PATCH', body: { status: next } }); loadClosers(); }
+                        catch (e) { alert('Erreur : ' + (e.detail || e.message)); }
+                    };
+                    status.appendChild(toggle);
+                }
+                tbody.appendChild(tableRow([
+                    who, closer.code, closer.referred_clients + ' (' + closer.paying_clients + ' payant)',
+                    sumLabel(closer.earned), sumLabel(closer.due), sumLabel(closer.paid),
+                    (PAYOUT_LABELS[closer.payout_method] || closer.payout_method) + ' · ' + closer.payout_account, status,
+                ]));
+            });
+            setStatus('closerLoading', 'closerError', 'closerContent', 'closerEmpty', false, false, !rows.length);
+        } catch (e) {
+            setStatus('closerLoading', 'closerError', 'closerContent', 'closerEmpty', false, true, false);
+            document.getElementById('closerError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    async function loadStatements() {
+        setStatus('statementLoading', 'statementError', 'statementContent', 'statementEmpty', true, false, false);
+        try {
+            const status = document.getElementById('statementStatusFilter').value;
+            const data = await apiFetch('/admin/commission-statements' + (status ? '?status=' + status : ''));
+            const tbody = document.getElementById('statementTableBody');
+            tbody.innerHTML = '';
+            (data.data || []).forEach(item => tbody.appendChild(statementRow(item)));
+            setStatus('statementLoading', 'statementError', 'statementContent', 'statementEmpty', false, false, !(data.data || []).length);
+        } catch (e) {
+            setStatus('statementLoading', 'statementError', 'statementContent', 'statementEmpty', false, true, false);
+            document.getElementById('statementError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function statementRow(item) {
+        const action = document.createElement('div');
+        if (item.status === 'DUE' && canManageClosers()) {
+            const method = document.createElement('select');
+            method.className = 'form-select';
+            method.style.cssText = 'max-width:160px;margin-bottom:4px;';
+            Object.entries(PAYOUT_LABELS).forEach(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value; option.textContent = label;
+                if (value === item.closer_payout_method) option.selected = true;
+                method.appendChild(option);
+            });
+            const reference = document.createElement('input');
+            reference.className = 'form-input';
+            reference.placeholder = 'Référence du transfert';
+            reference.maxLength = 100;
+            reference.style.cssText = 'max-width:180px;margin-bottom:4px;';
+            const pay = document.createElement('button');
+            pay.className = 'btn btn-primary btn-sm';
+            pay.textContent = 'Marquer versé';
+            pay.onclick = async () => {
+                if (!reference.value.trim()) { alert('Indiquez la référence du transfert.'); reference.focus(); return; }
+                if (!confirm('Confirmer le versement de ' + formatPriceAdmin({ amount: item.total_amount, currency: item.currency }) + ' à ' + item.closer_name + ' ?')) return;
+                try {
+                    await apiFetch('/admin/commission-statements/' + item.id + '/pay', { method: 'POST', body: { method: method.value, reference: reference.value.trim() } });
+                    loadStatements();
+                    loadClosers();
+                } catch (e) { alert('Erreur : ' + (e.detail || e.message)); }
+            };
+            action.append(method, reference, pay);
+        }
+        const state = item.status === 'PAID'
+            ? 'Versé le ' + formatDate(item.paid_on) + (item.payout_reference ? ' (réf. ' + item.payout_reference + ')' : '')
+            : 'À verser';
+        return tableRow([
+            monthLabel(item.period),
+            item.closer_name + ' · ' + item.closer_code,
+            formatPriceAdmin({ amount: item.total_amount, currency: item.currency }) + ' (' + item.commission_count + ' paiement(s))',
+            (PAYOUT_LABELS[item.closer_payout_method] || item.closer_payout_method) + ' · ' + item.closer_payout_account,
+            state, action,
+        ]);
+    }
+
+    function closerAttachCard(org) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginTop = '1.5rem';
+        const title = document.createElement('h3');
+        title.textContent = 'Closer 3.0';
+        const help = document.createElement('p');
+        help.style.cssText = 'font-size:13px;color:var(--text-muted);margin:0.5rem 0 1rem;';
+        help.textContent = 'Client amené par un closer sans passer par son lien ? Saisissez son code : les prochains paiements de ce client lui rapporteront 20 %. Laissez vide et validez pour détacher.';
+        const input = document.createElement('input');
+        input.className = 'form-input';
+        input.placeholder = 'Code du closer (ex. AB12CD)';
+        input.maxLength = 16;
+        input.style.cssText = 'max-width:220px;margin-right:0.5rem;';
+        const result = document.createElement('div');
+        result.style.cssText = 'font-size:13px;margin-top:0.5rem;';
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline btn-sm';
+        btn.textContent = 'Enregistrer';
+        btn.onclick = async () => {
+            const code = input.value.trim().toUpperCase() || null;
+            try {
+                const res = await apiFetch('/admin/organizations/' + org.id + '/closer', { method: 'PUT', body: { closer_code: code } });
+                result.style.color = 'var(--success)';
+                result.textContent = res.closer_code ? 'Client rattaché au closer ' + res.closer_code + '.' : 'Client détaché de son closer.';
+                loadClosers();
+            } catch (e) {
+                result.style.color = 'var(--error)';
+                result.textContent = e.detail || e.message;
+            }
+        };
+        card.append(title, help, input, btn, result);
+        return card;
+    }
+
+    // ── Projets de site (Digital Start) ──
+    let _projectCursor = null;
+    const PROJECT_STATUS_LABELS = {
+        BRIEF_PENDING: ['Brief à remplir', 'badge-muted'], IN_PRODUCTION: ['À produire', 'badge-warning'],
+        CLIENT_REVIEW: ['En relecture', 'badge-info'], REVISION: ['Corrections à faire', 'badge-warning'],
+        APPROVED: ['À mettre en ligne', 'badge-accent'], LIVE: ['En ligne', 'badge-success'], CANCELLED: ['Annulé', 'badge-muted'],
+    };
+    const BRIEF_LABELS = {
+        business_name: 'Entreprise', activity: 'Activité', city: 'Ville', address: 'Adresse', phone: 'Téléphone',
+        whatsapp: 'WhatsApp', email: 'E-mail', opening_hours: 'Horaires', facebook: 'Facebook', instagram: 'Instagram',
+        tiktok: 'TikTok', desired_domain: 'Domaine souhaité', template: 'Modèle', palette: 'Palette', has_logo: 'Logo fourni',
+    };
+    const REVISION_LABELS = { TEXT: 'Texte', PHOTO: 'Photo', CONTACT: 'Coordonnée', HOURS: 'Horaires' };
+
+    function projectBadge(status) {
+        const [label, css] = PROJECT_STATUS_LABELS[status] || [status, 'badge-muted'];
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + css;
+        badge.textContent = label;
+        return badge;
+    }
+
+    async function loadProjects(append) {
+        if (!append) {
+            _projectCursor = null;
+            document.getElementById('projectTableBody').innerHTML = '';
+            document.getElementById('projectDetail').style.display = 'none';
+        }
+        setStatus('projectLoading', 'projectError', 'projectContent', 'projectEmpty', true, false, false);
+        try {
+            const params = { limit: 25 };
+            const status = document.getElementById('projectStatusFilter').value;
+            if (status) params.status = status;
+            if (_projectCursor) params.cursor = _projectCursor;
+            const data = await apiFetch('/admin/website-projects?' + new URLSearchParams(params).toString());
+            const list = data.data || [];
+            list.forEach(appendProjectRow);
+            _projectCursor = data.page?.next_cursor || null;
+            document.getElementById('projectLoadMore').style.display = data.page?.has_more ? '' : 'none';
+            const total = document.getElementById('projectTableBody').children.length;
+            setStatus('projectLoading', 'projectError', 'projectContent', 'projectEmpty', false, false, total === 0);
+        } catch (e) {
+            setStatus('projectLoading', 'projectError', 'projectContent', 'projectEmpty', false, true, false);
+            document.getElementById('projectError').textContent = 'Erreur : ' + (e.detail || e.message);
+        }
+    }
+
+    function appendProjectRow(project) {
+        const tr = document.createElement('tr');
+        const cell = (text) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+        cell(formatDate(project.created_at));
+        cell(project.organization_name || '—').className = 'client-name';
+        const statusTd = document.createElement('td');
+        statusTd.appendChild(projectBadge(project.status));
+        tr.appendChild(statusTd);
+        cell(project.due_on ? formatDate(project.due_on) : '—');
+        const actionTd = document.createElement('td');
+        const open = document.createElement('button');
+        open.className = 'btn btn-ghost btn-sm';
+        open.textContent = 'Ouvrir';
+        open.onclick = () => showProject(project);
+        actionTd.appendChild(open);
+        tr.appendChild(actionTd);
+        document.getElementById('projectTableBody').appendChild(tr);
+    }
+
+    // ── Prompt de conception : rédigé depuis le brief, amélioré par l'équipe, exporté en PDF ──
+    function designPromptBlock(project) {
+        const box = document.createElement('div');
+        box.style.cssText = 'margin-top:1.5rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius-md);';
+        const title = document.createElement('h4');
+        title.style.cssText = 'font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;';
+        title.textContent = 'Prompt de conception';
+        const status = document.createElement('p');
+        status.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;';
+        status.textContent = 'Chargement du prompt…';
+        const area = document.createElement('textarea');
+        area.className = 'form-input';
+        area.rows = 18;
+        area.maxLength = 30000;
+        area.style.cssText = 'width:100%;font-family:monospace;font-size:12px;line-height:1.5;resize:vertical;';
+        const message = document.createElement('div');
+        message.style.cssText = 'font-size:12px;min-height:16px;margin-top:0.5rem;';
+        const buttons = document.createElement('div');
+        buttons.style.cssText = 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem;';
+        const canEdit = (_me?.staff_permissions || []).includes('website_project:transition');
+        const url = '/admin/website-projects/' + project.id + '/design-prompt';
+        const button = (label, primary, onclick) => {
+            const b = document.createElement('button');
+            b.className = primary ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+            b.textContent = label;
+            b.onclick = onclick;
+            buttons.appendChild(b);
+            return b;
+        };
+        const say = (text, ok) => { message.style.color = ok ? 'var(--success)' : 'var(--error)'; message.textContent = text; };
+        const show = data => {
+            area.value = data.prompt;
+            status.textContent = !data.saved
+                ? "Aperçu : le client n'a pas encore envoyé son brief. Le prompt sera rédigé automatiquement à l'envoi."
+                : data.edited_at
+                    ? 'Modifié par ' + (data.edited_by_name || "l'équipe") + ' le ' + formatDateTime(data.edited_at) + '.'
+                    : "Rédigé automatiquement à partir du brief. Améliorez-le puis enregistrez avant de lancer la conception.";
+        };
+        area.readOnly = !canEdit;
+        if (canEdit) {
+            button('Enregistrer', true, async () => {
+                try { show(await apiFetch(url, { method: 'PUT', body: { prompt: area.value } })); say('Prompt enregistré.', true); }
+                catch (e) { say(e.detail || e.message); }
+            });
+            button('Regénérer depuis le brief', false, async () => {
+                if (!confirm('Réécrire le prompt à partir du brief actuel ? Vos modifications seront remplacées.')) return;
+                try { show(await apiFetch(url + '/regenerate', { method: 'POST' })); say('Prompt réécrit depuis le brief.', true); }
+                catch (e) { say(e.detail || e.message); }
+            });
+        }
+        button('Télécharger le PDF', false, async () => {
+            try {
+                const res = await fetch(D360_API_BASE + url + '.pdf', { credentials: 'include' });
+                if (!res.ok) throw new Error('Téléchargement impossible (HTTP ' + res.status + ').');
+                const disposition = res.headers.get('content-disposition') || '';
+                const name = (disposition.match(/filename="([^"]+)"/) || [])[1] || 'prompt-conception.pdf';
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(await res.blob());
+                link.download = name;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => { URL.revokeObjectURL(link.href); link.remove(); }, 1000);
+            } catch (e) { say(e.message); }
+        });
+        button('Copier', false, async () => {
+            try { await navigator.clipboard.writeText(area.value); say('Prompt copié.', true); }
+            catch (_) { area.select(); say('Sélectionné : copiez avec Ctrl+C.', true); }
+        });
+        box.append(title, status, area, buttons, message);
+        apiFetch(url).then(show).catch(e => { status.textContent = 'Prompt indisponible : ' + (e.detail || e.message); });
+        return box;
+    }
+
+    function showProject(project) {
+        const panel = document.getElementById('projectDetail');
+        panel.innerHTML = '';
+        panel.style.display = '';
+        const add = (tag, text, css) => { const el = document.createElement(tag); el.textContent = text; if (css) el.style.cssText = css; panel.appendChild(el); return el; };
+
+        const header = add('div', '', 'display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;');
+        const title = document.createElement('h3');
+        title.textContent = project.organization_name;
+        header.appendChild(title);
+        header.appendChild(projectBadge(project.status));
+        if (project.due_on) add('p', 'Livraison promise au client : ' + formatDate(project.due_on), 'font-size:13px;color:var(--warning);margin-bottom:1rem;');
+
+        add('h4', 'Brief du client', 'font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin:1rem 0 0.5rem;');
+        const brief = project.brief || {};
+        Object.entries(BRIEF_LABELS).forEach(([key, label]) => {
+            if (brief[key] === undefined || brief[key] === null || brief[key] === '') return;
+            const row = add('div', '', 'display:flex;gap:1rem;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;');
+            const name = document.createElement('span'); name.style.cssText = 'min-width:140px;color:var(--text-muted);'; name.textContent = label;
+            const value = document.createElement('span'); value.textContent = typeof brief[key] === 'boolean' ? (brief[key] ? 'Oui' : 'Non') : String(brief[key]);
+            row.appendChild(name); row.appendChild(value);
+        });
+        if ((brief.services || []).length) {
+            add('div', 'Services :', 'font-size:13px;color:var(--text-muted);margin-top:0.5rem;');
+            const ul = add('ul', '', 'margin:0.25rem 0 0 1.2rem;font-size:13px;');
+            brief.services.forEach(service => {
+                const li = document.createElement('li');
+                li.textContent = service.name + (service.description ? ' — ' + service.description : '');
+                ul.appendChild(li);
+            });
+        }
+        if (project.missing_fields?.length && project.status === 'BRIEF_PENDING') {
+            add('p', 'Le client doit encore compléter : ' + project.missing_fields.join(', '), 'font-size:12px;color:var(--text-muted);margin-top:0.5rem;');
+        }
+
+        (project.revision_requests || []).forEach((request, index) => {
+            add('h4', 'Corrections demandées (série ' + (index + 1) + ')', 'font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin:1.25rem 0 0.5rem;');
+            const ul = add('ul', '', 'margin:0 0 0 1.2rem;font-size:13px;');
+            request.items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = (REVISION_LABELS[item.category] || item.category) + ' · ' + item.page + ' : ' + item.text;
+                ul.appendChild(li);
+            });
+        });
+        if (project.preview_url) add('p', 'Préversion : ' + project.preview_url, 'font-size:12px;color:var(--text-muted);margin-top:1rem;');
+        if (project.live_url) add('p', 'Site en ligne : ' + project.live_url, 'font-size:12px;color:var(--text-muted);');
+        if (project.status !== 'CANCELLED') panel.appendChild(designPromptBlock(project));
+
+        const actions = add('div', '', 'display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;max-width:520px;');
+        const message = add('div', '', 'font-size:13px;color:var(--error);min-height:18px;');
+        const actionRow = (placeholder, label, buildBody, confirmText) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:0.5rem;';
+            const input = document.createElement('input');
+            input.className = 'filter-input';
+            input.style.flex = '1';
+            input.placeholder = placeholder;
+            const button = document.createElement('button');
+            button.className = 'btn btn-primary btn-sm';
+            button.textContent = label;
+            button.onclick = async () => {
+                const value = input.value.trim();
+                if (!value) { message.textContent = 'Champ obligatoire.'; return; }
+                if (confirmText && !confirm(confirmText)) return;
+                try {
+                    showD360Loading();
+                    const updated = await apiFetch('/admin/website-projects/' + project.id + '/transition', { method: 'POST', body: buildBody(value) });
+                    loadProjects(false);
+                    showProject(updated);
+                } catch (e) {
+                    message.textContent = (e.detail || e.message) + ((e.errors || []).length ? ' : ' + e.errors.map(x => x.reason).join(', ') : '');
+                } finally {
+                    hideD360Loading();
+                }
+            };
+            row.appendChild(input);
+            row.appendChild(button);
+            actions.appendChild(row);
+        };
+        const available = project.available_actions || [];
+        if (available.includes('CLIENT_REVIEW')) {
+            actionRow('Lien de la préversion (https://…)', project.status === 'REVISION' ? 'Publier la version corrigée' : 'Publier la préversion',
+                value => ({ target: 'CLIENT_REVIEW', preview_url: value }), 'Le client va recevoir un e-mail pour relire son site. Continuer ?');
+        }
+        if (available.includes('LIVE')) {
+            actionRow('Adresse du site en ligne (https://…)', 'Mettre en ligne', value => ({ target: 'LIVE', live_url: value }), 'Le client va être prévenu que son site est en ligne. Continuer ?');
+        }
+        if (available.includes('CANCELLED')) {
+            actionRow("Motif de l'annulation", 'Annuler le projet', value => ({ target: 'CANCELLED', reason: value }), 'Annuler définitivement ce projet ?');
+        }
+        if (!available.some(target => ['CLIENT_REVIEW', 'LIVE', 'CANCELLED'].includes(target))) {
+            add('p', "Aucune action de l'équipe à cette étape : on attend le client.", 'font-size:13px;color:var(--text-muted);');
+        }
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── Logout admin ──
+    async function handleLogoutAdmin() {
+        try {
+            showD360Loading();
+            const res = await fetch(D360_API_BASE + '/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: csrfHeaders(),
+            });
+            if (res.status === 204) {
+                window.location.href = 'index.html';
+            } else {
+                alert('Déconnexion impossible (HTTP ' + res.status + '). Veuillez rafraîchir la page.');
+            }
+        } catch (e) {
+            // Si CSRF_FAILED, rafraîchir le jeton et réessayer une fois
+            if (e?.code === 'CSRF_FAILED' && _csrfToken) {
+                try {
+                    await getCsrf();
+                    const res2 = await fetch(D360_API_BASE + '/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: csrfHeaders(),
+                    });
+                    if (res2.status === 204) {
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('Déconnexion impossible (HTTP ' + res2.status + '). Veuillez rafraîchir la page.');
+                    }
+                } catch (_) {
+                    alert('Erreur lors de la déconnexion : ' + e.message);
+                } finally {
+                    hideD360Loading();
+                }
+                return;
+            }
+            alert('Erreur lors de la déconnexion : ' + e.message);
+        } finally {
+            hideD360Loading();
+        }
+    }
+
+    // ── Init ──
+    (async () => {
+        try {
+            await getCsrf();
+            _me = await checkAuth();
+            if (!_me) return;
+
+            _myUserId = _me.user?.id || null;
+            const userNameEl = document.getElementById('adminUserName');
+            if (userNameEl) userNameEl.textContent = (_me.user?.full_name || _me.user?.email || 'Staff') + ' · ' + (_me.staff_roles?.join(', ') || 'staff');
+
+            // Show/hide tabs based on permissions
+            const perms = _me.staff_permissions || [];
+            if (perms.includes('staff:manage')) {
+                document.getElementById('navSectionTeam').style.display = '';
+                document.getElementById('navItemEquipe').style.display = '';
+            }
+            if (perms.includes('audit:read')) {
+                document.getElementById('navItemAudit').style.display = '';
+            }
+            if (perms.includes('order:create')) {
+                document.getElementById('navItemDemandes').style.display = '';
+            }
+            if (!perms.includes('diagnostic:read')) {
+                document.getElementById('admin-prospects')?.remove();
+                document.querySelector('.admin-nav-item[data-page="prospects"]')?.remove();
+            }
+
+            // Load initial data
+            loadDashboard();
+            loadOrgs(false);
+            if (perms.includes('diagnostic:read')) { loadDiagnostics(false); loadOrphanBar(); }
+            if (perms.includes('staff:manage')) loadStaff();
+            if (perms.includes('audit:read')) loadAuditLogs(false);
+            if (perms.includes('order:create')) loadPurchaseRequests(false);
+            if (perms.includes('order:create')) {
+                document.getElementById('navItemAbonnements').style.display = '';
+                loadSubscriptions();
+            }
+            if (perms.includes('invoice:read')) {
+                document.getElementById('navItemClosers').style.display = '';
+                loadClosers();
+                loadStatements();
+            }
+            if (perms.includes('website_project:read')) {
+                document.getElementById('navItemProjets').style.display = '';
+                loadProjects(false);
+            }
+            // déclencher les animations reveal sur la page active au chargement
+            switchPage('dashboard');
+        } catch (e) {
+            console.error('[D360] Admin init error:', e);
+            window.location.href = 'index.html';
+        }
+    })();
+    </script>
+</body>
+</html>
