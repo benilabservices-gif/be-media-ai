@@ -37,6 +37,14 @@
         .currency-selector{display:flex;gap:.5rem;align-items:center}
         .currency-btn{padding:6px 14px;border-radius:var(--radius-full);font-size:13px;border:1px solid var(--border);color:var(--text-secondary);transition:all .3s;font-weight:500}
         .currency-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(127,181,168,.08)}
+        .pricing-paths{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:960px;margin:2.5rem auto 0}
+        .pricing-path{border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem 1.5rem;background:var(--bg-card)}
+        .pricing-path p{color:var(--text-secondary);font-size:14px;line-height:1.6;margin:0}
+        .pricing-path p strong{color:var(--text-primary)}
+        .pricing-path-tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:.5rem}
+        .pricing-note{text-align:center;color:var(--text-muted);font-size:13px;margin:1rem auto 0}
+        .price-scope{font-size:12px;color:var(--accent);margin:-0.5rem 0 1rem}
+        @media(max-width:768px){.pricing-paths{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
@@ -196,12 +204,24 @@
             <div class="reveal" style="text-align:center;">
                 <div class="section-label" style="justify-content:center;">Nos offres</div>
                 <h2 class="section-title">Des formules <span style="color:var(--accent);font-style:italic;">claires</span></h2>
-                <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Commencez par l'offre Start, puis choisissez votre accompagnement mensuel.</p>
+                <p class="section-sub" style="margin:0 auto;">Pas de frais cachés. Start crée votre site ; les abonnements le font vivre et vous apportent des clients.</p>
                 <div class="currency-selector" style="justify-content:center;margin-top:1.5rem;">
-                    <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">FCFA</button>
-                    <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">€</button>
+                    <button class="currency-btn active" data-cur="XOF" onclick="setCurrency('XOF')">Afrique · FCFA</button>
+                    <button class="currency-btn" data-cur="EUR" onclick="setCurrency('EUR')">Europe · €</button>
                 </div>
             </div>
+            <!-- Start est obligatoire seulement sans site : les abonnements ne créent pas de site -->
+            <div class="pricing-paths reveal">
+                <div class="pricing-path">
+                    <div class="pricing-path-tag">Vous n'avez pas encore de site</div>
+                    <p><strong>Commencez par Start</strong> (paiement unique) : nous créons et mettons en ligne votre site, avec nom de domaine, hébergement et email professionnel. Ajoutez ensuite un abonnement si vous voulez que nous le fassions vivre.</p>
+                </div>
+                <div class="pricing-path">
+                    <div class="pricing-path-tag">Vous avez déjà un site et un nom de domaine</div>
+                    <p><strong>Pas besoin de Start</strong> : choisissez directement Essential, Growth ou Performance. Nous prenons en charge votre site existant.</p>
+                </div>
+            </div>
+            <p class="pricing-note">Les abonnements ne comprennent pas la création d'un nouveau site.</p>
             <div class="lp-pricing-grid" id="pricingGrid">
                 <!-- Rendered dynamically from catalog -->
             </div>
@@ -767,18 +787,13 @@
          if (!catalogData) { renderPricingDefault(); return; }
          const grid = document.getElementById('pricingGrid');
         if (!grid) { console.error('[D360] pricingGrid element not found!'); return; }
-        const featureMap = {
-            DIGITAL_START: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'],
-            DIGITAL_ESSENTIAL: ['Tout le pack Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'],
-            DIGITAL_GROWTH: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'],
-            DIGITAL_PERFORMANCE: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé']
-        };
         grid.innerHTML = '';
          catalogData.products.forEach((prod, i) => {
              const isFeatured = prod.code === 'DIGITAL_GROWTH';
              // NONE = paiement unique (Start) : aucune période affichée
              const period = { MONTH: ' / mois', YEAR: ' / an' }[prod.price?.period] || '';
-             const features = featureMap[prod.code] || [];
+             // Contenu exact de l'offre : vient du catalogue serveur, jamais écrit en dur ici
+             const features = prod.includes || [];
              const card = document.createElement('div');
              card.className = `card price-card${isFeatured ? ' featured' : ''} reveal delay-${i + 1}`;
              // Title
@@ -795,13 +810,19 @@
              // Period text
              const pEl = document.createElement('p');
              pEl.className = 'price-period';
-             pEl.textContent = prod.kind === 'ONE_TIME' ? 'Paiement unique — Pack complet' : 'Abonnement' + period;
+             pEl.textContent = prod.kind === 'ONE_TIME' ? 'Paiement unique — création du site' : 'Abonnement' + period;
              card.appendChild(pEl);
+             // À qui s'adresse l'offre : lève la confusion « l'abonnement inclut-il le site ? »
+             const scope = document.createElement('p');
+             scope.className = 'price-scope';
+             scope.textContent = prod.kind === 'ONE_TIME'
+                 ? 'Si vous n\'avez pas encore de site'
+                 : 'Pour un site existant : le vôtre ou celui créé avec Start';
+             card.appendChild(scope);
              // Features list
              const ul = document.createElement('ul');
              ul.className = 'price-features';
              features.forEach(f => { const li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
-             if (prod.code !== 'DIGITAL_START') { const li = document.createElement('li'); li.className = 'disabled'; li.textContent = 'Module V2'; ul.appendChild(li); }
              card.appendChild(ul);
              // CTA
              const a = document.createElement('a');
@@ -815,47 +836,22 @@
          observeReveals(grid);
      }
 
+    // API injoignable (ex. serveur en veille) : pas de prix de secours écrit en dur, qui
+    // finirait périmé ; on propose de réessayer
     function renderPricingDefault() {
-        // Fallback static rendering with HT
-         const grid = document.getElementById('pricingGrid');
-         if (!grid) { console.error('[D360] renderPricingDefault: pricingGrid not found'); return; }
-        const products = [
-             { code: 'DIGITAL_START', name: 'Start', price: { amount: 109900, currency: 'XOF' }, period: '', featured: false, features: ['Nom de domaine + hébergement', 'Site web jusqu\'à 5 pages', 'Design responsive', 'Formulaire de contact', 'Intégration WhatsApp', 'Google Maps intégré', 'SEO technique de base', 'Email professionnel'] },
-             { code: 'DIGITAL_ESSENTIAL', name: 'Essential', price: { amount: 25000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Start', 'Maintenance & mises à jour', 'Sauvegardes régulières', 'Assistance prioritaire', '4 contenus par mois', 'Suivi de base Google Business'] },
-             { code: 'DIGITAL_GROWTH', name: 'Growth', price: { amount: 50000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: true, features: ['Tout le pack Essential inclus', '8 contenus par mois', 'Gestion Facebook & Instagram', 'Optimisation Google Business', 'SEO local de base', 'Création de visuels', 'Landing page selon besoin', 'Rapport mensuel'] },
-             { code: 'DIGITAL_PERFORMANCE', name: 'Performance', price: { amount: 100000, currency: 'XOF', period: 'MONTH' }, period: ' / mois', featured: false, features: ['Tout le pack Growth inclus', '12 contenus par mois', 'Stratégie éditoriale complète', 'Landing pages multiples', 'Génération de leads', 'Email marketing', 'Gestion campagnes publicitaires', 'Reporting avancé'] }
-         ];
+        const grid = document.getElementById('pricingGrid');
+        if (!grid) return;
         grid.innerHTML = '';
-         products.forEach((p, i) => {
-             const card = document.createElement('div');
-             card.className = `card price-card${p.featured ? ' featured' : ''} reveal delay-${i + 1}`;
-             const h3 = document.createElement('h3');
-             h3.style.cssText = 'font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;';
-             h3.textContent = p.name;
-             card.appendChild(h3);
-             const priceDiv = document.createElement('div');
-             priceDiv.className = 'price-amount';
-             priceDiv.appendChild(document.createTextNode(formatPrice(p.price, 'XOF')));
-             if (p.period) { const span = document.createElement('span'); span.textContent = p.period; priceDiv.appendChild(span); }
-             card.appendChild(priceDiv);
-             const pEl = document.createElement('p');
-             pEl.className = 'price-period';
-             pEl.textContent = p.period ? 'Abonnement' : 'Paiement unique — Pack complet';
-             card.appendChild(pEl);
-             const ul = document.createElement('ul');
-             ul.className = 'price-features';
-             p.features.forEach(f => { const li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
-             card.appendChild(ul);
-             const a = document.createElement('a');
-             a.href = '#';
-             a.onclick = (e) => { e.preventDefault(); startDiagnostic(); };
-             a.className = `btn ${p.featured ? 'btn-primary' : 'btn-outline'} btn-block`;
-              a.textContent = 'Commencer';
-              card.appendChild(a);
-              grid.appendChild(card);
-          });
-         observeReveals(grid);
-     }
+        const box = document.createElement('div');
+        box.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--text-muted);padding:2rem;';
+        box.textContent = 'Les tarifs se chargent… ';
+        const retry = document.createElement('button');
+        retry.className = 'btn btn-outline btn-sm';
+        retry.textContent = 'Réessayer';
+        retry.addEventListener('click', loadCatalog);
+        box.appendChild(retry);
+        grid.appendChild(box);
+    }
 
     function renderPlanPricingCta() {
         const el = document.getElementById('planPricingCta');
