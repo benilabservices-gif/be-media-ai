@@ -81,7 +81,7 @@ def _query(database_url: str, sql: str, **params: Any) -> list[Any]:
 def test_should_serve_questionnaire_without_scoring_points(api: ApiClient) -> None:
     body = api.get("/public/questionnaire").json()
 
-    assert body["version"] == 1
+    assert body["version"] == 2
     questions = {q["key"]: q for section in body["sections"] for q in section["questions"]}
     assert questions["site"]["options"][0] == {
         "value": "oui",
