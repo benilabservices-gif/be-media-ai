@@ -10,7 +10,7 @@ from digital360.modules.diagnostics.domain.seeds import load_catalog, load_quest
 
 @pytest.fixture(scope="module")
 def catalog() -> Catalog:
-    return load_catalog(Path("config/seeds/catalog.v5.yaml"))
+    return load_catalog(Path("config/seeds/catalog.v6.yaml"))
 
 
 @pytest.mark.parametrize(
@@ -92,7 +92,7 @@ def test_should_keep_african_prices_unchanged(catalog: Catalog) -> None:
 
 
 @pytest.mark.parametrize(
-    "country", ["FR", "BE", "CH", "LU", "MC", "DE", "ES", "IT", "PT", "NL", "GB"]
+    "country", ["FR", "BE", "CH", "LU", "MC", "DE", "ES", "IT", "PT", "NL", "GB", "CA"]
 )
 def test_should_bill_every_european_country_of_the_questionnaire_in_euros(
     catalog: Catalog, country: str
@@ -101,10 +101,10 @@ def test_should_bill_every_european_country_of_the_questionnaire_in_euros(
 
 
 def test_should_list_european_countries_in_questionnaire() -> None:
-    questionnaire = load_questionnaire(Path("config/seeds/questionnaire.v2.yaml"))
+    questionnaire = load_questionnaire(Path("config/seeds/questionnaire.v3.yaml"))
     country = questionnaire.question("country")
     assert country is not None
 
     values = {option.value for option in country.options}
 
-    assert {"BE", "CH", "LU", "MC", "DE", "ES", "IT", "PT", "NL", "GB"} <= values
+    assert {"BE", "CH", "LU", "MC", "DE", "ES", "IT", "PT", "NL", "GB", "CA"} <= values

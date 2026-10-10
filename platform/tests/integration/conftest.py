@@ -108,7 +108,7 @@ def published_config(test_database_url: str) -> None:
                 await config_store.publish(
                     session,
                     ConfigKind.QUESTIONNAIRE,
-                    load_questionnaire(SEEDS_DIR / "questionnaire.v2.yaml"),
+                    load_questionnaire(SEEDS_DIR / "questionnaire.v3.yaml"),
                 )
                 await config_store.publish(
                     session,
@@ -119,7 +119,7 @@ def published_config(test_database_url: str) -> None:
                     session, ConfigKind.RULE_SET, load_rule_set(SEEDS_DIR / "rules.v1.yaml")
                 )
                 await config_store.publish(
-                    session, ConfigKind.CATALOG, load_catalog(SEEDS_DIR / "catalog.v5.yaml")
+                    session, ConfigKind.CATALOG, load_catalog(SEEDS_DIR / "catalog.v6.yaml")
                 )
         finally:
             await engine.dispose()

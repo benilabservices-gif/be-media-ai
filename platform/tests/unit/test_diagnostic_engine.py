@@ -31,7 +31,7 @@ SEEDS = Path("config/seeds")
 
 @pytest.fixture(scope="module")
 def questionnaire() -> QuestionnaireDefinition:
-    return load_questionnaire(SEEDS / "questionnaire.v2.yaml")
+    return load_questionnaire(SEEDS / "questionnaire.v3.yaml")
 
 
 @pytest.fixture(scope="module")
@@ -170,6 +170,7 @@ def test_should_normalize_phone_email_and_multi(questionnaire: QuestionnaireDefi
         ("GB", "07911 123456", "+447911123456"),
         ("IT", "333 123 4567", "+393331234567"),
         ("ES", "612 34 56 78", "+34612345678"),
+        ("CA", "514 555 0123", "+15145550123"),
         # Indicatif tapé avec 00, ou sans le +
         ("BJ", "00229 01 90 49 31 32", "+2290190493132"),
         ("BJ", "229 01 90 49 31 32", "+2290190493132"),

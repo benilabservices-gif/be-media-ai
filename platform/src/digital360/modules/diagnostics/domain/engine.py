@@ -51,6 +51,7 @@ _DIAL_CODES = {
     "PT": "351",
     "NL": "31",
     "GB": "44",
+    "CA": "1",
 }
 # Pays où le 0 initial du numéro national disparaît après l'indicatif (06… → +33 6…).
 # L'Italie le garde (fixes en 0…), comme les pays africains de la liste.
