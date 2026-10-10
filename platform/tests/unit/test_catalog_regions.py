@@ -5,12 +5,12 @@ from pathlib import Path
 import pytest
 
 from digital360.modules.catalog.domain.models import Catalog, Currency, is_african_number
-from digital360.modules.diagnostics.domain.seeds import load_catalog
+from digital360.modules.diagnostics.domain.seeds import load_catalog, load_questionnaire
 
 
 @pytest.fixture(scope="module")
 def catalog() -> Catalog:
-    return load_catalog(Path("config/seeds/catalog.v4.yaml"))
+    return load_catalog(Path("config/seeds/catalog.v5.yaml"))
 
 
 @pytest.mark.parametrize(
@@ -89,3 +89,22 @@ def test_should_keep_african_prices_unchanged(catalog: Catalog) -> None:
         "DIGITAL_GROWTH": 75000,
         "DIGITAL_PERFORMANCE": 150000,
     }
+
+
+@pytest.mark.parametrize(
+    "country", ["FR", "BE", "CH", "LU", "MC", "DE", "ES", "IT", "PT", "NL", "GB"]
+)
+def test_should_bill_every_european_country_of_the_questionnaire_in_euros(
+    catalog: Catalog, country: str
+) -> None:
+    assert catalog.currency_for(country) is Currency.EUR
+
+
+def test_should_list_european_countries_in_questionnaire() -> None:
+    questionnaire = load_questionnaire(Path("config/seeds/questionnaire.v2.yaml"))
+    country = questionnaire.question("country")
+    assert country is not None
+
+    values = {option.value for option in country.options}
+
+    assert {"BE", "CH", "LU", "MC", "DE", "ES", "IT", "PT", "NL", "GB"} <= values

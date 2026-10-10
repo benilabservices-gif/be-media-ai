@@ -27,8 +27,8 @@ Answers = Mapping[str, Any]
 MAX_TEXT_LENGTH = 2000
 _E164 = re.compile(r"^\+[1-9]\d{6,14}$")
 _PHONE_SEPARATORS = re.compile(r"[\s.\-()]")
-# Indicatifs des pays du questionnaire. Seule la France retire le 0 initial : ailleurs
-# (Bénin 01…, Côte d'Ivoire 07…, Congo 06…) il fait partie du numéro.
+# Indicatifs des pays du questionnaire. En Afrique (Bénin 01…, Côte d'Ivoire 07…,
+# Congo 06…), le 0 initial fait partie du numéro : voir _TRUNK_ZERO_DROPPED.
 _DIAL_CODES = {
     "CI": "225",
     "SN": "221",
@@ -41,8 +41,20 @@ _DIAL_CODES = {
     "GA": "241",
     "CG": "242",
     "FR": "33",
+    "BE": "32",
+    "CH": "41",
+    "LU": "352",
+    "MC": "377",
+    "DE": "49",
+    "ES": "34",
+    "IT": "39",
+    "PT": "351",
+    "NL": "31",
+    "GB": "44",
 }
-_TRUNK_ZERO_DROPPED = {"FR"}
+# Pays où le 0 initial du numéro national disparaît après l'indicatif (06… → +33 6…).
+# L'Italie le garde (fixes en 0…), comme les pays africains de la liste.
+_TRUNK_ZERO_DROPPED = {"FR", "BE", "CH", "DE", "NL", "GB"}
 # Un numéro national fait au plus 10 chiffres : au-delà, il contient déjà l'indicatif
 _MIN_INTERNATIONAL_DIGITS = 8
 

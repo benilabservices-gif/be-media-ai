@@ -1,0 +1,263 @@
+# Questionnaire du diagnostic digital — version 2
+#
+# v2 (2026-10-10) : pays européens ajoutés (prix Europe, voir catalog.v5.yaml).
+#
+# Modifier ce fichier puis lancer `python -m digital360.cli seed-config` publie une NOUVELLE
+# version (les diagnostics passés gardent la leur). Clés de questions et valeurs d'options
+# identiques aux écrans de Kilo (digital360/).
+#
+# - category : catégorie du Digital Score (IDENTITY et GOALS ne comptent pas dans le score)
+# - points   : barème, jamais envoyé au navigateur
+# - visible_if : condition sur les RÉPONSES (clé de question), évaluée aussi par le frontend
+#   avec la même grammaire (all / any / not / fact + eq, ne, in, contains, exists…)
+
+key: default
+version: 2
+
+sections:
+  - key: identity
+    title: "Identité de l'entreprise"
+    questions:
+      - { key: company, label: "Nom de l'entreprise", type: TEXT, category: IDENTITY, required: true }
+      - key: sector
+        label: "Secteur d'activité"
+        type: SINGLE
+        category: IDENTITY
+        options:
+          - { value: restaurant, label: "Restaurant / Hôtellerie" }
+          - { value: retail, label: "Commerce / Boutique" }
+          - { value: services, label: "Services professionnels" }
+          - { value: beauty, label: "Beauté / Coiffure" }
+          - { value: health, label: "Santé / Bien-être" }
+          - { value: education, label: "Éducation / Formation" }
+          - { value: tech, label: "Technologie" }
+          - { value: artisan, label: "Artisan / Fabrication" }
+          - { value: other, label: "Autre" }
+      - key: country
+        label: "Pays"
+        type: SINGLE
+        category: IDENTITY
+        required: true
+        options:
+          - { value: CI, label: "Côte d'Ivoire" }
+          - { value: SN, label: "Sénégal" }
+          - { value: CM, label: "Cameroun" }
+          - { value: BJ, label: "Bénin" }
+          - { value: TG, label: "Togo" }
+          - { value: BF, label: "Burkina Faso" }
+          - { value: ML, label: "Mali" }
+          - { value: NE, label: "Niger" }
+          - { value: GA, label: "Gabon" }
+          - { value: CG, label: "Congo" }
+          - { value: FR, label: "France" }
+          - { value: BE, label: "Belgique" }
+          - { value: CH, label: "Suisse" }
+          - { value: LU, label: "Luxembourg" }
+          - { value: MC, label: "Monaco" }
+          - { value: DE, label: "Allemagne" }
+          - { value: ES, label: "Espagne" }
+          - { value: IT, label: "Italie" }
+          - { value: PT, label: "Portugal" }
+          - { value: NL, label: "Pays-Bas" }
+          - { value: GB, label: "Royaume-Uni" }
+      - { key: city, label: "Ville", type: TEXT, category: IDENTITY }
+      - { key: phone, label: "Téléphone", type: PHONE, category: IDENTITY }
+      - { key: whatsapp, label: "WhatsApp", type: PHONE, category: IDENTITY }
+      - { key: email, label: "Email", type: EMAIL, category: IDENTITY }
+      - { key: description, label: "Décrivez votre activité", type: TEXT, category: IDENTITY }
+
+  - key: presence
+    title: "Présence web"
+    questions:
+      - key: site
+        label: "Possédez-vous un site web ?"
+        type: SINGLE
+        category: PRESENCE
+        required: true
+        options:
+          - { value: oui, label: "Oui, mon site est en ligne", points: 40 }
+          - { value: en-cours, label: "En cours de création", points: 15 }
+          - { value: non, label: "Non, je n'ai pas de site", points: 0 }
+      - key: domain
+        label: "Avez-vous un nom de domaine ?"
+        type: SINGLE
+        category: PRESENCE
+        options:
+          - { value: oui, label: "Oui", points: 20 }
+          - { value: non, label: "Non", points: 0 }
+      - key: emailprof
+        label: "Avez-vous un email professionnel ?"
+        type: SINGLE
+        category: PRESENCE
+        options:
+          - { value: oui, label: "Oui (ex. nom@entreprise.com)", points: 15 }
+          - { value: non, label: "Non, j'utilise une adresse personnelle", points: 0 }
+
+  - key: visibility
+    title: "Google et réseaux sociaux"
+    questions:
+      - key: gb
+        label: "Avez-vous une fiche Google Business ?"
+        type: SINGLE
+        category: PRESENCE
+        required: true
+        options:
+          - { value: oui, label: "Oui, elle est créée et validée", points: 25 }
+          - { value: en-cours, label: "J'ai commencé mais c'est incomplet", points: 10 }
+          - { value: non, label: "Non, je n'en ai pas", points: 0 }
+      - key: reviews
+        label: "Combien d'avis Google possédez-vous ?"
+        type: SINGLE
+        category: VISIBILITY
+        visible_if: { fact: gb, in: [oui, en-cours] }
+        options:
+          - { value: 0-5, label: "0 à 5 avis", points: 5 }
+          - { value: 6-20, label: "6 à 20 avis", points: 12 }
+          - { value: 20+, label: "Plus de 20 avis", points: 20 }
+      - key: socials
+        label: "Quels réseaux sociaux utilisez-vous ?"
+        type: MULTI
+        category: VISIBILITY
+        max_points: 30
+        options:
+          - { value: facebook, label: "Facebook", points: 10 }
+          - { value: instagram, label: "Instagram", points: 10 }
+          - { value: tiktok, label: "TikTok", points: 10 }
+          - { value: linkedin, label: "LinkedIn", points: 10 }
+      - key: seo
+        label: "Votre site apparaît-il dans les résultats Google ?"
+        type: SINGLE
+        category: VISIBILITY
+        visible_if: { fact: site, eq: oui }
+        options:
+          - { value: top3, label: "Oui, en première page", points: 30 }
+          - { value: page2, label: "Oui, mais page 2 ou plus", points: 15 }
+          - { value: never, label: "Jamais testé", points: 0 }
+
+  - key: acquisition
+    title: "Acquisition"
+    questions:
+      - key: ads
+        label: "Investissez-vous dans la publicité en ligne ?"
+        type: SINGLE
+        category: ACQUISITION
+        required: true
+        options:
+          - { value: meta, label: "Oui, Meta Ads (Facebook/Instagram)", points: 40 }
+          - { value: google, label: "Oui, Google Ads", points: 40 }
+          - { value: tiktok, label: "Oui, TikTok Ads", points: 30 }
+          - { value: none, label: "Non, je n'ai jamais fait de publicité", points: 0 }
+
+  - key: conversion
+    title: "Conversion"
+    questions:
+      - key: contact
+        label: "Comment vos clients vous contactent-ils principalement ?"
+        type: SINGLE
+        category: CONVERSION
+        options:
+          - { value: whatsapp, label: "WhatsApp", points: 25 }
+          - { value: phone, label: "Téléphone", points: 15 }
+          - { value: form, label: "Formulaire sur le site", points: 30 }
+          - { value: dm, label: "Message privé (réseaux)", points: 10 }
+          - { value: walkin, label: "Passage physique uniquement", points: 5 }
+      - key: booking
+        label: "Proposez-vous un système de réservation ou paiement en ligne ?"
+        type: SINGLE
+        category: CONVERSION
+        options:
+          - { value: both, label: "Les deux (réservation + paiement)", points: 40 }
+          - { value: reservation, label: "Réservation uniquement", points: 25 }
+          - { value: payment, label: "Paiement en ligne uniquement", points: 25 }
+          - { value: none, label: "Non, rien en ligne", points: 0 }
+
+  - key: retention
+    title: "Fidélisation"
+    questions:
+      - key: clientbase
+        label: "Avez-vous une base de clients (emails, téléphones) ?"
+        type: SINGLE
+        category: RETENTION
+        options:
+          - { value: crm, label: "Oui, dans un CRM", points: 50 }
+          - { value: spreadsheet, label: "Oui, dans un fichier Excel / Google Sheets", points: 30 }
+          - { value: notebook, label: "Quelques notes, pas de système structuré", points: 15 }
+          - { value: none, label: "Non, pas de liste clients", points: 0 }
+      - key: comm
+        label: "Envoyez-vous des communications à vos clients existants ?"
+        type: SINGLE
+        category: RETENTION
+        options:
+          - { value: email, label: "Oui, par email", points: 50 }
+          - { value: whatsapp, label: "Oui, par WhatsApp", points: 40 }
+          - { value: social, label: "Oui, via les réseaux sociaux", points: 20 }
+          - { value: none, label: "Non, pas de communication régulière", points: 0 }
+
+  - key: content
+    title: "Contenu et objectifs"
+    questions:
+      - key: freq
+        label: "À quelle fréquence publiez-vous du contenu ?"
+        type: SINGLE
+        category: VISIBILITY
+        options:
+          - { value: daily, label: "Quotidiennement", points: 30 }
+          - { value: weekly, label: "1 à 2 fois par semaine", points: 25 }
+          - { value: monthly, label: "Quelques fois par mois", points: 10 }
+          - { value: rarely, label: "Rarement ou jamais", points: 0 }
+      - key: producer
+        label: "Qui produit votre contenu ?"
+        type: SINGLE
+        category: VISIBILITY
+        options:
+          - { value: internal, label: "Moi-même / mon équipe", points: 10 }
+          - { value: freelance, label: "Un freelance", points: 15 }
+          - { value: agency, label: "Une agence", points: 20 }
+          - { value: none, label: "Je n'ai pas encore de contenu", points: 0 }
+      - key: goal
+        label: "Quel est votre principal objectif digital ?"
+        type: SINGLE
+        category: GOALS
+        required: true
+        options:
+          - { value: presence, label: "Créer ma première présence en ligne" }
+          - { value: visibility, label: "Être plus visible localement" }
+          - { value: sales, label: "Vendre plus / générer des prospects" }
+          - { value: brand, label: "Renforcer ma marque" }
+
+# Faits normalisés, utilisés par les règles de recommandation : les règles ne dépendent
+# pas du libellé des questions, seulement de ces faits.
+facts:
+  has_website: { condition: { fact: site, eq: oui } }
+  website_in_progress: { condition: { fact: site, eq: en-cours } }
+  has_domain: { condition: { fact: domain, eq: oui } }
+  has_professional_email: { condition: { fact: emailprof, eq: oui } }
+  has_google_business: { condition: { fact: gb, eq: oui } }
+  google_business_incomplete: { condition: { fact: gb, eq: en-cours } }
+  social_networks_count: { count: socials }
+  content_frequency: { answer: freq }
+  runs_ads: { condition: { all: [{ fact: ads, exists: true }, { fact: ads, ne: none }] } }
+  contact_channel: { answer: contact }
+  has_online_booking_or_payment: { condition: { fact: booking, in: [both, reservation, payment] } }
+  client_base: { answer: clientbase }
+  retention_channel: { answer: comm }
+  main_goal: { answer: goal }
+  sector: { answer: sector }
+
+# Passport initial, déduit des déclarations (source = DECLARED). Élément absent ou aucune
+# condition vraie : NOT_CONFIGURED.
+passport:
+  WEBSITE: { active_if: { fact: site, eq: oui }, in_progress_if: { fact: site, eq: en-cours } }
+  DOMAIN: { active_if: { fact: domain, eq: oui } }
+  EMAIL: { active_if: { fact: emailprof, eq: oui } }
+  GOOGLE_BUSINESS: { active_if: { fact: gb, eq: oui }, in_progress_if: { fact: gb, eq: en-cours } }
+  FACEBOOK: { active_if: { fact: socials, contains: facebook } }
+  INSTAGRAM: { active_if: { fact: socials, contains: instagram } }
+  TIKTOK: { active_if: { fact: socials, contains: tiktok } }
+  LINKEDIN: { active_if: { fact: socials, contains: linkedin } }
+  WHATSAPP: { active_if: { any: [{ fact: contact, eq: whatsapp }, { fact: comm, eq: whatsapp }, { fact: whatsapp, exists: true }] } }
+  SEO: { active_if: { fact: seo, eq: top3 }, in_progress_if: { fact: seo, eq: page2 } }
+  ADS: { active_if: { all: [{ fact: ads, exists: true }, { fact: ads, ne: none }] } }
+  EMAILING: { active_if: { fact: comm, eq: email } }
+  CRM: { active_if: { fact: clientbase, eq: crm }, in_progress_if: { fact: clientbase, eq: spreadsheet } }
+  CONVERSION: { active_if: { fact: booking, eq: both }, in_progress_if: { fact: booking, in: [reservation, payment] } }
