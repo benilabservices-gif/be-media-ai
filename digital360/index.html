@@ -338,6 +338,10 @@
                           <a href="#" onclick="openAuthModal('register');return false;" class="btn btn-primary" id="scoreCtaPrimary">Créer mon espace gratuit</a>
                           <a href="#" onclick="openAuthModal('login');return false;" class="btn btn-ghost" id="scoreCtaSecondary">J'ai déjà un compte</a>
                       </div>
+                      <div style="margin-top:1.5rem;">
+                          <p style="color:var(--text-secondary);font-size:14px;margin-bottom:0.75rem;">Un conseiller vous explique vos résultats, gratuitement :</p>
+                          <a href="https://wa.me/2290140540876" target="_blank" rel="noopener" id="scoreWhatsApp" class="btn" style="background:#25D366;border-color:#25D366;color:#fff;display:inline-flex;align-items:center;gap:0.5rem;">Échanger avec un conseiller sur WhatsApp</a>
+                      </div>
                  </div>
             </div>
         </div>
@@ -1065,10 +1069,73 @@
                showPage('score');
                const result = await attachDiagnostic(diagSessionId, diagToken, currentAnswers.company);
                if (result.message) showNotice(result.message);
+               offerWhatsApp(scoreResult.score);
                return;
            }
           showPage('score');
+          offerWhatsApp(scoreResult.score);
      }
+
+    // ── Après le diagnostic : inviter à écrire à BENILAB sur WhatsApp, message déjà rédigé ──
+    const BENILAB_WHATSAPP = '2290140540876';
+    function whatsappLink(score) {
+        const company = (currentAnswers.company || '').trim();
+        const city = (currentAnswers.city || '').trim();
+        const message = 'Bonjour BENILAB, je viens de terminer mon diagnostic Digital360'
+            + (company ? ' pour « ' + company + ' »' + (city ? ' (' + city + ')' : '') : '')
+            + ' : score de ' + score.total + '/100' + (score.maturity_label ? ', niveau « ' + score.maturity_label + ' »' : '')
+            + '. Je souhaite échanger avec un conseiller sur mes résultats.';
+        return 'https://wa.me/' + BENILAB_WHATSAPP + '?text=' + encodeURIComponent(message);
+    }
+    function offerWhatsApp(score) {
+        if (!score) return;
+        const link = whatsappLink(score);
+        const button = document.getElementById('scoreWhatsApp');
+        if (button) button.href = link;
+        // Une seule fois par diagnostic (pas à chaque rechargement de la page)
+        const key = 'd360_wa_' + (diagSessionId || 'local');
+        try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (_) {}
+        // Laisser le temps de voir le score (et d'éventuellement choisir le projet)
+        setTimeout(() => {
+            if (document.querySelector('.modal-overlay.open')) { setTimeout(() => showWhatsAppPopup(score, link), 4000); return; }
+            showWhatsAppPopup(score, link);
+        }, 2500);
+    }
+    function showWhatsAppPopup(score, link) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay open';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        const box = document.createElement('div');
+        box.className = 'modal-box';
+        box.style.cssText = 'max-width:440px;text-align:center;';
+        const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+        overlay.onclick = e => { if (e.target === overlay) close(); };
+        const title = document.createElement('h2');
+        title.style.cssText = 'font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.5rem;';
+        title.textContent = 'Votre score : ' + score.total + '/100';
+        const text = document.createElement('p');
+        text.style.cssText = 'color:var(--text-secondary);font-size:15px;line-height:1.6;margin-bottom:1.5rem;';
+        text.textContent = 'Un conseiller BENILAB vous explique vos résultats et vos 3 actions prioritaires, gratuitement, sur WhatsApp. Votre message est déjà rédigé : il vous suffit de l\'envoyer.';
+        const go = document.createElement('a');
+        go.href = link;
+        go.target = '_blank';
+        go.rel = 'noopener';
+        go.className = 'btn';
+        go.style.cssText = 'background:#25D366;border-color:#25D366;color:#fff;width:100%;justify-content:center;font-size:15px;padding:14px;';
+        go.textContent = 'Écrire à BENILAB sur WhatsApp';
+        go.onclick = close;
+        const later = document.createElement('button');
+        later.className = 'btn btn-ghost btn-sm';
+        later.style.cssText = 'width:100%;justify-content:center;margin-top:0.75rem;';
+        later.textContent = 'Plus tard';
+        later.onclick = close;
+        box.append(title, text, go, later);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        go.focus();
+    }
 
     // Enregistre les réponses puis termine. Une ancienne session (déjà terminée ou expirée,
     // gardée en localStorage) est remplacée une fois par une session neuve.
