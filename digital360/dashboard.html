@@ -467,24 +467,58 @@
 
     // ── Tant que le client n'a rien acheté : échanger avec un conseiller sur WhatsApp ──
     function renderWhatsAppReminder() {
-        const latest = (diagnosticsData?.data || [])[0];
-        const anchor = document.getElementById('dashDiagAction');
         const hasBought = _purchaseRequests.some(p => p.status === 'WON');
-        if (!latest?.score || !anchor || hasBought || document.getElementById('dashWhatsApp')) return;
+        if (!_orgId || hasBought || _meData?.staff_roles?.length) return;
+        const latest = (diagnosticsData?.data || [])[0];
+        const score = latest?.score;
         const company = _orgData?.commercial_name || _orgData?.legal_name || '';
-        const message = 'Bonjour BENILAB, j\'ai fait mon diagnostic Digital360'
-            + (company ? ' pour « ' + company + ' »' : '')
-            + ' : score de ' + latest.score.total + '/100'
-            + (latest.score.maturity_label ? ', niveau « ' + latest.score.maturity_label + ' »' : '')
-            + '. Je souhaite échanger avec un conseiller sur mes résultats.';
-        const card = h('div', { id: 'dashWhatsApp', class: 'card', style: 'display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.25rem 1.5rem;margin-bottom:2rem;border-color:#25D366;' }, [
-            h('div', { style: 'flex:1 1 240px;' }, [
-                h('div', { style: 'font-weight:600;margin-bottom:0.25rem;', text: 'Un conseiller vous explique votre score de ' + latest.score.total + '/100' }),
-                h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0;', text: 'Gratuitement, sur WhatsApp : vos résultats et les actions à mener en priorité. Votre message est déjà rédigé.' }),
+        const message = score
+            ? 'Bonjour BENILAB, j\'ai fait mon diagnostic Digital360'
+                + (company ? ' pour « ' + company + ' »' : '')
+                + ' : score de ' + score.total + '/100'
+                + (score.maturity_label ? ', niveau « ' + score.maturity_label + ' »' : '')
+                + '. Je souhaite échanger avec un conseiller sur mes résultats.'
+            : 'Bonjour BENILAB, je viens de créer mon espace Digital360'
+                + (company ? ' pour « ' + company + ' »' : '')
+                + '. Je souhaite échanger avec un conseiller.';
+        const link = 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, '') + '?text=' + encodeURIComponent(message);
+        const anchor = document.getElementById('dashDiagAction');
+        if (score && anchor && !document.getElementById('dashWhatsApp')) {
+            anchor.after(h('div', { id: 'dashWhatsApp', class: 'card', style: 'display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.25rem 1.5rem;margin-bottom:2rem;border-color:#25D366;' }, [
+                h('div', { style: 'flex:1 1 240px;' }, [
+                    h('div', { style: 'font-weight:600;margin-bottom:0.25rem;', text: 'Un conseiller vous explique votre score de ' + score.total + '/100' }),
+                    h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0;', text: 'Gratuitement, sur WhatsApp : vos résultats et les actions à mener en priorité. Votre message est déjà rédigé.' }),
+                ]),
+                h('a', { class: 'btn', style: 'background:#25D366;border-color:#25D366;color:#fff;', href: link, target: '_blank', rel: 'noopener', text: 'Écrire sur WhatsApp' }),
+            ]));
+        }
+        // Popup à l'arrivée dans l'espace : une fois par visite (pas à chaque rechargement),
+        // et de nouveau à la visite suivante tant que rien n'est acheté
+        const key = 'd360_wa_dash_' + _orgId;
+        try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (_) {}
+        const show = () => {
+            // Une autre fenêtre (paiement, invitation…) est ouverte : attendre qu'elle se ferme
+            if (document.querySelector('.modal-overlay.open')) { setTimeout(show, 3000); return; }
+            showWhatsAppPopup(score, link);
+        };
+        setTimeout(show, 2000);
+    }
+
+    function showWhatsAppPopup(score, link) {
+        const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+        const overlay = h('div', { class: 'modal-overlay open', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === overlay) close(); } }, [
+            h('div', { class: 'modal-box', style: 'max-width:440px;text-align:center;' }, [
+                h('h2', { style: 'font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.5rem;', text: 'Bienvenue dans votre espace' }),
+                h('p', { style: 'color:var(--text-secondary);font-size:15px;line-height:1.6;margin-bottom:1.5rem;', text: score
+                    ? 'Un conseiller BENILAB vous explique gratuitement, sur WhatsApp, votre score de ' + score.total + '/100 et les actions à mener en priorité. Votre message est déjà rédigé : il vous suffit de l\'envoyer.'
+                    : 'Un conseiller BENILAB vous aide gratuitement, sur WhatsApp, à bien démarrer. Votre message est déjà rédigé : il vous suffit de l\'envoyer.' }),
+                h('a', { class: 'btn', style: 'background:#25D366;border-color:#25D366;color:#fff;width:100%;justify-content:center;font-size:15px;padding:14px;', href: link, target: '_blank', rel: 'noopener', onclick: close, text: 'Écrire à BENILAB sur WhatsApp' }),
+                h('button', { class: 'btn btn-ghost btn-sm', style: 'width:100%;justify-content:center;margin-top:0.75rem;', onclick: close, text: 'Plus tard' }),
             ]),
-            h('a', { class: 'btn', style: 'background:#25D366;border-color:#25D366;color:#fff;', href: 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, '') + '?text=' + encodeURIComponent(message), target: '_blank', rel: 'noopener', text: 'Écrire sur WhatsApp' }),
         ]);
-        anchor.after(card);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        overlay.querySelector('a').focus();
     }
 
     // ── Render dashboard from API ──
