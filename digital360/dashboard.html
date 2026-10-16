@@ -465,8 +465,31 @@
         // Remove hardcoded notification
     }
 
+    // ── Tant que le client n'a rien acheté : échanger avec un conseiller sur WhatsApp ──
+    function renderWhatsAppReminder() {
+        const latest = (diagnosticsData?.data || [])[0];
+        const anchor = document.getElementById('dashDiagAction');
+        const hasBought = _purchaseRequests.some(p => p.status === 'WON');
+        if (!latest?.score || !anchor || hasBought || document.getElementById('dashWhatsApp')) return;
+        const company = _orgData?.commercial_name || _orgData?.legal_name || '';
+        const message = 'Bonjour BENILAB, j\'ai fait mon diagnostic Digital360'
+            + (company ? ' pour « ' + company + ' »' : '')
+            + ' : score de ' + latest.score.total + '/100'
+            + (latest.score.maturity_label ? ', niveau « ' + latest.score.maturity_label + ' »' : '')
+            + '. Je souhaite échanger avec un conseiller sur mes résultats.';
+        const card = h('div', { id: 'dashWhatsApp', class: 'card', style: 'display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.25rem 1.5rem;margin-bottom:2rem;border-color:#25D366;' }, [
+            h('div', { style: 'flex:1 1 240px;' }, [
+                h('div', { style: 'font-weight:600;margin-bottom:0.25rem;', text: 'Un conseiller vous explique votre score de ' + latest.score.total + '/100' }),
+                h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0;', text: 'Gratuitement, sur WhatsApp : vos résultats et les actions à mener en priorité. Votre message est déjà rédigé.' }),
+            ]),
+            h('a', { class: 'btn', style: 'background:#25D366;border-color:#25D366;color:#fff;', href: 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, '') + '?text=' + encodeURIComponent(message), target: '_blank', rel: 'noopener', text: 'Écrire sur WhatsApp' }),
+        ]);
+        anchor.after(card);
+    }
+
     // ── Render dashboard from API ──
     function renderDashboard() {
+        renderWhatsAppReminder();
         // Welcome message for ?welcome=1 or ?notice=…
         const params = new URLSearchParams(window.location.search);
         const noticeMap = {
