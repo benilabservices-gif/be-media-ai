@@ -1,9 +1,9 @@
-"""Paiement en ligne Cartflox : le client paie seul, l'offre s'active dès que Cartflox confirme.
+"""Paiement en ligne SasPay : le client paie seul, l'offre s'active dès que SasPay confirme.
 
-1. Le client lance le paiement : le prix HT est figé, Cartflox ouvre une page de paiement.
-2. Le paiement est confirmé en interrogeant Cartflox (le webhook de l'espace SchoolConnect
-   sert déjà un autre projet) : au retour du client sur son espace, puis par des
-   vérifications en arrière-plan s'il ferme la page avant.
+1. Le client lance le paiement : le prix HT est figé, SasPay ouvre une page de paiement.
+2. Le paiement est confirmé en interrogeant SasPay : au retour du client sur son espace
+   (SasPay ne l'y renvoie qu'après un paiement réussi), puis par des vérifications en
+   arrière-plan s'il ferme la page avant.
 3. Paiement confirmé : même suite qu'un encaissement manuel (vente gagnée ou renouvellement,
    droits, client actif, reçu, projet de site pour Start).
 """
@@ -33,12 +33,6 @@ from digital360.modules.billing.application.service import (
     open_request,
     receipt_number,
 )
-from digital360.modules.billing.infrastructure.cartflox import (
-    GatewaySessionStatus,
-    GatewayStatus,
-    PaymentGateway,
-    PaymentGatewayError,
-)
 from digital360.modules.billing.infrastructure.models import (
     CheckoutStatus,
     ContactChannel,
@@ -49,6 +43,12 @@ from digital360.modules.billing.infrastructure.models import (
     PurchaseRequest,
     PurchaseRequestStatus,
 )
+from digital360.modules.billing.infrastructure.payment_gateway import (
+    GatewaySessionStatus,
+    GatewayStatus,
+    PaymentGateway,
+    PaymentGatewayError,
+)
 from digital360.modules.catalog.application.service import current_catalog
 from digital360.modules.catalog.domain.models import BillingPeriod
 from digital360.modules.identity.infrastructure.models import User
@@ -56,7 +56,8 @@ from digital360.modules.organizations.infrastructure.models import Organization
 
 logger = logging.getLogger("digital360.billing.online")
 
-# Cartflox encaisse en FCFA de l'UEMOA ; les autres devises restent en paiement manuel
+# Paiement en ligne en FCFA de l'UEMOA (Bénin et voisins) ; les autres devises restent
+# en paiement manuel tant que leurs réseaux SasPay ne sont pas vérifiés
 ONLINE_CURRENCIES = {"XOF"}
 CHECK_CHECKOUT_JOB = "billing.check_online_checkout"
 # Vérifications en arrière-plan après le lancement (minutes) ; sans confirmation au bout
@@ -64,7 +65,7 @@ CHECK_CHECKOUT_JOB = "billing.check_online_checkout"
 CHECK_DELAYS_MINUTES = (2, 5, 15, 30, 60, 180, 360, 720, 1440)
 # Un double clic ou un retour arrière réutilise la page de paiement déjà ouverte
 REUSE_WINDOW = timedelta(minutes=30)
-PROVIDER_ACTOR = Actor.provider("cartflox")
+PROVIDER_ACTOR = Actor.provider("saspay")
 
 
 @dataclass(frozen=True)
@@ -76,7 +77,7 @@ class CheckoutView:
     currency: str
     period: str | None
     status: str
-    # Page de paiement Cartflox, tant que le paiement est en attente
+    # Page de paiement SasPay, tant que le paiement est en attente
     checkout_url: str | None
     # Numéro du reçu une fois payé
     receipt_number: str | None
@@ -114,7 +115,7 @@ async def _record_payment(
 ) -> Payment:
     """Paiement confirmé : renouvellement d'un abonnement en cours, sinon vente gagnée."""
     payment = PaymentInput(
-        method=PaymentMethod.CARTFLOX,
+        method=PaymentMethod.SASPAY,
         amount=checkout.amount,
         reference=checkout.provider_order_id or checkout.provider_reference,
         received_on=now.date(),
@@ -178,7 +179,7 @@ async def apply_gateway_status(
     *,
     now: datetime,
 ) -> None:
-    """Reporte l'état Cartflox sur le paiement. Idempotent : seul un paiement en attente bouge.
+    """Reporte l'état SasPay sur le paiement. Idempotent : seul un paiement en attente bouge.
 
     `checkout` doit être verrouillé (SELECT … FOR UPDATE) : le retour du client et la
     vérification en arrière-plan peuvent arriver en même temps.
@@ -192,7 +193,7 @@ async def apply_gateway_status(
         if not (currency_ok and amount_ok):
             # Ne devrait jamais arriver (le montant est fixé par nous) : l'équipe vérifie à la main
             logger.error(
-                "paiement Cartflox incohérent",
+                "paiement SasPay incohérent",
                 extra={
                     "checkout_id": str(checkout.id),
                     "expected": checkout.amount,
@@ -333,7 +334,8 @@ class OnlinePaymentService:
                 "currency": currency.value,
                 "description": f"BENILAB Digital360 — {product.name}",
                 "customer_email": customer.email,
-                "customer_name": customer.full_name,
+                "customer_name": customer.full_name or customer.email,
+                "country": organization.country,
             }
 
         # Appel réseau hors transaction : la ligne existe déjà, une panne la passe en FAILED
@@ -341,18 +343,16 @@ class OnlinePaymentService:
         try:
             gateway_session = await self._gateway.create_session(
                 **request,
-                success_url=return_url,
-                cancel_url=return_url + "&annule=1",
-                # app : permet aux autres projets du même espace Cartflox d'ignorer ce paiement
+                return_url=return_url,
+                # app : permet de reconnaître ce paiement parmi ceux d'autres projets
                 metadata={
                     "app": "digital360",
                     "checkout_id": str(checkout_id),
                     "organization_id": str(context.organization_id),
                 },
-                idempotency_key=f"digital360-{checkout_id}",
             )
         except PaymentGatewayError:
-            logger.exception("création de la session Cartflox impossible")
+            logger.exception("création de la session SasPay impossible")
             async with tenant_transaction(self._session_factory, context) as session:
                 failed = await session.get(OnlineCheckout, checkout_id)
                 if failed is not None:
@@ -378,7 +378,7 @@ class OnlinePaymentService:
             return await _view(session, checkout)
 
     async def refresh(self, context: TenantContext, checkout_id: uuid.UUID) -> CheckoutView:
-        """Retour du client sur son espace : Cartflox est interrogé si le paiement est en attente."""
+        """Retour du client sur son espace : SasPay est interrogé si le paiement est en attente."""
         async with tenant_transaction(self._session_factory, context) as session:
             checkout = (
                 await session.execute(
@@ -398,7 +398,7 @@ class OnlinePaymentService:
                 status = await self._gateway.get_status(session_id)
             except PaymentGatewayError:
                 # Le paiement reste en attente : la vérification en arrière-plan prendra le relais
-                logger.warning("statut Cartflox indisponible", exc_info=True)
+                logger.warning("statut SasPay indisponible", exc_info=True)
             else:
                 async with staff_transaction(self._session_factory) as session:
                     locked = await _locked(session, checkout_id)
@@ -470,7 +470,7 @@ def register_jobs(registry: JobRegistry, gateway: PaymentGateway | None) -> None
             try:
                 status = await gateway.get_status(checkout.provider_session_id)
             except PaymentGatewayError:
-                logger.warning("statut Cartflox indisponible", exc_info=True)
+                logger.warning("statut SasPay indisponible", exc_info=True)
             else:
                 await apply_gateway_status(
                     session, registry, checkout, status, now=datetime.now(UTC)

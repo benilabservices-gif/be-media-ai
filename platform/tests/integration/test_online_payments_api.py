@@ -1,4 +1,4 @@
-"""Paiement en ligne Cartflox : lancement, confirmation par interrogation, activation, reprises."""
+"""Paiement en ligne SasPay : lancement, confirmation par interrogation, activation, reprises."""
 
 import asyncio
 import uuid
@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from digital360.main import create_app
 from digital360.modules.billing.application.online_payments import CHECK_DELAYS_MINUTES
-from digital360.modules.billing.infrastructure.cartflox import (
+from digital360.modules.billing.infrastructure.payment_gateway import (
     GatewaySession,
     GatewaySessionStatus,
     GatewayStatus,
@@ -27,8 +27,8 @@ from tests.integration.test_admin_api import _client_with_diagnostic, _staff_mem
 pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("published_config")]
 
 
-class FakeCartflox:
-    """Cartflox simulé : chaque session reste en attente jusqu'à ce que le test la règle."""
+class FakeSasPay:
+    """SasPay simulé : chaque session reste en attente jusqu'à ce que le test la règle."""
 
     def __init__(self) -> None:
         self.created: list[dict[str, Any]] = []
@@ -37,12 +37,12 @@ class FakeCartflox:
 
     async def create_session(self, **request: Any) -> GatewaySession:
         if self.down:
-            raise PaymentGatewayError("Cartflox injoignable")
+            raise PaymentGatewayError("SasPay injoignable")
         # Unique d'un lancement à l'autre : la base de test garde les sessions précédentes
         number = uuid.uuid4().hex[:12]
         session = GatewaySession(
             id=f"cs_test_{number}",
-            url=f"https://pay.cartflox.test/{number}",
+            url=f"https://pay.saspay.test/{number}",
             order_id=f"CS-{number}",
         )
         self.created.append({"session_id": session.id, **request})
@@ -51,7 +51,7 @@ class FakeCartflox:
 
     async def get_status(self, session_id: str) -> GatewaySessionStatus:
         if self.down:
-            raise PaymentGatewayError("Cartflox injoignable")
+            raise PaymentGatewayError("SasPay injoignable")
         return self.statuses[session_id]
 
     def settle(self, session_id: str, status: GatewayStatus, *, amount: int | None = None) -> None:
@@ -72,18 +72,18 @@ class FakeCartflox:
 
 
 @pytest.fixture
-def cartflox() -> FakeCartflox:
-    return FakeCartflox()
+def saspay() -> FakeSasPay:
+    return FakeSasPay()
 
 
 @pytest.fixture
-def db_app(test_database_url: str, outbox: RecordingEmailSender, cartflox: FakeCartflox) -> FastAPI:
+def db_app(test_database_url: str, outbox: RecordingEmailSender, saspay: FakeSasPay) -> FastAPI:
     settings = make_settings(
         database_url=test_database_url,
         sales_alert_emails=["ventes@benilab.test"],
         app_url="https://digital360.test/",
     )
-    return create_app(settings, email_sender=outbox, payment_gateway=cartflox)
+    return create_app(settings, email_sender=outbox, payment_gateway=saspay)
 
 
 @pytest.fixture
@@ -123,8 +123,8 @@ def _run_checks_now(database_url: str, http_client: TestClient) -> None:
 # ── Lancement ──
 
 
-def test_should_open_cartflox_page_with_frozen_price_and_return_url(
-    api: ApiClient, cartflox: FakeCartflox
+def test_should_open_saspay_page_with_frozen_price_and_return_url(
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
 
@@ -133,22 +133,17 @@ def test_should_open_cartflox_page_with_frozen_price_and_return_url(
     assert response.status_code == 201, response.json()
     checkout = response.json()
     assert checkout["status"] == "PENDING"
-    assert checkout["checkout_url"].startswith("https://pay.cartflox.test/")
+    assert checkout["checkout_url"].startswith("https://pay.saspay.test/")
     assert (checkout["amount"], checkout["currency"]) == (109900, "XOF")
-    sent = cartflox.created[-1]
+    sent = saspay.created[-1]
     assert sent["amount"] == 109900
-    assert (
-        sent["success_url"] == f"https://digital360.test/dashboard.html?paiement={checkout['id']}"
-    )
-    assert sent["cancel_url"].endswith("&annule=1")
-    # Les autres projets du même espace Cartflox reconnaissent et ignorent ce paiement
+    assert sent["return_url"] == f"https://digital360.test/dashboard.html?paiement={checkout['id']}"
+    # Pays présélectionné sur la page de paiement, paiement reconnaissable par son app
+    assert sent["country"] == api.get(f"/orgs/{org['id']}").json()["country"]
     assert sent["metadata"]["app"] == "digital360"
-    assert sent["idempotency_key"] == f"digital360-{checkout['id']}"
 
 
-def test_should_reuse_open_payment_page_on_double_click(
-    api: ApiClient, cartflox: FakeCartflox
-) -> None:
+def test_should_reuse_open_payment_page_on_double_click(api: ApiClient, saspay: FakeSasPay) -> None:
     org = _client_with_diagnostic(api)
 
     first = _start(api, org["id"]).json()
@@ -156,7 +151,7 @@ def test_should_reuse_open_payment_page_on_double_click(
 
     assert second["id"] == first["id"]
     assert second["checkout_url"] == first["checkout_url"]
-    assert len([c for c in cartflox.created if c["metadata"]["checkout_id"] == first["id"]]) == 1
+    assert len([c for c in saspay.created if c["metadata"]["checkout_id"] == first["id"]]) == 1
 
 
 def test_should_refuse_online_payment_outside_xof_zone(api: ApiClient) -> None:
@@ -171,16 +166,16 @@ def test_should_refuse_online_payment_outside_xof_zone(api: ApiClient) -> None:
 
 
 def test_should_report_provider_outage_and_mark_checkout_failed(
-    api: ApiClient, cartflox: FakeCartflox
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
-    cartflox.down = True
+    saspay.down = True
 
     response = _start(api, org["id"])
 
     assert response.status_code == 502
     assert response.json()["code"] == "PAYMENT_PROVIDER_ERROR"
-    cartflox.down = False
+    saspay.down = False
     # Aucune page en attente à réutiliser : un nouvel essai ouvre une nouvelle session
     assert _start(api, org["id"]).status_code == 201
 
@@ -212,17 +207,17 @@ def test_should_answer_503_when_online_payment_is_not_configured(
 # ── Confirmation au retour du client ──
 
 
-def test_should_activate_start_when_cartflox_confirms_on_return(
+def test_should_activate_start_when_saspay_confirms_on_return(
     api: ApiClient,
     http_client: TestClient,
     outbox: RecordingEmailSender,
-    cartflox: FakeCartflox,
+    saspay: FakeSasPay,
 ) -> None:
     org = _client_with_diagnostic(api)
     run_pending_jobs(http_client)
     outbox.sent.clear()
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
 
     returned = api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}")
     run_pending_jobs(http_client)
@@ -236,18 +231,18 @@ def test_should_activate_start_when_cartflox_confirms_on_return(
     assert api.get(f"/orgs/{org['id']}").json()["status"] == "ACTIVE"
     assert api.get(f"/orgs/{org['id']}/website-project").json()["status"] == "BRIEF_PENDING"
     payment = api.get(f"/orgs/{org['id']}/billing").json()["payments"][0]
-    assert (payment["method"], payment["amount"]) == ("CARTFLOX", 109900)
-    assert payment["reference"] == cartflox.created[-1]["session_id"].replace("cs_test_", "CS-")
+    assert (payment["method"], payment["amount"]) == ("SASPAY", 109900)
+    assert payment["reference"] == saspay.created[-1]["session_id"].replace("cs_test_", "CS-")
     receipt = next(m for m in outbox.sent if m.subject.startswith("Reçu de paiement"))
-    assert "Paiement en ligne (Cartflox)" in receipt.text
+    assert "Paiement en ligne (SasPay)" in receipt.text
 
 
 def test_should_record_payment_once_when_client_returns_twice(
-    api: ApiClient, cartflox: FakeCartflox
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
 
     api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}")
     api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}")
@@ -256,7 +251,7 @@ def test_should_record_payment_once_when_client_returns_twice(
 
 
 def test_should_close_open_purchase_request_when_paid_online(
-    api: ApiClient, second_api: ApiClient, cartflox: FakeCartflox, test_database_url: str
+    api: ApiClient, second_api: ApiClient, saspay: FakeSasPay, test_database_url: str
 ) -> None:
     org = _client_with_diagnostic(api)
     request = api.post(
@@ -264,7 +259,7 @@ def test_should_close_open_purchase_request_when_paid_online(
         {"product_code": "DIGITAL_START", "channel": "EMAIL"},
     ).json()
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
 
     api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}")
 
@@ -277,11 +272,11 @@ def test_should_close_open_purchase_request_when_paid_online(
 
 
 def test_should_keep_offer_inactive_when_payment_is_refused(
-    api: ApiClient, cartflox: FakeCartflox
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.FAILED)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.FAILED)
 
     body = api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}").json()
 
@@ -291,11 +286,11 @@ def test_should_keep_offer_inactive_when_payment_is_refused(
 
 
 def test_should_refuse_payment_when_amount_is_lower_than_price(
-    api: ApiClient, cartflox: FakeCartflox
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS, amount=100)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS, amount=100)
 
     body = api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}").json()
 
@@ -303,12 +298,12 @@ def test_should_refuse_payment_when_amount_is_lower_than_price(
     assert _entitlement(api, org["id"], "WEBSITE") is False
 
 
-def test_should_stay_pending_when_cartflox_is_unreachable_on_return(
-    api: ApiClient, cartflox: FakeCartflox
+def test_should_stay_pending_when_saspay_is_unreachable_on_return(
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
     checkout = _start(api, org["id"]).json()
-    cartflox.down = True
+    saspay.down = True
 
     response = api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}")
 
@@ -316,10 +311,10 @@ def test_should_stay_pending_when_cartflox_is_unreachable_on_return(
     assert response.json()["status"] == "PENDING"
 
 
-def test_should_refuse_paying_start_twice(api: ApiClient, cartflox: FakeCartflox) -> None:
+def test_should_refuse_paying_start_twice(api: ApiClient, saspay: FakeSasPay) -> None:
     org = _client_with_diagnostic(api)
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
     api.get(f"/orgs/{org['id']}/checkouts/{checkout['id']}")
 
     again = _start(api, org["id"])
@@ -332,16 +327,16 @@ def test_should_refuse_paying_start_twice(api: ApiClient, cartflox: FakeCartflox
 
 
 def test_should_extend_subscription_from_due_date_when_renewed_online(
-    api: ApiClient, cartflox: FakeCartflox
+    api: ApiClient, saspay: FakeSasPay
 ) -> None:
     org = _client_with_diagnostic(api)
     first = _start(api, org["id"], "DIGITAL_ESSENTIAL").json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
     api.get(f"/orgs/{org['id']}/checkouts/{first['id']}")
     covered = api.get(f"/orgs/{org['id']}/billing").json()["subscriptions"][0]
 
     renewal = _start(api, org["id"], "DIGITAL_ESSENTIAL").json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
     assert api.get(f"/orgs/{org['id']}/checkouts/{renewal['id']}").json()["status"] == "PAID"
 
     billing = api.get(f"/orgs/{org['id']}/billing").json()
@@ -354,11 +349,11 @@ def test_should_extend_subscription_from_due_date_when_renewed_online(
 
 
 def test_should_activate_offer_in_background_when_client_never_returns(
-    api: ApiClient, http_client: TestClient, cartflox: FakeCartflox, test_database_url: str
+    api: ApiClient, http_client: TestClient, saspay: FakeSasPay, test_database_url: str
 ) -> None:
     org = _client_with_diagnostic(api)
     checkout = _start(api, org["id"]).json()
-    cartflox.settle(cartflox.created[-1]["session_id"], GatewayStatus.SUCCESS)
+    saspay.settle(saspay.created[-1]["session_id"], GatewayStatus.SUCCESS)
 
     _run_checks_now(test_database_url, http_client)
 
@@ -380,10 +375,10 @@ def test_should_expire_abandoned_payment_after_last_check(
     assert body["checkout_url"] is None
 
 
-# ── L'équipe ne saisit pas de paiement Cartflox à la main ──
+# ── L'équipe ne saisit pas de paiement en ligne à la main ──
 
 
-def test_should_refuse_manual_payment_declared_as_cartflox(
+def test_should_refuse_manual_payment_declared_as_online(
     api: ApiClient, second_api: ApiClient, test_database_url: str
 ) -> None:
     org = _client_with_diagnostic(api)
@@ -393,7 +388,7 @@ def test_should_refuse_manual_payment_declared_as_cartflox(
         f"/admin/organizations/{org['id']}/sales",
         {
             "product_code": "DIGITAL_START",
-            "payment": {"method": "CARTFLOX", "reference": "CS-FAUX"},
+            "payment": {"method": "SASPAY", "reference": "CS-FAUX"},
         },
     )
 

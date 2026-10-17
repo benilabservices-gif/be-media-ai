@@ -89,7 +89,9 @@ class PaymentMethod(StrEnum):
     WAVE = "WAVE"
     BANK_TRANSFER = "BANK_TRANSFER"
     CASH = "CASH"
-    # Payé sur la page Cartflox (mobile money ou carte) : jamais saisi à la main
+    # Payé sur la page SasPay (mobile money ou carte) : jamais saisi à la main
+    SASPAY = "SASPAY"
+    # Ancien fournisseur, conservé pour l'historique : plus aucun nouveau paiement
     CARTFLOX = "CARTFLOX"
 
 
@@ -108,7 +110,7 @@ class Payment(Base):
     __table_args__ = (
         CheckConstraint(
             "method IN ('ORANGE_MONEY', 'MTN_MOMO', 'MOOV_MONEY', 'WAVE', 'BANK_TRANSFER', 'CASH', "
-            "'CARTFLOX')",
+            "'SASPAY', 'CARTFLOX')",
             name="method_valid",
         ),
         CheckConstraint("channel IN ('MANUAL', 'ONLINE')", name="channel_valid"),
@@ -149,7 +151,7 @@ class Payment(Base):
 
 
 class CheckoutStatus(StrEnum):
-    # Page de paiement ouverte, paiement pas encore confirmé par Cartflox
+    # Page de paiement ouverte, paiement pas encore confirmé par SasPay
     PENDING = "PENDING"
     PAID = "PAID"
     FAILED = "FAILED"
@@ -160,7 +162,7 @@ class CheckoutStatus(StrEnum):
 
 class OnlineCheckout(Base):
     """Paiement en ligne lancé par le client. Le prix est figé au lancement ; le paiement
-    n'est enregistré (table payments) qu'une fois confirmé par Cartflox."""
+    n'est enregistré (table payments) qu'une fois confirmé par SasPay."""
 
     __tablename__ = "online_checkouts"
     __table_args__ = (
@@ -182,7 +184,7 @@ class OnlineCheckout(Base):
     currency: Mapped[str] = mapped_column(String(3))
     period: Mapped[str | None] = mapped_column(String(8))
     status: Mapped[str] = mapped_column(String(16), server_default=CheckoutStatus.PENDING)
-    # Session Cartflox (vide tant que Cartflox n'a pas répondu)
+    # Session SasPay (vide tant que SasPay n'a pas répondu)
     provider_session_id: Mapped[str | None] = mapped_column(String(100))
     provider_order_id: Mapped[str | None] = mapped_column(String(100))
     checkout_url: Mapped[str | None] = mapped_column(Text)

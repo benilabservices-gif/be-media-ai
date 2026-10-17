@@ -26,10 +26,8 @@ from digital360.modules.billing.application.renewals import (
     schedule_daily_sweep,
 )
 from digital360.modules.billing.application.service import PurchaseRequestService
-from digital360.modules.billing.infrastructure.cartflox import (
-    PaymentGateway,
-    build_payment_gateway,
-)
+from digital360.modules.billing.infrastructure.payment_gateway import PaymentGateway
+from digital360.modules.billing.infrastructure.saspay import build_payment_gateway
 from digital360.modules.catalog.api import routes as catalog_routes
 from digital360.modules.catalog.application.service import CatalogService
 from digital360.modules.diagnostics.api import routes as diagnostic_routes

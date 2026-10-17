@@ -9,7 +9,7 @@ from digital360.core.email import EmailSender
 from digital360.core.jobs import JobRegistry
 from digital360.modules.billing.application import online_payments, renewals
 from digital360.modules.billing.application import service as billing
-from digital360.modules.billing.infrastructure.cartflox import PaymentGateway
+from digital360.modules.billing.infrastructure.payment_gateway import PaymentGateway
 from digital360.modules.diagnostics.application import notifications as diagnostic_notifications
 from digital360.modules.identity.application import password_reset
 from digital360.modules.organizations.application import team

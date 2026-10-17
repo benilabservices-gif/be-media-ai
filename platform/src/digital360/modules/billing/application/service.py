@@ -383,7 +383,7 @@ async def close_sale_as_won(
 ) -> Payment:
     """Vente gagnée : paiement enregistré, offre activée, client actif, livraison lancée.
 
-    Commun à l'encaissement manuel (l'équipe) et au paiement en ligne (confirmé par Cartflox).
+    Commun à l'encaissement manuel (l'équipe) et au paiement en ligne (confirmé par SasPay).
     """
     await _move_plan_items(
         session,
@@ -958,6 +958,7 @@ METHOD_LABELS = {
     "WAVE": "Wave",
     "BANK_TRANSFER": "Virement bancaire",
     "CASH": "Espèces",
+    "SASPAY": "Paiement en ligne (SasPay)",
     "CARTFLOX": "Paiement en ligne (Cartflox)",
 }
 

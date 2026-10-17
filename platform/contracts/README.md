@@ -46,7 +46,7 @@ Remplace le mock correspondant dès qu'un endpoint est **Disponible**. Les autre
 | `GET /admin/purchase-requests` · `PATCH /admin/purchase-requests/{id}` | **Disponible** | ADMIN et MANAGER : traitement des demandes (§11) |
 | `GET /orgs/{id}/website-project` · `PUT …/brief` · `POST …/submit` · `…/revision` · `…/approve` | **Disponible** | Projet de site Digital Start, offre encadrée (§13) |
 | `GET /admin/website-projects` · `POST /admin/website-projects/{id}/transition` | **Disponible** | Équipe : suivi et étapes des projets (§13) |
-| `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne Cartflox : achat ou renouvellement (§14) |
+| `POST /orgs/{id}/checkouts` · `GET /orgs/{id}/checkouts/{checkout_id}` | **Disponible** | Paiement en ligne SasPay : achat ou renouvellement (§14) |
 | `GET·POST·PATCH /me/closer` | **Disponible** | Closer 3.0 : espace de l'apporteur d'affaires (§15) |
 | `POST /me/password` · `POST /me/email` | **Disponible** | Changer son mot de passe ou son e-mail de connexion (§16) |
 | `GET /orgs/{id}/performance` · `GET /admin/organizations/{id}/performance` · `PUT …/google-setup` · `PUT·DELETE …/reports/{channel}/{period}` | **Disponible** | Suivi Google Business et site web (§17) |
@@ -341,23 +341,23 @@ En attendant le paiement en ligne, le client demande une offre et l'équipe le r
 - `POST …/design-prompt/regenerate` réécrit le prompt depuis le brief actuel ; les modifications de l'équipe sont remplacées.
 - `GET …/design-prompt.pdf` renvoie le PDF de la version actuelle (`Content-Disposition: attachment`). Le télécharger avec `fetch` (cookies inclus), puis créer un lien vers le `blob`.
 
-## 14. Paiement en ligne (Cartflox)
+## 14. Paiement en ligne (SasPay)
 
-Le client paie seul (mobile money ou carte) sur la page Cartflox ; l'offre s'active dès que Cartflox confirme. Le paiement manuel (§11) reste disponible.
+Le client paie seul (mobile money ou carte) sur la page SasPay ; l'offre s'active dès que SasPay confirme. Le paiement manuel (§11) reste disponible.
 
-**Afficher le bouton** « Payer en ligne » seulement si `GET /orgs/{id}/billing` renvoie **`online_payment_available: true`** (Cartflox configuré et entreprise facturée en XOF). Réservé, comme « Je veux démarrer », au propriétaire (`order:create`). Garde « Je veux démarrer » à côté, pour les clients qui préfèrent être rappelés.
+**Afficher le bouton** « Payer en ligne » seulement si `GET /orgs/{id}/billing` renvoie **`online_payment_available: true`** (SasPay configuré et entreprise facturée en XOF). Réservé, comme « Je veux démarrer », au propriétaire (`order:create`). Garde « Je veux démarrer » à côté, pour les clients qui préfèrent être rappelés.
 
 **`POST /orgs/{id}/checkouts`** avec `{ "product_code": "DIGITAL_START" }` (achat) ou un abonnement déjà souscrit (**renouvellement** : la période s'ajoute à l'échéance) :
 - **201** : `{ id, product_code, product_name, amount, currency, period, status: "PENDING", checkout_url, receipt_number: null, created_at }`. Redirige aussitôt : `window.location.href = checkout_url`. Un double clic dans les 30 minutes renvoie le même paiement et la même page.
-- Erreurs : 503 `ONLINE_PAYMENT_UNAVAILABLE` (paiement en ligne non activé), 422 `ONLINE_PAYMENT_UNAVAILABLE` (devise autre que XOF), 422 `PRODUCT_NOT_AVAILABLE`, 409 `ALREADY_PURCHASED` (Digital Start déjà payé), 502 `PAYMENT_PROVIDER_ERROR` (Cartflox ne répond pas : proposer de réessayer ou « Je veux démarrer »).
+- Erreurs : 503 `ONLINE_PAYMENT_UNAVAILABLE` (paiement en ligne non activé), 422 `ONLINE_PAYMENT_UNAVAILABLE` (devise autre que XOF), 422 `PRODUCT_NOT_AVAILABLE`, 409 `ALREADY_PURCHASED` (Digital Start déjà payé), 502 `PAYMENT_PROVIDER_ERROR` (SasPay ne répond pas : proposer de réessayer ou « Je veux démarrer »).
 
-**Retour de Cartflox** : le client revient sur `dashboard.html?paiement={id}` (ou `…&annule=1` s'il a annulé). Appelle alors **`GET /orgs/{id}/checkouts/{id}`** : le serveur interroge Cartflox et active l'offre si le paiement est confirmé. Selon `status` :
+**Retour de SasPay** : après un paiement **réussi**, SasPay renvoie le client sur `dashboard.html?paiement={id}` (au bout de 3 secondes). Après un échec, SasPay ne renvoie pas : le client reste sur la page SasPay, qui propose « Réessayer » ; s'il revient de lui-même, le paiement reste `PENDING` jusqu'à confirmation ou abandon. Il n'y a plus de `&annule=1`. Appelle **`GET /orgs/{id}/checkouts/{id}`** : le serveur interroge SasPay (statut de la session, puis vérification de la transaction) et active l'offre si le paiement est confirmé. Selon `status` :
 - `PAID` : « Paiement confirmé, votre offre est active » (+ `receipt_number`), puis recharge les données (droits, abonnement, projet de site).
 - `PENDING` : « Paiement en cours de confirmation… ». Rappelle la route toutes les 5 secondes pendant une minute, puis affiche « Nous vous confirmons votre paiement par e-mail dès sa validation » (le serveur continue de vérifier pendant environ deux jours).
 - `FAILED` ou `CANCELLED` : « Paiement non abouti », avec un bouton pour réessayer. `EXPIRED` : paiement abandonné.
 - Retire ensuite `?paiement=` de l'adresse (`history.replaceState`).
 
-Un paiement confirmé suit le même chemin qu'un encaissement manuel : reçu par e-mail, client actif, projet de site créé pour Start, et une demande « Je veux démarrer » en cours pour la même offre passe à `WON`. Dans `payments`, `method` vaut **`CARTFLOX`** (« Paiement en ligne ») et `reference` la référence Cartflox (`CS-…`). Côté admin, ces paiements ont `payment.channel = "ONLINE"` ; l'équipe ne peut pas saisir `CARTFLOX` à la main (400).
+Un paiement confirmé suit le même chemin qu'un encaissement manuel : reçu par e-mail, client actif, projet de site créé pour Start, et une demande « Je veux démarrer » en cours pour la même offre passe à `WON`. Dans `payments`, `method` vaut **`SASPAY`** (« Paiement en ligne ») et `reference` la référence de la transaction SasPay (`TXN-…`). `CARTFLOX` ne sert plus qu'à l'historique. Côté admin, ces paiements ont `payment.channel = "ONLINE"` ; l'équipe ne peut saisir ni `SASPAY` ni `CARTFLOX` à la main (400).
 
 ## 15. Closer 3.0 (apporteurs d'affaires)
 

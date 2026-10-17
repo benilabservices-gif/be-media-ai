@@ -14,7 +14,7 @@ from digital360.core.jobs import Worker
 from digital360.core.logging import configure_logging
 from digital360.jobs import build_registry
 from digital360.modules.billing.application.renewals import schedule_daily_sweep
-from digital360.modules.billing.infrastructure.cartflox import build_payment_gateway
+from digital360.modules.billing.infrastructure.saspay import build_payment_gateway
 from digital360.modules.referrals.application.service import schedule_monthly_statements
 
 logger = logging.getLogger("digital360.worker")

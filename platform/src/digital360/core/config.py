@@ -57,9 +57,9 @@ class Settings(BaseSettings):
     sales_alert_emails: Annotated[list[str], NoDecode] = Field(default_factory=list)
     # Hébergement sans worker séparé (Render gratuit) : l'API traite elle-même la file
     run_worker_in_api: bool = False
-    # Paiement en ligne Cartflox (clé secrète af_live_sec_… de l'espace SchoolConnect) ;
+    # Paiement en ligne SasPay (clé secrète sk_live_…, ou sk_test_… pour les essais) ;
     # vide = paiement en ligne désactivé, seul le paiement manuel est proposé
-    cartflox_secret_key: SecretStr | None = None
+    saspay_secret_key: SecretStr | None = None
     # Adresse que le client ajoute comme gestionnaire de sa fiche Google Business
     google_manager_email: str = "clientele@bemedia-ai.online"
 

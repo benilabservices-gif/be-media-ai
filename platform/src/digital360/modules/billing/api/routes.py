@@ -132,8 +132,8 @@ class PaymentIn(BaseModel):
 
     @model_validator(mode="after")
     def _reference_unless_cash(self) -> "PaymentIn":
-        if self.method is PaymentMethod.CARTFLOX:
-            raise ValueError("un paiement Cartflox est enregistré automatiquement")
+        if self.method in (PaymentMethod.SASPAY, PaymentMethod.CARTFLOX):
+            raise ValueError("un paiement en ligne est enregistré automatiquement")
         if self.method is not PaymentMethod.CASH and not self.reference:
             raise ValueError("référence de la transaction obligatoire (sauf espèces)")
         return self
@@ -348,7 +348,7 @@ class CheckoutOut(BaseModel):
     currency: str
     period: str | None
     status: Literal["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]
-    # Page de paiement Cartflox vers laquelle rediriger le client (paiement en attente)
+    # Page de paiement SasPay vers laquelle rediriger le client (paiement en attente)
     checkout_url: str | None
     # Numéro du reçu, une fois payé
     receipt_number: str | None
@@ -385,7 +385,7 @@ async def get_checkout(
     ],
     service: OnlinePayments,
 ) -> CheckoutOut:
-    """Retour de la page de paiement : vérifie auprès de Cartflox et active l'offre si payé."""
+    """Retour de la page de paiement : vérifie auprès de SasPay et active l'offre si payé."""
     return _checkout_out(await service.refresh(access.tenant, checkout_id))
 
 
@@ -404,7 +404,7 @@ class ClientPaymentOut(BaseModel):
 class ClientBillingOut(BaseModel):
     subscriptions: list[SubscriptionOut]
     payments: list[ClientPaymentOut]
-    # Bouton « Payer en ligne » à proposer (Cartflox configuré, client en FCFA XOF)
+    # Bouton « Payer en ligne » à proposer (SasPay configuré, client en FCFA XOF)
     online_payment_available: bool
 
 
