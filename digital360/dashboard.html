@@ -1185,7 +1185,7 @@
             container.appendChild(h('p', { style: 'color:var(--text-muted);font-size:14px;', text: 'Aucun paiement pour le moment.' }));
             return;
         }
-        const methods = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement', CASH: 'Espèces', CARTFLOX: 'Paiement en ligne' };
+        const methods = { ORANGE_MONEY: 'Orange Money', MTN_MOMO: 'MTN Mobile Money', MOOV_MONEY: 'Moov Money', WAVE: 'Wave', BANK_TRANSFER: 'Virement', CASH: 'Espèces', SASPAY: 'Paiement en ligne', CARTFLOX: 'Paiement en ligne' };
         container.appendChild(h('div', { class: 'card', style: 'overflow-x:auto;' }, [
             h('table', { style: 'width:100%;font-size:13px;border-collapse:collapse;' }, [
                 h('thead', {}, h('tr', {}, ['Date', 'Reçu', 'Offre', 'Montant', 'Moyen', 'Référence'].map(label => h('th', { style: 'text-align:left;padding:8px;color:var(--text-muted);', text: label })))),
@@ -2122,7 +2122,7 @@
         root.appendChild(h('div', { class: 'card' }, [terms]));
     }
 
-    // ── Paiement en ligne (Cartflox) ──
+    // ── Paiement en ligne (SasPay) ──
     async function startOnlinePayment(productCode) {
         const code = productCode || _pendingPurchase?.product_code;
         if (!code || !_orgId) return;
@@ -2132,7 +2132,7 @@
         showD360Loading();
         try {
             const checkout = await sendJson('POST', '/orgs/' + _orgId + '/checkouts', { product_code: code });
-            // Page de paiement Cartflox renvoyée par notre API ; jamais autre chose qu'une adresse https
+            // Page de paiement SasPay renvoyée par notre API ; jamais autre chose qu'une adresse https
             if (!/^https:\/\//.test(checkout?.checkout_url || '')) throw new Error('Page de paiement indisponible. Réessayez.');
             window.location.href = checkout.checkout_url;
         } catch (e) {
@@ -2170,8 +2170,8 @@
         Object.keys(SERVICE_PAGES).forEach(renderServicePage);
     }
 
-    // Retour de Cartflox sur dashboard.html?paiement={id} : le serveur vérifie le paiement
-    // auprès de Cartflox et active l'offre ; on rappelle quelques fois si l'opérateur tarde
+    // Retour de SasPay sur dashboard.html?paiement={id} : le serveur vérifie le paiement
+    // auprès de SasPay et active l'offre ; on rappelle quelques fois si l'opérateur tarde
     async function handlePaymentReturn() {
         const params = new URLSearchParams(window.location.search);
         const checkoutId = params.get('paiement');
@@ -2257,7 +2257,7 @@
             <div id="purchaseError" style="color:var(--error);font-size:13px;margin-bottom:1rem;min-height:20px;"></div>
             <div id="purchaseOnline" style="display:none;margin-bottom:1.5rem;">
                 <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="startOnlinePayment()">Payer en ligne maintenant</button>
-                <p style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;text-align:center;">Mobile money ou carte, paiement sécurisé par Cartflox. Votre offre s'active dès la confirmation du paiement.</p>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;text-align:center;">Mobile money ou carte, paiement sécurisé par SasPay. Votre offre s'active dès la confirmation du paiement.</p>
                 <p style="font-size:12px;color:var(--text-muted);margin-top:1.25rem;text-align:center;">— ou laissez-nous vos coordonnées, un conseiller vous rappelle —</p>
             </div>
             <div id="purchaseForm">
