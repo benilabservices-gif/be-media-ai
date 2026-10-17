@@ -522,8 +522,30 @@
     }
 
     // ── Render dashboard from API ──
+    // Tableau de bord : solde à régler (ou services suspendus) au-dessus du score
+    function renderBalanceAlert() {
+        const page = document.getElementById('page-dashboard');
+        const balances = _billing?.balances || [];
+        if (!page || !balances.length || document.getElementById('dashBalanceAlert')) return;
+        const suspended = balances.some(b => b.suspended);
+        const first = balances[0];
+        const remaining = formatPrice({ amount: first.remaining, currency: first.currency }, first.currency);
+        const alert = h('div', { id: 'dashBalanceAlert', class: 'card', style: 'margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;border-color:' + (suspended ? 'var(--error)' : 'var(--warning)') + ';' }, [
+            h('div', { style: 'flex:1 1 240px;' }, [
+                h('div', { style: 'font-weight:600;margin-bottom:0.25rem;', text: suspended ? 'Services suspendus : solde impayé' : 'Solde à régler' }),
+                h('p', { style: 'font-size:14px;color:var(--text-secondary);margin:0;', text: 'Il reste ' + remaining + ' à payer pour votre offre ' + first.product_name
+                    + (suspended ? '. Vos services sont réactivés dès le paiement complet.' : ', avant le ' + new Date(first.due_on + 'T12:00:00').toLocaleDateString('fr-FR') + '.') }),
+            ]),
+            h('button', { class: 'btn btn-primary btn-sm', text: 'Voir le détail', onclick: () => switchPage('abonnement') }),
+        ]);
+        const anchor = document.getElementById('scoreBanner');
+        if (anchor && anchor.parentNode === page) page.insertBefore(alert, anchor);
+        else page.insertBefore(alert, page.firstChild);
+    }
+
     function renderDashboard() {
         renderWhatsAppReminder();
+        renderBalanceAlert();
         // Welcome message for ?welcome=1 or ?notice=…
         const params = new URLSearchParams(window.location.search);
         const noticeMap = {
@@ -1128,10 +1150,37 @@
         return h('button', { class: 'btn btn-sm btn-primary', style: 'margin-top:0.5rem;width:100%;', text: 'Je veux démarrer',
             onclick: () => showPurchaseModalForProduct(p.code, null, p.name || p.code, price) });
     }
+    // Offres achetées en plusieurs fois : reste à payer, échéance, suspension
+    function balanceCards() {
+        return (_billing?.balances || []).map(b => {
+            const due = new Date(b.due_on + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            const money = amount => formatPrice({ amount, currency: b.currency }, b.currency);
+            const message = 'Bonjour BENILAB, je souhaite régler le solde de mon offre ' + b.product_name + ' (' + money(b.remaining) + ').';
+            return h('div', { class: 'card', style: 'margin-bottom:1rem;border-color:' + (b.suspended ? 'var(--error)' : 'var(--warning)') + ';' }, [
+                h('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;' }, [
+                    h('div', {}, [
+                        h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: 'Reste à payer · ' + b.product_name }),
+                        h('div', { style: 'font-size:1.4rem;font-weight:700;', text: money(b.remaining) }),
+                        h('div', { style: 'font-size:13px;color:var(--text-muted);margin-top:4px;', text: 'Déjà payé : ' + money(b.paid) + ' sur ' + money(b.total) }),
+                    ]),
+                    h('div', { style: 'text-align:right;' }, [
+                        h('div', { class: 'label', style: 'margin-bottom:0.25rem;', text: b.suspended ? 'Échéance dépassée' : 'À régler avant le' }),
+                        h('div', { style: 'font-weight:600;', text: due }),
+                        h('span', { class: 'badge ' + (b.suspended ? 'badge-error' : 'badge-warning'), style: 'margin-top:0.5rem;', text: b.suspended ? 'Services suspendus' : 'Solde à régler' }),
+                    ]),
+                ]),
+                h('p', { style: 'font-size:13px;color:var(--text-secondary);margin:0.75rem 0;', text: (b.suspended ? 'Vos services liés à cette offre sont suspendus : ils sont réactivés dès le paiement complet. ' : '')
+                    + 'Réglez le solde auprès de votre conseiller (mobile money, virement ou espèces) : un reçu vous est envoyé à chaque paiement.' }),
+                h('a', { class: 'btn btn-sm', style: 'background:#25D366;border-color:#25D366;color:#fff;', target: '_blank', rel: 'noopener', text: 'Régler le solde avec mon conseiller',
+                    href: 'https://wa.me/' + BENILAB_CONTACT.whatsapp.replace(/\D/g, '') + '?text=' + encodeURIComponent(message) }),
+            ]);
+        });
+    }
     function renderSubscriptionPage() {
         const container = document.getElementById('subscriptionContent');
         if (!container) return;
         container.textContent = '';
+        balanceCards().forEach(card => container.appendChild(card));
         const subscriptions = _billing?.subscriptions || [];
         const activeCodes = subscriptions.filter(s => s.status !== 'EXPIRED').map(s => s.product_code);
         if (subscriptions.length) {

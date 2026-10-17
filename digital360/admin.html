@@ -148,6 +148,7 @@
                             <div class="kpi-card"><div class="kpi-value" id="kpiSalesWinRate">—</div><div class="kpi-label">Taux de transformation</div><div class="kpi-sub">Ventes gagnées / demandes closes</div></div>
                             <div class="kpi-card"><div class="kpi-value" id="kpiRevenue30" style="font-size:1.4rem;">—</div><div class="kpi-label">Chiffre d'affaires, 30 jours</div><div class="kpi-sub" id="kpiRevenueTotal"></div></div>
                             <div class="kpi-card" style="cursor:pointer;" onclick="switchPage('abonnements')"><div class="kpi-value" id="kpiRenewalsDue" style="color:var(--warning);">—</div><div class="kpi-label">Abonnements à renouveler</div><div class="kpi-sub">Échéance proche ou dépassée</div></div>
+                            <div class="kpi-card" style="cursor:pointer;" onclick="switchPage('demandes')"><div class="kpi-value" id="kpiBalancesDue" style="font-size:1.4rem;color:var(--warning);">—</div><div class="kpi-label">Soldes à encaisser</div><div class="kpi-sub" id="kpiBalancesDueSub">Ventes payées en plusieurs fois</div></div>
                         </div>
                         <h2 class="kpi-section-title">Acquisition</h2>
                         <div class="kpi-grid reveal delay-1">
@@ -590,6 +591,9 @@
             el('kpiSalesWonSub', sales.won_last_30_days != null ? sales.won_last_30_days + ' sur les 30 derniers jours' : '');
             el('kpiSalesWinRate', percent(sales.win_rate));
             el('kpiRenewalsDue', sales.renewals_due ?? '—');
+            const balances = sales.balances_due || [];
+            el('kpiBalancesDue', balances.map(b => formatPriceAdmin({ amount: b.total, currency: b.currency })).join(' + ') || '0');
+            el('kpiBalancesDueSub', balances.length ? balances.reduce((n, b) => n + b.count, 0) + ' vente(s) payée(s) en plusieurs fois' : 'Aucun solde en attente');
             el('kpiRevenue30', revenue('last_30_days'));
             el('kpiRevenueTotal', 'Depuis le début : ' + revenue('total'));
 
@@ -1388,10 +1392,25 @@
         if (req.payment) {
             const paid = document.createElement('div');
             paid.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:4px;';
-            paid.textContent = paymentSummary(req.payment);
+            const severalPayments = (req.payments || []).length > 1;
+            paid.textContent = (severalPayments || req.balance_amount > 0 ? 'Acompte : ' : '') + paymentSummary(req.payment);
             tdStatus.appendChild(paid);
+            if (severalPayments) {
+                const received = document.createElement('div');
+                received.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:2px;';
+                received.textContent = req.payments.length + ' paiements · ' + formatPriceAdmin({ amount: req.paid_amount, currency: req.payment.currency }) + ' reçus';
+                tdStatus.appendChild(received);
+            }
+            if (req.balance_amount > 0) {
+                const due = document.createElement('div');
+                due.style.cssText = 'font-size:11px;font-weight:600;margin-top:2px;color:' + (req.suspended ? 'var(--error)' : 'var(--warning)') + ';';
+                due.textContent = 'Reste dû : ' + formatPriceAdmin({ amount: req.balance_amount, currency: req.payment.currency })
+                    + (req.balance_due_on ? ' · avant le ' + new Date(req.balance_due_on + 'T00:00:00').toLocaleDateString('fr-FR') : '')
+                    + (req.suspended ? ' · services suspendus' : '');
+                tdStatus.appendChild(due);
+            }
             // Paiement en double (avant le contrôle anti-doublon) : annulable par ADMIN et FINANCE
-            if (req.status === 'WON' && (_me?.staff_permissions || []).includes('payment:refund')) {
+            if (req.status === 'WON' && !severalPayments && (_me?.staff_permissions || []).includes('payment:refund')) {
                 const voidBtn = document.createElement('button');
                 voidBtn.className = 'btn btn-ghost btn-sm';
                 voidBtn.style.cssText = 'color:var(--error);font-size:11px;padding:2px 6px;margin-top:4px;';
@@ -1470,6 +1489,7 @@
                 subtitle: (req.organization_name || 'Ce client') + " : l'offre sera activée immédiatement et un reçu lui sera envoyé.",
                 priceLabel: req.price ? formatPriceAdmin(req.price) : '',
                 currency: req.price?.currency,
+                allowInstallment: true,
                 onConfirm: async payment => {
                     await apiFetch('/admin/purchase-requests/' + req.id, { method: 'PATCH', body: { status: 'WON', payment } });
                     loadPurchaseRequests(false);
@@ -1498,6 +1518,29 @@
             tdActions.appendChild(lostBtn);
         }
 
+        if (req.status === 'WON' && req.balance_amount > 0) {
+            const remaining = formatPriceAdmin({ amount: req.balance_amount, currency: req.payment?.currency });
+            const balanceBtn = document.createElement('button');
+            balanceBtn.className = 'btn-revoke';
+            balanceBtn.style.cssText = 'border-color:var(--success);color:var(--success);';
+            balanceBtn.textContent = 'Encaisser le solde';
+            balanceBtn.onclick = () => openPaymentDialog({
+                title: 'Paiement du solde : ' + (req.product_name || req.product_code),
+                subtitle: (req.organization_name || 'Ce client') + ' : reste dû ' + remaining + '. Un reçu lui est envoyé ; une fois tout payé, la vente est soldée'
+                    + (req.suspended ? ' et ses services sont réactivés.' : '.'),
+                priceLabel: remaining,
+                currency: req.payment?.currency,
+                confirmLabel: 'Enregistrer le paiement',
+                onConfirm: async payment => {
+                    if (payment.amount == null) payment.amount = req.balance_amount;
+                    await apiFetch('/admin/purchase-requests/' + req.id + '/payments', { method: 'POST', body: payment });
+                    loadPurchaseRequests(false);
+                    loadDashboard();
+                },
+            });
+            tdActions.appendChild(balanceBtn);
+        }
+
         tr.appendChild(tdActions);
         tbody.appendChild(tr);
     }
@@ -1518,7 +1561,7 @@
     const PAYMENT_METHOD_LABELS = Object.fromEntries(PAYMENT_METHODS);
 
     // Fenêtre de saisie ; `onConfirm(payment)` renvoie une promesse, l'erreur s'affiche dans la fenêtre
-    function openPaymentDialog({ title, subtitle, priceLabel, currency, extraField, onConfirm, allowAmount = true }) {
+    function openPaymentDialog({ title, subtitle, priceLabel, currency, extraField, onConfirm, allowAmount = true, allowInstallment = false, confirmLabel }) {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,10,15,0.75);display:flex;align-items:center;justify-content:center;padding:1rem;';
         const box = document.createElement('div');
@@ -1542,13 +1585,33 @@
         PAYMENT_METHODS.forEach(([value, label]) => { const o = document.createElement('option'); o.value = value; o.textContent = label; method.appendChild(o); });
         labelled('Moyen de paiement', method);
         const reference = labelled('Référence de la transaction (obligatoire sauf espèces)', input({ placeholder: 'Ex. OM-251003-7781', maxLength: 100 }));
-        const amount = !allowAmount ? { value: '' } : labelled('Montant reçu' + (currency ? ' (' + (currency === 'EUR' ? '€' : 'FCFA') + ', HT)' : ''),
-            input({ type: 'number', min: '0', step: currency === 'EUR' ? '0.01' : '1', placeholder: priceLabel ? 'Laisser vide : ' + priceLabel : 'Laisser vide : prix de l\'offre' }));
+        // Acompte : l'offre s'active, le reste est dû sous 30 jours (le serveur gère rappels et suspension)
+        let installment = null;
+        if (allowInstallment) {
+            const wrap = add('label', '', 'display:flex;gap:0.5rem;align-items:flex-start;font-size:13px;margin-bottom:0.9rem;cursor:pointer;');
+            installment = document.createElement('input');
+            installment.type = 'checkbox';
+            installment.style.marginTop = '3px';
+            const explain = document.createElement('span');
+            explain.textContent = "Paiement partiel (acompte) : l'offre est activée, le reste est dû sous 30 jours (rappels automatiques, puis suspension des services en cas de retard).";
+            wrap.append(installment, explain);
+        }
+        const unit = currency ? ' (' + (currency === 'EUR' ? '€' : 'FCFA') + ', HT)' : '';
+        const defaultPlaceholder = priceLabel ? 'Laisser vide : ' + priceLabel : 'Laisser vide : prix de l\'offre';
+        const amountShown = allowAmount || allowInstallment;
+        const amount = !amountShown ? { value: '' } : labelled('Montant reçu' + unit,
+            input({ type: 'number', min: '0', step: currency === 'EUR' ? '0.01' : '1', placeholder: defaultPlaceholder }));
+        if (amountShown && !allowAmount) amount.parentElement.style.display = 'none';
+        if (installment) installment.onchange = () => {
+            amount.parentElement.style.display = allowAmount || installment.checked ? '' : 'none';
+            amount.parentElement.firstChild.textContent = (installment.checked ? "Montant de l'acompte" : 'Montant reçu') + unit;
+            amount.placeholder = installment.checked ? 'Montant versé aujourd\'hui' : defaultPlaceholder;
+        };
         const received = labelled('Date du paiement', input({ type: 'date', value: new Date().toISOString().slice(0, 10) }));
         const message = add('div', '', 'font-size:13px;color:var(--error);min-height:18px;margin-bottom:0.5rem;');
         const buttons = add('div', '', 'display:flex;gap:0.75rem;justify-content:flex-end;');
         const cancel = document.createElement('button'); cancel.className = 'btn btn-ghost btn-sm'; cancel.textContent = 'Annuler';
-        const confirmBtn = document.createElement('button'); confirmBtn.className = 'btn btn-primary btn-sm'; confirmBtn.textContent = 'Paiement reçu : activer l\'offre';
+        const confirmBtn = document.createElement('button'); confirmBtn.className = 'btn btn-primary btn-sm'; confirmBtn.textContent = confirmLabel || 'Paiement reçu : activer l\'offre';
         buttons.appendChild(cancel); buttons.appendChild(confirmBtn);
         cancel.onclick = () => overlay.remove();
         confirmBtn.onclick = async () => {
@@ -1557,6 +1620,10 @@
             if (method.value !== 'CASH' && !ref) { message.textContent = 'Indiquez la référence de la transaction.'; return; }
             const payment = { method: method.value, received_on: received.value || undefined };
             if (ref) payment.reference = ref;
+            if (installment?.checked) {
+                if (amount.value === '') { message.textContent = "Indiquez le montant de l'acompte."; return; }
+                payment.installment = true;
+            }
             if (amount.value !== '') {
                 const value = Number(amount.value);
                 if (!(value >= 0)) { message.textContent = 'Montant invalide.'; return; }
@@ -1610,8 +1677,9 @@
             try { products = await catalogProducts(); } catch (e) { alert('Catalogue indisponible : ' + (e.detail || e.message)); return; }
             openPaymentDialog({
                 title: 'Vente pour ' + (org.commercial_name || 'ce client'),
-                subtitle: "Le prix de l'offre, dans la devise du client, est enregistré comme montant reçu.",
+                subtitle: "Le prix de l'offre, dans la devise du client, est enregistré comme montant reçu, sauf acompte (case ci-dessous).",
                 allowAmount: false,
+                allowInstallment: true,
                 extraField: labelled => {
                     const select = document.createElement('select');
                     select.className = 'filter-input';
