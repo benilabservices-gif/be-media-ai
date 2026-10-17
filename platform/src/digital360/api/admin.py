@@ -81,6 +81,13 @@ class RevenueOut(BaseModel):
     last_30_days: int
 
 
+class BalanceDueOut(BaseModel):
+    # Soldes restant à encaisser (ventes payées en plusieurs fois), unité mineure HT
+    currency: str
+    total: int
+    count: int
+
+
 class SalesKpis(BaseModel):
     # Demandes « Je veux démarrer » par statut
     new: int
@@ -94,6 +101,7 @@ class SalesKpis(BaseModel):
     revenue: list[RevenueOut]
     # Abonnements dont l'échéance est proche ou dépassée
     renewals_due: int = 0
+    balances_due: list[BalanceDueOut] = []
 
 
 class DashboardOut(BaseModel):

@@ -21,6 +21,11 @@ from digital360.core.email import EmailMessage, EmailSender
 from digital360.core.errors import AppError
 from digital360.core.jobs import JobRegistry, enqueue, publish
 from digital360.core.tenancy import TenantContext, staff_transaction, tenant_transaction
+from digital360.modules.billing.application.balances import (
+    BalanceView,
+    client_balances,
+    send_balance_reminders,
+)
 from digital360.modules.billing.application.service import (
     PAYMENT_RECORDED_EVENT,
     SUBSCRIPTION_PERIOD,
@@ -129,6 +134,8 @@ async def _views(
 class ClientBilling:
     subscriptions: list[SubscriptionView]
     payments: list[dict[str, Any]]
+    # Offres achetées en plusieurs fois dont il reste un solde à payer
+    balances: list[BalanceView]
 
 
 class RenewalService:
@@ -177,7 +184,8 @@ class RenewalService:
                         ),
                     }
                 )
-        return ClientBilling(subscriptions=subscriptions, payments=history)
+            balances = await client_balances(session, context.organization_id)
+        return ClientBilling(subscriptions=subscriptions, payments=history, balances=balances)
 
     async def count_due(self) -> int:
         """Abonnements à renouveler : échéance proche ou dépassée."""
@@ -434,6 +442,9 @@ def register_jobs(
     async def renewal_sweep(session: AsyncSession, _: dict[str, Any]) -> None:
         now = datetime.now(UTC)
         await send_due_reminders(
+            session, sender, team=team, app_url=app_url, admin_url=admin_url, now=now
+        )
+        await send_balance_reminders(
             session, sender, team=team, app_url=app_url, admin_url=admin_url, now=now
         )
         tomorrow = now.date() + timedelta(days=1)

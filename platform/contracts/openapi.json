@@ -461,6 +461,132 @@
         "title": "AuditLogPage",
         "type": "object"
       },
+      "BalanceDueOut": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "currency",
+          "total",
+          "count"
+        ],
+        "title": "BalanceDueOut",
+        "type": "object"
+      },
+      "BalanceOut": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "due_on": {
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "integer"
+          },
+          "product_code": {
+            "title": "Product Code",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "purchase_request_id": {
+            "format": "uuid",
+            "title": "Purchase Request Id",
+            "type": "string"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          },
+          "suspended": {
+            "title": "Suspended",
+            "type": "boolean"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "purchase_request_id",
+          "product_code",
+          "product_name",
+          "currency",
+          "total",
+          "paid",
+          "remaining",
+          "due_on",
+          "suspended"
+        ],
+        "title": "BalanceOut",
+        "type": "object"
+      },
+      "BalancePaymentIn": {
+        "description": "Paiement d'une partie (ou de la totalité) du solde d'une vente en plusieurs fois.",
+        "properties": {
+          "amount": {
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "type": "integer"
+          },
+          "installment": {
+            "default": false,
+            "title": "Installment",
+            "type": "boolean"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received On"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "method",
+          "amount"
+        ],
+        "title": "BalancePaymentIn",
+        "type": "object"
+      },
       "Brief": {
         "additionalProperties": false,
         "description": "Brouillon du brief : chaque champ est facultatif, mais toujours dans le cadre de l'offre.",
@@ -927,6 +1053,13 @@
       },
       "ClientBillingOut": {
         "properties": {
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceOut"
+            },
+            "title": "Balances",
+            "type": "array"
+          },
           "online_payment_available": {
             "title": "Online Payment Available",
             "type": "boolean"
@@ -949,6 +1082,7 @@
         "required": [
           "subscriptions",
           "payments",
+          "balances",
           "online_payment_available"
         ],
         "title": "ClientBillingOut",
@@ -3470,6 +3604,11 @@
             ],
             "title": "Amount"
           },
+          "installment": {
+            "default": false,
+            "title": "Installment",
+            "type": "boolean"
+          },
           "method": {
             "$ref": "#/components/schemas/PaymentMethod"
           },
@@ -4126,6 +4265,23 @@
       },
       "PurchaseRequestOut": {
         "properties": {
+          "balance_amount": {
+            "default": 0,
+            "title": "Balance Amount",
+            "type": "integer"
+          },
+          "balance_due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Due On"
+          },
           "channel": {
             "$ref": "#/components/schemas/ContactChannel"
           },
@@ -4170,6 +4326,11 @@
             "title": "Organization Name",
             "type": "string"
           },
+          "paid_amount": {
+            "default": 0,
+            "title": "Paid Amount",
+            "type": "integer"
+          },
           "plan_item_id": {
             "anyOf": [
               {
@@ -4202,6 +4363,11 @@
           },
           "status": {
             "$ref": "#/components/schemas/PurchaseRequestStatus"
+          },
+          "suspended": {
+            "default": false,
+            "title": "Suspended",
+            "type": "boolean"
           },
           "updated_at": {
             "format": "date-time",
@@ -4685,6 +4851,14 @@
       },
       "SalesKpis": {
         "properties": {
+          "balances_due": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/BalanceDueOut"
+            },
+            "title": "Balances Due",
+            "type": "array"
+          },
           "contacted": {
             "title": "Contacted",
             "type": "integer"
@@ -4971,6 +5145,23 @@
       },
       "StaffPurchaseRequestOut": {
         "properties": {
+          "balance_amount": {
+            "default": 0,
+            "title": "Balance Amount",
+            "type": "integer"
+          },
+          "balance_due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Due On"
+          },
           "channel": {
             "$ref": "#/components/schemas/ContactChannel"
           },
@@ -5015,6 +5206,11 @@
             "title": "Organization Name",
             "type": "string"
           },
+          "paid_amount": {
+            "default": 0,
+            "title": "Paid Amount",
+            "type": "integer"
+          },
           "payment": {
             "anyOf": [
               {
@@ -5024,6 +5220,14 @@
                 "type": "null"
               }
             ]
+          },
+          "payments": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
           },
           "plan_item_id": {
             "anyOf": [
@@ -5087,6 +5291,11 @@
           },
           "status": {
             "$ref": "#/components/schemas/PurchaseRequestStatus"
+          },
+          "suspended": {
+            "default": false,
+            "title": "Suspended",
+            "type": "boolean"
           },
           "updated_at": {
             "format": "date-time",
@@ -7130,6 +7339,60 @@
           }
         },
         "summary": "Admin Update Purchase Request",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/purchase-requests/{request_id}/payments": {
+      "post": {
+        "description": "Encaisse tout ou partie du solde d'une vente payée en plusieurs fois (reçu au client).\n\nLe paiement qui solde la vente rend les droits de l'offre s'ils étaient suspendus.",
+        "operationId": "admin_record_balance_payment_api_v1_admin_purchase_requests__request_id__payments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BalancePaymentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPurchaseRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Record Balance Payment",
         "tags": [
           "admin"
         ]

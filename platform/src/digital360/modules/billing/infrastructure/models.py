@@ -48,6 +48,12 @@ class PurchaseRequest(Base):
         CheckConstraint("channel IN ('WHATSAPP', 'PHONE', 'EMAIL')", name="channel_valid"),
         Index("ix_purchase_requests_organization_id", "organization_id"),
         Index("ix_purchase_requests_status", "status"),
+        # Contrôle quotidien des soldes : seules les ventes avec un solde dû sont lues
+        Index(
+            "ix_purchase_requests_balance_due_on",
+            "balance_due_on",
+            postgresql_where=text("balance_due_on IS NOT NULL"),
+        ),
         # Pas deux demandes en cours pour la même offre (protège aussi des doubles clics)
         Index(
             "uq_purchase_requests_open_product",
@@ -76,6 +82,12 @@ class PurchaseRequest(Base):
     status: Mapped[str] = mapped_column(String(16), server_default=PurchaseRequestStatus.NEW)
     staff_note: Mapped[str | None] = mapped_column(Text)
     handled_by: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    # Vente payée en plusieurs fois : date limite du solde (vide quand tout est payé)
+    balance_due_on: Mapped[date | None] = mapped_column(Date)
+    # Rappels de solde déjà envoyés : 1 = une semaine avant, 2 = le jour même, 3 = en retard
+    balance_reminder_stage: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Droits de l'offre retirés pour solde impayé (rendus dès que tout est payé)
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -117,11 +129,10 @@ class Payment(Base):
         CheckConstraint("amount >= 0", name="amount_positive"),
         Index("ix_payments_organization_id", "organization_id"),
         Index("ix_payments_covers_until", "covers_until"),
-        # Une vente n'est encaissée qu'une fois
+        # Une vente peut être payée en plusieurs fois (acompte puis solde)
         Index(
-            "uq_payments_purchase_request_id",
+            "ix_payments_purchase_request_id",
             "purchase_request_id",
-            unique=True,
             postgresql_where=text("purchase_request_id IS NOT NULL"),
         ),
     )

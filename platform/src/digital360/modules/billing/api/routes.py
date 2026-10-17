@@ -89,6 +89,12 @@ class PurchaseRequestOut(BaseModel):
     status: PurchaseRequestStatus
     created_at: datetime
     updated_at: datetime
+    # Paiement en plusieurs fois : déjà payé, reste dû (0 = rien à payer), échéance du solde
+    paid_amount: int = 0
+    balance_amount: int = 0
+    balance_due_on: date | None = None
+    # Droits de l'offre suspendus pour solde impayé
+    suspended: bool = False
 
 
 class PaymentOut(BaseModel):
@@ -101,7 +107,10 @@ class PaymentOut(BaseModel):
 
 
 class StaffPurchaseRequestOut(PurchaseRequestOut):
+    # Premier encaissement (l'acompte pour une vente en plusieurs fois)
     payment: PaymentOut | None
+    # Tous les encaissements de la vente, du plus ancien au plus récent
+    payments: list[PaymentOut] = []
     staff_note: str | None
     requested_by_name: str
     requested_by_email: str
@@ -129,6 +138,9 @@ class PaymentIn(BaseModel):
         None
     )
     received_on: date | None = None
+    # Acompte : l'offre s'active, le reste du prix est dû sous 30 jours (rappels, puis
+    # suspension). Sans cette case, un montant plus bas que le prix est une remise.
+    installment: bool = False
 
     @model_validator(mode="after")
     def _reference_unless_cash(self) -> "PaymentIn":
@@ -144,7 +156,20 @@ class PaymentIn(BaseModel):
             amount=self.amount,
             reference=self.reference or None,
             received_on=self.received_on or date.today(),
+            installment=self.installment,
         )
+
+
+class BalancePaymentIn(PaymentIn):
+    """Paiement d'une partie (ou de la totalité) du solde d'une vente en plusieurs fois."""
+
+    amount: Annotated[int, Field(gt=0)]
+
+    @model_validator(mode="after")
+    def _no_deposit_flag(self) -> "BalancePaymentIn":
+        if self.installment:
+            raise ValueError("l'acompte se déclare à la vente, pas sur le solde")
+        return self
 
 
 class PurchaseRequestUpdate(BaseModel):
@@ -184,6 +209,12 @@ class SubscriptionList(BaseModel):
 class RenewalIn(BaseModel):
     product_code: ProductCode
     payment: PaymentIn
+
+    @model_validator(mode="after")
+    def _paid_in_full(self) -> "RenewalIn":
+        if self.payment.installment:
+            raise ValueError("un renouvellement se paie en une fois")
+        return self
 
 
 def _client_out(view: PurchaseRequestView) -> PurchaseRequestOut:
@@ -274,6 +305,23 @@ async def admin_update_purchase_request(
         staff_note=body.staff_note,
         payment=body.payment.to_input() if body.payment else None,
     )
+    return _staff_out(view)
+
+
+@admin_router.post(
+    "/purchase-requests/{request_id}/payments",
+    status_code=status.HTTP_201_CREATED,
+    response_model=StaffPurchaseRequestOut,
+    dependencies=[Depends(require_csrf)],
+)
+async def admin_record_balance_payment(
+    request_id: uuid.UUID, body: BalancePaymentIn, principal: StaffSales, service: Service
+) -> StaffPurchaseRequestOut:
+    """Encaisse tout ou partie du solde d'une vente payée en plusieurs fois (reçu au client).
+
+    Le paiement qui solde la vente rend les droits de l'offre s'ils étaient suspendus.
+    """
+    view = await service.admin_record_payment(request_id, principal.user_id, body.to_input())
     return _staff_out(view)
 
 
@@ -401,9 +449,27 @@ class ClientPaymentOut(BaseModel):
     covers_until: datetime | None
 
 
+class BalanceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    purchase_request_id: uuid.UUID
+    product_code: str
+    product_name: str
+    currency: str
+    # Unité mineure, HT
+    total: int
+    paid: int
+    remaining: int
+    due_on: date
+    # Services de l'offre suspendus jusqu'au paiement complet
+    suspended: bool
+
+
 class ClientBillingOut(BaseModel):
     subscriptions: list[SubscriptionOut]
     payments: list[ClientPaymentOut]
+    # Offres achetées en plusieurs fois : reste à payer et échéance
+    balances: list[BalanceOut]
     # Bouton « Payer en ligne » à proposer (SasPay configuré, client en FCFA XOF)
     online_payment_available: bool
 
@@ -419,6 +485,7 @@ async def get_client_billing(
     return ClientBillingOut(
         subscriptions=[SubscriptionOut.model_validate(view) for view in billing.subscriptions],
         payments=[ClientPaymentOut(**payment) for payment in billing.payments],
+        balances=[BalanceOut.model_validate(view) for view in billing.balances],
         online_payment_available=await online.is_available(access.tenant),
     )
 

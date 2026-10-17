@@ -7,7 +7,7 @@ son pays et prévient l'équipe commerciale. L'équipe encaisse hors ligne, pass
 
 import html
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -61,6 +61,8 @@ ALLOWED_TRANSITIONS: dict[PurchaseRequestStatus, set[PurchaseRequestStatus]] = {
 # Effet sur les recommandations de l'offre : gagnée = en cours de réalisation, perdue = de nouveau
 # proposées
 PLAN_ITEM_STATUS_ON_CLOSE = {S.WON: PlanItemStatus.IN_PROGRESS, S.LOST: PlanItemStatus.PROPOSED}
+# Vente payée en plusieurs fois : délai accordé pour le solde après l'acompte
+BALANCE_DUE_DAYS = 30
 
 
 def _contact_number(
@@ -123,13 +125,31 @@ class PurchaseRequestView:
     requested_by_phone: str | None
     created_at: datetime
     updated_at: datetime
-    # Encaissement de la vente gagnée : {amount, currency, method, reference, received_on}
+    # Premier encaissement de la vente gagnée : {amount, currency, method, reference, received_on}
     payment: dict[str, Any] | None = None
+    # Tous les encaissements de la vente, du plus ancien au plus récent (acompte, soldes)
+    payments: list[dict[str, Any]] = field(default_factory=list)
+    paid_amount: int = 0
+    # Reste à payer d'une vente en plusieurs fois (0 : soldée, ou payée en une fois)
+    balance_amount: int = 0
+    balance_due_on: date | None = None
+    # Droits retirés pour solde impayé
+    suspended: bool = False
+
+
+def remaining_balance(request: PurchaseRequest, paid: int) -> int:
+    """Reste dû d'une vente payée en plusieurs fois. Sans acompte déclaré, un montant plus
+    bas que le prix est une remise : il ne reste rien à payer."""
+    if request.balance_due_on is None or request.amount is None:
+        return 0
+    return max(request.amount - paid, 0)
 
 
 def _payment_payload(payment: Payment | None) -> dict[str, Any] | None:
-    if payment is None:
-        return None
+    return _payment_dict(payment) if payment is not None else None
+
+
+def _payment_dict(payment: Payment) -> dict[str, Any]:
     return {
         "amount": payment.amount,
         "currency": payment.currency,
@@ -145,8 +165,10 @@ def _view(
     organization: Organization,
     user: User,
     product_name: str,
-    payment: Payment | None = None,
+    payments: list[Payment] | None = None,
 ) -> PurchaseRequestView:
+    payments = payments or []
+    paid = sum(item.amount for item in payments)
     price = (
         {"amount": request.amount, "currency": request.currency, "period": request.period}
         if request.amount is not None
@@ -170,7 +192,12 @@ def _view(
         requested_by_phone=user.phone,
         created_at=request.created_at,
         updated_at=request.updated_at,
-        payment=_payment_payload(payment),
+        payment=_payment_payload(payments[0] if payments else None),
+        payments=[_payment_dict(item) for item in payments],
+        paid_amount=paid,
+        balance_amount=remaining_balance(request, paid),
+        balance_due_on=request.balance_due_on,
+        suspended=request.suspended_at is not None,
     )
 
 
@@ -199,16 +226,16 @@ async def _load_views(
         ).scalars()
     }
 
-    payments = {
-        payment.purchase_request_id: payment
-        for payment in (
-            await session.execute(
-                select(Payment).where(
-                    Payment.purchase_request_id.in_({item.id for item in requests})
-                )
-            )
-        ).scalars()
-    }
+    payments: dict[uuid.UUID, list[Payment]] = {}
+    for payment in (
+        await session.execute(
+            select(Payment)
+            .where(Payment.purchase_request_id.in_({item.id for item in requests}))
+            .order_by(Payment.received_on, Payment.id)
+        )
+    ).scalars():
+        if payment.purchase_request_id is not None:
+            payments.setdefault(payment.purchase_request_id, []).append(payment)
 
     def product_name(code: str) -> str:
         product = catalog.product(code)
@@ -220,7 +247,7 @@ async def _load_views(
             organizations[item.organization_id],
             users[item.requested_by],
             product_name(item.product_code),
-            payments.get(item.id),
+            payments.get(item.id, []),
         )
         for item in requests
     ]
@@ -280,6 +307,9 @@ class PaymentInput:
     amount: int | None
     reference: str | None
     received_on: date
+    # Acompte : le reste du prix est dû sous BALANCE_DUE_DAYS jours (sinon, un montant plus
+    # bas que le prix est une remise)
+    installment: bool = False
 
 
 def _payment_required() -> AppError:
@@ -335,6 +365,16 @@ async def grant_product_entitlements(
         )
 
 
+def _sale_reason(product_name: str, request_id: uuid.UUID) -> str:
+    """Motif des droits d'une vente : il permet de les retrouver pour les suspendre."""
+    return f"Offre {product_name} : demande d'achat {request_id} gagnée"
+
+
+def _sale_entitlements(request_id: uuid.UUID) -> Any:
+    # Le nom de l'offre a pu changer depuis la vente : on retrouve les droits par la demande
+    return EntitlementOverride.reason.like(f"%demande d'achat {request_id} gagnée")
+
+
 async def _activate_offer(
     session: AsyncSession, request: PurchaseRequest, *, actor: Actor, granted_by: uuid.UUID
 ) -> datetime | None:
@@ -351,7 +391,7 @@ async def _activate_offer(
         request.organization_id,
         product,
         expires_at=expires_at,
-        reason=f"Offre {product.name} : demande d'achat {request.id} gagnée",
+        reason=_sale_reason(product.name, request.id),
         staff_user_id=granted_by,
     )
     await record_audit(
@@ -392,6 +432,17 @@ async def close_sale_as_won(
         from_statuses={PlanItemStatus.PROPOSED, PlanItemStatus.ACCEPTED},
         to=PlanItemStatus.IN_PROGRESS,
     )
+    if payment.installment:
+        price = request.amount or 0
+        if payment.amount is None or not 0 < payment.amount < price:
+            raise AppError(
+                "INVALID_DEPOSIT",
+                "L'acompte doit être supérieur à zéro et inférieur au prix de l'offre.",
+                status=422,
+                errors=[{"field": "payment.amount", "reason": "deposit_out_of_range"}],
+            )
+        request.balance_due_on = payment.received_on + timedelta(days=BALANCE_DUE_DAYS)
+        request.balance_reminder_stage = 0
     recorded = Payment(
         organization_id=request.organization_id,
         purchase_request_id=request.id,
@@ -423,6 +474,9 @@ async def close_sale_as_won(
             "method": payment.method.value,
             "channel": channel.value,
             "reference": payment.reference,
+            "balance_due_on": (
+                request.balance_due_on.isoformat() if request.balance_due_on else None
+            ),
         },
     )
     await publish(
@@ -444,6 +498,72 @@ async def close_sale_as_won(
         organization_id=request.organization_id,
     )
     return recorded
+
+
+async def suspend_offer(session: AsyncSession, request: PurchaseRequest, *, now: datetime) -> int:
+    """Solde impayé : retire les droits accordés par la vente. Renvoie le nombre retiré."""
+    revoked = (
+        await session.execute(
+            update(EntitlementOverride)
+            .where(
+                EntitlementOverride.organization_id == request.organization_id,
+                _sale_entitlements(request.id),
+                EntitlementOverride.revoked_at.is_(None),
+            )
+            .values(revoked_at=now)
+            .returning(EntitlementOverride.id)
+        )
+    ).all()
+    request.suspended_at = now
+    await record_audit(
+        session,
+        actor=Actor.system("billing.balance_sweep"),
+        action="purchase_request.suspend_for_balance",
+        entity_type="purchase_request",
+        entity_id=request.id,
+        organization_id=request.organization_id,
+        new_value={
+            "entitlements_revoked": len(revoked),
+            "balance_due_on": str(request.balance_due_on),
+        },
+    )
+    return len(revoked)
+
+
+async def restore_offer(
+    session: AsyncSession,
+    request: PurchaseRequest,
+    *,
+    actor: Actor,
+    granted_by: uuid.UUID,
+    now: datetime,
+) -> None:
+    """Solde payé après une suspension : les droits de l'offre sont rendus (jusqu'à la fin de
+    la période déjà payée pour un abonnement)."""
+    product = (await current_catalog(session)).product(request.product_code)
+    covers_until = await session.scalar(
+        select(func.max(Payment.covers_until)).where(Payment.purchase_request_id == request.id)
+    )
+    still_running = covers_until is None or covers_until > now
+    if product is not None and product.entitlements and still_running:
+        await grant_product_entitlements(
+            session,
+            request.organization_id,
+            product,
+            expires_at=covers_until,
+            reason=_sale_reason(product.name, request.id),
+            staff_user_id=granted_by,
+        )
+    request.suspended_at = None
+    await record_audit(
+        session,
+        actor=actor,
+        action="purchase_request.restore_after_balance",
+        entity_type="purchase_request",
+        entity_id=request.id,
+        organization_id=request.organization_id,
+        new_value={"restored": bool(product and product.entitlements and still_running)},
+    )
 
 
 class PurchaseRequestService:
@@ -624,6 +744,26 @@ class PurchaseRequestService:
                     .order_by(Payment.currency)
                 )
             ).all()
+            # Soldes à encaisser (ventes payées en plusieurs fois)
+            open_balances = (
+                await session.execute(
+                    select(
+                        PurchaseRequest.currency,
+                        PurchaseRequest.amount,
+                        func.coalesce(func.sum(Payment.amount), 0),
+                    )
+                    .outerjoin(Payment, Payment.purchase_request_id == PurchaseRequest.id)
+                    .where(PurchaseRequest.balance_due_on.is_not(None))
+                    .group_by(PurchaseRequest.id)
+                )
+            ).all()
+        balances: dict[str, dict[str, int]] = {}
+        for currency, price, paid in open_balances:
+            remaining = max((price or 0) - int(paid), 0)
+            if remaining:
+                entry = balances.setdefault(currency, {"total": 0, "count": 0})
+                entry["total"] += remaining
+                entry["count"] += 1
         won_count = by_status.get(S.WON.value, 0)
         closed = won_count + by_status.get(S.LOST.value, 0)
         return {
@@ -637,6 +777,9 @@ class PurchaseRequestService:
             "revenue": [
                 {"currency": currency, "total": int(total or 0), "last_30_days": int(recent or 0)}
                 for currency, total, recent in revenue
+            ],
+            "balances_due": [
+                {"currency": currency, **entry} for currency, entry in sorted(balances.items())
             ],
         }
 
@@ -705,6 +848,94 @@ class PurchaseRequestService:
             await session.refresh(request)
             return (await _load_views(session, [request]))[0]
 
+    async def admin_record_payment(
+        self, request_id: uuid.UUID, staff_user_id: uuid.UUID, payment: PaymentInput
+    ) -> PurchaseRequestView:
+        """Encaissement d'une partie du solde d'une vente payée en plusieurs fois. Le dernier
+        paiement solde la vente et rend les droits s'ils avaient été suspendus."""
+        actor = Actor.user(staff_user_id)
+        async with staff_transaction(self._session_factory) as session:
+            request = (
+                await session.execute(
+                    select(PurchaseRequest)
+                    .where(PurchaseRequest.id == request_id)
+                    .with_for_update()
+                )
+            ).scalar_one_or_none()
+            if request is None:
+                raise AppError("NOT_FOUND", "Demande introuvable.", status=404)
+            paid = await session.scalar(
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.purchase_request_id == request.id
+                )
+            )
+            remaining = remaining_balance(request, int(paid or 0))
+            if request.status != S.WON.value or remaining == 0:
+                raise AppError(
+                    "NO_BALANCE_DUE", "Cette vente n'a pas de solde à encaisser.", status=409
+                )
+            if payment.amount is None or not 0 < payment.amount <= remaining:
+                due = format_price(
+                    {"amount": remaining, "currency": request.currency, "period": "NONE"}
+                )
+                raise AppError(
+                    "INVALID_AMOUNT",
+                    f"Le montant doit être supérieur à zéro et ne pas dépasser le reste dû ({due}).",
+                    status=422,
+                    errors=[{"field": "amount", "reason": "out_of_range"}],
+                )
+            recorded = Payment(
+                organization_id=request.organization_id,
+                purchase_request_id=request.id,
+                product_code=request.product_code,
+                amount=payment.amount,
+                currency=request.currency,
+                method=payment.method.value,
+                channel=PaymentChannel.MANUAL.value,
+                reference=payment.reference,
+                received_on=payment.received_on,
+                recorded_by=staff_user_id,
+            )
+            session.add(recorded)
+            await session.flush()
+            settled = payment.amount == remaining
+            if settled:
+                request.balance_due_on = None
+                request.balance_reminder_stage = 0
+                if request.suspended_at is not None:
+                    await restore_offer(
+                        session,
+                        request,
+                        actor=actor,
+                        granted_by=staff_user_id,
+                        now=datetime.now(UTC),
+                    )
+            await record_audit(
+                session,
+                actor=actor,
+                action="payment.record_balance",
+                entity_type="payment",
+                entity_id=recorded.id,
+                organization_id=request.organization_id,
+                new_value={
+                    "purchase_request_id": str(request.id),
+                    "amount": recorded.amount,
+                    "method": recorded.method,
+                    "reference": recorded.reference,
+                    "remaining": remaining - payment.amount,
+                },
+            )
+            await publish(
+                session,
+                self._registry,
+                PAYMENT_RECORDED_EVENT,
+                {"payment_id": str(recorded.id)},
+                organization_id=request.organization_id,
+            )
+            await session.flush()
+            await session.refresh(request)
+            return (await _load_views(session, [request]))[0]
+
     async def admin_void_duplicate(
         self, request_id: uuid.UUID, staff_user_id: uuid.UUID, *, reason: str
     ) -> PurchaseRequestView:
@@ -723,9 +954,21 @@ class PurchaseRequestService:
             ).scalar_one_or_none()
             if request is None:
                 raise AppError("NOT_FOUND", "Demande introuvable.", status=404)
-            payment = await session.scalar(
-                select(Payment).where(Payment.purchase_request_id == request.id)
+            payments = list(
+                (
+                    await session.execute(
+                        select(Payment).where(Payment.purchase_request_id == request.id)
+                    )
+                ).scalars()
             )
+            if len(payments) > 1:
+                raise AppError(
+                    "MULTIPLE_PAYMENTS",
+                    "Cette vente a été payée en plusieurs fois : elle ne peut pas être annulée "
+                    "comme un simple doublon.",
+                    status=409,
+                )
+            payment = payments[0] if payments else None
             if request.status != S.WON.value or payment is None:
                 raise AppError(
                     "NOT_PAID", "Cette demande n'a pas de paiement à annuler.", status=409
