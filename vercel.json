@@ -1,0 +1,28 @@
+{
+  "framework": null,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "routes": [
+    { "src": "/api/v1/(.*)", "dest": "https://digital360-api.onrender.com/api/v1/$1" },
+    {
+      "src": "/digital360(?:/(.*))?",
+      "has": [{ "type": "host", "value": "digital360.bemedia-ai.online" }],
+      "status": 308,
+      "headers": { "Location": "/$1" }
+    },
+    {
+      "src": "/",
+      "has": [{ "type": "host", "value": "digital360.bemedia-ai.online" }],
+      "dest": "/digital360/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "has": [{ "type": "host", "value": "digital360.bemedia-ai.online" }],
+      "dest": "/digital360/$1"
+    },
+    { "handle": "filesystem" },
+    { "src": "/digital360/(.*)", "dest": "/digital360/index.html" },
+    { "src": "/academy360/(.*)", "dest": "/academy360/index.html" },
+    { "src": "/booster360/(.*)", "dest": "/booster360/index.html" }
+  ]
+}

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ça me dit TIC — Atelier pratique IA & vidéo publicitaire | Benilab Services</title>
+    <meta name="description" content="Atelier pratique « Ça me dit TIC » : apprenez à utiliser l'intelligence artificielle pour concevoir une idée commerciale, rédiger un script et créer une vidéo publicitaire. Samedi 24 octobre 2026, 09 h–15 h. Participation : 2 500 FCFA.">
+    <meta name="keywords" content="atelier IA, intelligence artificielle, vidéo publicitaire, workshop, Benilab, Bénin, Africa">
+    <link rel="canonical" href="https://benilab.co/atelier-tic">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://benilab.co/atelier-tic">
+    <meta property="og:title" content="Ça me dit TIC — Atelier pratique IA & vidéo publicitaire">
+    <meta property="og:description" content="Apprenez à transformer vos idées en vidéos publicitaires grâce à l'intelligence artificielle. Samedi 24 octobre 2026, 09 h–15 h. 2 500 FCFA.">
+    <meta property="og:image" content="https://benilab.co/img/atelier-tic-og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:site_name" content="Benilab Services">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ça me dit TIC — Atelier pratique IA & vidéo publicitaire">
+    <meta name="twitter:description" content="Apprenez à transformer vos idées en vidéos publicitaires grâce à l'intelligence artificielle.">
+    <meta name="twitter:image" content="https://benilab.co/img/atelier-tic-og.jpg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/atelier-tic.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231682A5'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3EL%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+    <!-- ═══════════════ NAVIGATION ═══════════════ -->
+    <nav class="tic-nav" id="ticNav">
+        <a href="#" class="tic-nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
+            <strong>Benilab</strong> Services
+            <span>Atelier Ça me dit TIC</span>
+        </a>
+        <ul class="tic-nav-links">
+            <li><a href="#programme" onclick="scrollToProgram();return false;">Programme</a></li>
+            <li><a href="#outils" onclick="event.preventDefault();document.getElementById('ticOutils').scrollIntoView({behavior:'smooth',block:'start'});return false;">Outils</a></li>
+            <li><a href="#faq" onclick="event.preventDefault();document.getElementById('ticFaq').scrollIntoView({behavior:'smooth',block:'start'});return false;">FAQ</a></li>
+            <li><a href="#inscription" class="tic-btn tic-btn-primary tic-nav-cta" onclick="window.scrollToRegistration();return false;">Réserver ma place</a></li>
+        </ul>
+        <button class="tic-menu-toggle" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu">☰</button>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div class="tic-mobile-menu" id="ticMobileMenu">
+        <button class="tic-mobile-close" onclick="closeMobileMenu()" aria-label="Fermer le menu">✕</button>
+        <a href="#programme" onclick="scrollToProgram();return false;">Programme</a>
+        <a href="#outils" onclick="event.preventDefault();document.getElementById('ticOutils').scrollIntoView({behavior:'smooth'});closeMobileMenu();return false;">Outils</a>
+        <a href="#faq" onclick="event.preventDefault();document.getElementById('ticFaq').scrollIntoView({behavior:'smooth'});closeMobileMenu();return false;">FAQ</a>
+        <a href="#inscription" onclick="window.scrollToRegistration();return false;">Réserver ma place</a>
+    </div>
+
+    <!-- ═══════════════ HERO ═══════════════ -->
+    <section class="tic-hero" id="ticHero">
+        <div class="tic-container">
+            <div class="tic-hero-inner">
+                <div class="tic-hero-content">
+                    <div class="tic-hero-badge tic-reveal">
+                        <span class="dot"></span>
+                        Ça me dit TIC · Atelier pratique
+                    </div>
+                    <h1 class="tic-reveal tic-delay-1">
+                        Et si ton<br>
+                        smartphone devenait<br>
+                        ton <em>studio publicitaire</em> ?
+                    </h1>
+                    <p class="tic-hero-desc tic-reveal tic-delay-2">
+                        Apprends à utiliser l'intelligence artificielle pour transformer tes idées en vidéos publicitaires et promouvoir tes produits ou services.
+                    </p>
+                    <div class="tic-hero-info tic-reveal tic-delay-2">
+                        <div class="tic-hero-info-item">
+                            <span class="tic-hero-info-label">Date</span>
+                            <span class="tic-hero-info-value">Samedi 24 octobre 2026</span>
+                        </div>
+                        <div class="tic-hero-info-item">
+                            <span class="tic-hero-info-label">Horaires</span>
+                            <span class="tic-hero-info-value">09 h – 15 h</span>
+                        </div>
+                        <div class="tic-hero-info-item">
+                            <span class="tic-hero-info-label">Participation</span>
+                            <span class="tic-hero-info-value price">2 500 FCFA</span>
+                        </div>
+                        <div class="tic-hero-info-item">
+                            <span class="tic-hero-info-label">Inclus</span>
+                            <span class="tic-hero-info-value">Pause + déjeuner</span>
+                        </div>
+                    </div>
+                    <div class="tic-hero-actions tic-reveal tic-delay-3">
+                        <a href="#inscription" class="tic-btn tic-btn-primary tic-btn-lg" onclick="window.scrollToRegistration();return false;">Je réserve ma place</a>
+                        <a href="#programme" class="tic-btn tic-btn-outline tic-btn-lg" onclick="scrollToProgram();return false;">Découvrir le programme</a>
+                    </div>
+                </div>
+                <div class="tic-hero-visual tic-reveal tic-delay-2">
+                    <div class="tic-hero-image-wrapper">
+                        <div class="tic-hero-image-placeholder">
+                            <div class="icon">📱</div>
+                            <p style="font-family:var(--tic-font-display);font-size:1.1rem;color:var(--tic-text-secondary);margin-bottom:0.5rem;">Création vidéo avec l'IA</p>
+                            <p style="font-size:12px;color:var(--tic-text-muted);">Photo d'illustration —<br>un entrepreneur africain devant son smartphone et son ordinateur</p>
+                        </div>
+                    </div>
+                    <div class="tic-hero-float-card">
+                        <div class="icon">🎬</div>
+                        <div class="text">
+                            <strong>Niveau débutant accepté</strong>
+                            Aucun préalable requis
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ LE PROBLÈME ═══════════════ -->
+    <section class="tic-section tic-problem" id="ticProblem">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Le défi</span>
+                <h2 class="tic-section-title">Tu as un produit ou une idée,<br>mais comment la faire connaître ?</h2>
+                <p class="tic-section-sub" style="margin:0 auto;">Produire du contenu attractif demande du temps, des compétences et parfois un budget important. Beaucoup d'entrepreneurs rencontrent les mêmes obstacles.</p>
+            </div>
+            <div class="tic-problem-grid">
+                <div class="tic-problem-card tic-reveal tic-delay-1">
+                    <div class="tic-problem-icon">🎥</div>
+                    <h3>Contenu difficile à produire</h3>
+                    <p>Créer des visuels et des vidéos qui attirent l'attention semble réservé à ceux qui savent monter ou designer.</p>
+                </div>
+                <div class="tic-problem-card tic-reveal tic-delay-2">
+                    <div class="tic-problem-icon">💸</div>
+                    <h3>Coûts de production élevés</h3>
+                    <p>Engager une agence ou acheter du matériel professionnel représente un investissement important pour une petite entreprise.</p>
+                </div>
+                <div class="tic-problem-card tic-reveal tic-delay-3">
+                    <div class="tic-problem-icon">💡</div>
+                    <h3>Manque d'idées créatives</h3>
+                    <p>Savoir quoi dire, comment le dire et sous quelle forme est souvent la première difficulté quand on veut se faire connaître.</p>
+                </div>
+                <div class="tic-problem-card tic-reveal tic-delay-4">
+                    <div class="tic-problem-icon">⏱️</div>
+                    <h3>Temps limité</h3>
+                    <p>Gérer son activité laisse peu de marge pour apprendre de nouveaux outils ou expérimenter des techniques de communication.</p>
+                </div>
+            </div>
+            <div class="tic-reveal tic-delay-2" style="text-align:center;margin-top:3rem;">
+                <p class="tic-section-sub" style="margin:0 auto;">L'intelligence artificielle offre aujourd'hui des outils accessibles pour faciliter ces étapes — sans remplacer le jugement humain, mais en donnant à chacun la possibilité de produire plus vite et mieux.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ LA PROMESSE ═══════════════ -->
+    <section class="tic-section tic-section-alt tic-promise" id="ticPromise">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Ce que tu vas apprendre</span>
+                <h2 class="tic-section-title">Passe de l'<em>idée</em> à une<br>publicité vidéo <em>concrète</em></h2>
+            </div>
+            <div class="tic-promise-grid">
+                <div class="tic-promise-item tic-reveal tic-delay-1">
+                    <div class="tic-promise-num">01</div>
+                    <div>
+                        <h3>Trouver et structurer une idée commerciale</h3>
+                        <p>Identifier ton produit ou service phare et le positionner clairement pour ton audience.</p>
+                    </div>
+                </div>
+                <div class="tic-promise-item tic-reveal tic-delay-2">
+                    <div class="tic-promise-num">02</div>
+                    <div>
+                        <h3>Utiliser ChatGPT pour concevoir un message publicitaire</h3>
+                        <p>Apprendre à formuler des prompts efficaces pour générer des idées de communication.</p>
+                    </div>
+                </div>
+                <div class="tic-promise-item tic-reveal tic-delay-1">
+                    <div class="tic-promise-num">03</div>
+                    <div>
+                        <h3>Rédiger une accroche et un script court</h3>
+                        <p>Structurer un message percutant en quelques secondes, adapté aux réseaux sociaux.</p>
+                    </div>
+                </div>
+                <div class="tic-promise-item tic-reveal tic-delay-2">
+                    <div class="tic-promise-num">04</div>
+                    <div>
+                        <h3>Générer des visuels et séquences vidéo avec l'IA</h3>
+                        <p>Découvrir comment les outils d'IA peuvent créer des images et des séquences pour ta publicité.</p>
+                    </div>
+                </div>
+                <div class="tic-promise-item tic-reveal tic-delay-1">
+                    <div class="tic-promise-num">05</div>
+                    <div>
+                        <h3>Assembler une vidéo publicitaire courte</h3>
+                        <p>Rassembler les éléments visuels, le script et la musique en une vidéo prête à publier.</p>
+                    </div>
+                </div>
+                <div class="tic-promise-item tic-reveal tic-delay-2">
+                    <div class="tic-promise-num">06</div>
+                    <div>
+                        <h3>Préparer un texte de publication pour les réseaux sociaux</h3>
+                        <p>Rédiger la légende, les hashtags et les métadonnées pour maximiser la portée de ta vidéo.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tic-disclaimer tic-reveal">
+                ⚠ Les productions réalisées pendant l'atelier dépendront des outils disponibles, du niveau de chaque participant et du temps de pratique. Il ne s'agit pas d'un cours de montage professionnel.
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ LE PROGRAMME ═══════════════ -->
+    <section class="tic-section tic-program" id="ticProgram">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Déroulé de la journée</span>
+                <h2 class="tic-section-title">Un atelier <em>pratique</em>,<br>de 09 h à 15 h</h2>
+                <p class="tic-section-sub" style="margin:0 auto;">Chaque module alterne démonstration et exercice. Tu repars avec une vidéo réelle, pas seulement des connaissances théoriques.</p>
+            </div>
+            <div class="tic-timeline">
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">09 h – 09 h 30</div>
+                        <div class="tic-timeline-content">
+                            <h3>Accueil et présentation</h3>
+                            <p>Installation, prise de knowns et introduction à la journée.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">09 h 30 – 10 h 15</div>
+                        <div class="tic-timeline-content">
+                            <h3>Module 1 — Les opportunités de l'IA pour ton activité</h3>
+                            <p>Comprendre ce que l'intelligence artificielle peut faire pour un entrepreneur, et où elle s'arrête.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-timeline-break tic-reveal">Pause</div>
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">10 h 30 – 11 h 15</div>
+                        <div class="tic-timeline-content">
+                            <h3>Module 2 — ChatGPT pour préparer ton offre et ton script</h3>
+                            <p>Formuler des prompts efficaces, générer des idées de messages et construire un script publicitaire.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">11 h 15 – 12 h</div>
+                        <div class="tic-timeline-content">
+                            <h3>Module 3 — Visuels et génération vidéo avec l'IA</h3>
+                            <p>Découvrir les outils de création visuelle et vidéo assistée par intelligence artificielle.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-timeline-break tic-reveal">Pause déjeuner</div>
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">13 h – 14 h</div>
+                        <div class="tic-timeline-content">
+                            <h3>Module 4 — Challenge « Mon business en 30 secondes »</h3>
+                            <p>Mise en pratique : chaque participant réalise une vidéo publicitaire courte pour son propre produit ou service.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">14 h – 14 h 40</div>
+                        <div class="tic-timeline-content">
+                            <h3>Projection des créations</h3>
+                            <p>Chaque participant présente sa vidéo. Retour d'expérience et échanges.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-reveal tic-delay-1">
+                    <div class="tic-timeline-item">
+                        <div class="tic-timeline-time">14 h 40 – 15 h</div>
+                        <div class="tic-timeline-content">
+                            <h3>Clôture et perspectives</h3>
+                            <p>Resumé de la journée, ressources complémentaires et possibilités de continuer seul.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ LES OUTILS ═══════════════ -->
+    <section class="tic-section tic-tools" id="ticOutils">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Outils utilisés</span>
+                <h2 class="tic-section-title">Des outils <em>accessibles</em>,<br>déjà disponibles</h2>
+                <p class="tic-section-sub" style="margin:0 auto;">Les outils présentés sont ceux qui seront démontrés et utilisés pendant l'atelier. Certains peuvent évoluer selon les accès disponibles le jour J.</p>
+            </div>
+            <div class="tic-tools-grid tic-reveal tic-delay-1">
+                <div class="tic-tool-tag"><span class="dot"></span>ChatGPT — idées, scripts, prompts</div>
+                <div class="tic-tool-tag"><span class="dot"></span>Google Gemini — concepts et visuels</div>
+                <div class="tic-tool-tag"><span class="dot"></span>Outil de génération vidéo par IA</div>
+                <div class="tic-tool-tag"><span class="dot"></span>CapCut — montage et finalisation</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ À QUI S'ADRESSE L'ATELIER ═══════════════ -->
+    <section class="tic-section tic-audience" id="ticAudience">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Public cible</span>
+                <h2 class="tic-section-title">Cet atelier est fait <em>pour toi</em> si…</h2>
+            </div>
+            <div class="tic-audience-grid">
+                <div class="tic-audience-card tic-reveal tic-delay-1">
+                    <div class="tic-audience-icon">🚀</div>
+                    <h3>Entrepreneurs</h3>
+                </div>
+                <div class="tic-audience-card tic-reveal tic-delay-2">
+                    <div class="tic-audience-icon">🛒</div>
+                    <h3>Commerçants</h3>
+                </div>
+                <div class="tic-audience-card tic-reveal tic-delay-1">
+                    <div class="tic-audience-icon">🎓</div>
+                    <h3>Étudiants</h3>
+                </div>
+                <div class="tic-audience-card tic-reveal tic-delay-2">
+                    <div class="tic-audience-icon">🎨</div>
+                    <h3>Créateurs de contenu</h3>
+                </div>
+                <div class="tic-audience-card tic-reveal tic-delay-1">
+                    <div class="tic-audience-icon">💼</div>
+                    <h3>Porteurs de projets</h3>
+                </div>
+                <div class="tic-audience-card tic-reveal tic-delay-2">
+                    <div class="tic-audience-icon">🔍</div>
+                    <h3>Débutants curieux de l'IA</h3>
+                </div>
+            </div>
+            <div class="tic-audience-note tic-reveal">
+                ✅ <strong>Aucune expertise préalable</strong> en intelligence artificielle ou en montage vidéo n'est exigée. Le niveau débutant est accueilli avec plaisir.
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ CE QUI EST INCLUS ═══════════════ -->
+    <section class="tic-section tic-section-alt tic-included" id="ticIncluded">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Tarif et inclus</span>
+                <h2 class="tic-section-title">Tout cela pour <em>2 500 FCFA</em></h2>
+            </div>
+            <div class="tic-included-grid">
+                <div class="tic-included-item tic-reveal tic-delay-1">
+                    <div class="tic-included-check">✓</div>
+                    <p>Participation à l'atelier complet de <strong>09 h à 15 h</strong></p>
+                </div>
+                <div class="tic-included-item tic-reveal tic-delay-2">
+                    <div class="tic-included-check">✓</div>
+                    <p>Démonstrations et <strong>exercices pratiques</strong> guidés</p>
+                </div>
+                <div class="tic-included-item tic-reveal tic-delay-1">
+                    <div class="tic-included-check">✓</div>
+                    <p>Participation au <strong>challenge créatif</strong> « Mon business en 30 secondes »</p>
+                </div>
+                <div class="tic-included-item tic-reveal tic-delay-2">
+                    <div class="tic-included-check">✓</div>
+                    <p><strong>Pause et déjeuner</strong> inclus</p>
+                </div>
+            </div>
+            <div class="tic-reveal" style="text-align:center;margin-top:3rem;">
+                <a href="#inscription" class="tic-btn tic-btn-primary tic-btn-lg" onclick="window.scrollToRegistration();return false;">Je m'inscris pour 2 500 FCFA</a>
+                <p style="font-size:12px;color:var(--tic-text-muted);margin-top:1rem;">Les modalités de paiement et de confirmation seront communiquées après ton inscription.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FAQ ═══════════════ -->
+    <section class="tic-section tic-faq" id="ticFaq">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Questions fréquentes</span>
+                <h2 class="tic-section-title">Tout ce que tu veux <em>savoir</em></h2>
+            </div>
+            <div class="tic-faq-list">
+                <div class="tic-faq-item tic-reveal tic-delay-1">
+                    <button class="tic-faq-question">
+                        À qui s'adresse cet atelier ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Cet atelier s'adresse à tout entrepreneur, commerçant, étudiant, créateur de contenu ou porteur de projet souhaitant découvrir comment l'intelligence artificielle peut l'aider à produire du contenu vidéo publicitaire. Aucun préalable technique n'est nécessaire.
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-faq-item tic-reveal tic-delay-2">
+                    <button class="tic-faq-question">
+                        Dois-je déjà maîtriser l'intelligence artificielle ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Non. L'atelier est conçu pour les débutants. Nous partons de zéro et t'accompagnons pas à pas dans la découverte des outils. Si tu as déjà utilisé ChatGPT, tu pourras approfondir ; sinon, tu apprendras les bases.
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-faq-item tic-reveal tic-delay-1">
+                    <button class="tic-faq-question">
+                        Dois-je venir avec un ordinateur ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Un smartphone est suffisant pour la plupart des exercices. Si tu as un ordinateur portable, tu peux l'amener, mais ce n'est pas obligatoire. Les outils utilisés sont accessibles depuis un téléphone.
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-faq-item tic-reveal tic-delay-2">
+                    <button class="tic-faq-question">
+                        Que couvrent les 2 500 FCFA ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Le montant couvre ta participation à l'atelier de 09 h à 15 h, les démonstrations et exercices pratiques, la participation au challenge créatif, ainsi que la pause et le déjeuner. Il ne couvre pas les abonnements payants aux outils d'IA ni les crédits de génération.
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-faq-item tic-reveal tic-delay-1">
+                    <button class="tic-faq-question">
+                        Comment se déroule l'inscription ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Remplis le formulaire d'inscription ci-dessous avec ton nom, ton numéro WhatsApp et, si tu le souhaites, ton adresse e-mail. Après soumission, tu recevras les instructions pour confirmer ton inscription et effectuer le paiement.
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-faq-item tic-reveal tic-delay-2">
+                    <button class="tic-faq-question">
+                        Comment confirmer mon inscription et mon paiement ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Les modalités exactes de paiement (Mobile Money, virement, etc.) seront communiquées après l'enregistrement de ton inscription, via WhatsApp ou e-mail. Tu recevras un récapitulatif avec les instructions à suivre.
+                        </div>
+                    </div>
+                </div>
+                <div class="tic-faq-item tic-reveal tic-delay-1">
+                    <button class="tic-faq-question">
+                        Que se passe-t-il si je rencontre un problème technique pendant l'atelier ?
+                        <span class="tic-faq-arrow">+</span>
+                    </button>
+                    <div class="tic-faq-answer">
+                        <div class="tic-faq-answer-inner">
+                            Les animateurs seront présents pour t'aider. Si tu ne possèdes pas de smartphone compatible ou si tu rencontres des difficultés avec les outils, nous ferons notre possible pour t'accompagner. N'hésite pas à nous prévenir en avance si tu as des préoccupations particulières.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ APPEL À L'ACTION FINAL ═══════════════ -->
+    <section class="tic-cta-final" id="ticCtaFinal">
+        <div class="tic-container">
+            <div class="tic-reveal">
+                <span class="tic-label">Passe à l'action</span>
+            </div>
+            <h2 class="tic-section-title tic-reveal tic-delay-1">
+                Tes idées méritent d'être vues.<br>
+                Apprends à les mettre en <em>images</em> avec l'IA.
+            </h2>
+            <p class="tic-section-sub tic-reveal tic-delay-2">
+                Rejoins-nous pour une journée pratique où chaque participant repartira avec une vidéo publicitaire réelle.
+            </p>
+            <div class="tic-cta-details tic-reveal tic-delay-2">
+                <div class="tic-cta-detail">
+                    <div class="tic-cta-detail-value">24 oct. 2026</div>
+                    <div class="tic-cta-detail-label">Date</div>
+                </div>
+                <div class="tic-cta-detail">
+                    <div class="tic-cta-detail-value">09 h – 15 h</div>
+                    <div class="tic-cta-detail-label">Horaires</div>
+                </div>
+                <div class="tic-cta-detail">
+                    <div class="tic-cta-detail-value">2 500 FCFA</div>
+                    <div class="tic-cta-detail-label">Participation</div>
+                </div>
+                <div class="tic-cta-detail">
+                    <div class="tic-cta-detail-value">Pause + repas</div>
+                    <div class="tic-cta-detail-label">Inclus</div>
+                </div>
+            </div>
+            <div class="tic-reveal tic-delay-3">
+                <a href="#inscription" class="tic-btn tic-btn-primary tic-btn-lg" onclick="window.scrollToRegistration();return false;" style="background:#fff;color:var(--tic-primary);">Réserver ma place</a>
+            </div>
+            <p class="tic-reveal tic-delay-4" style="margin-top:2rem;font-size:13px;color:rgba(255,255,255,0.4);">
+                <a href="https://benilab.co" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.5);text-decoration:underline;">benilab.co</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FORMULAIRE D'INSCRIPTION ═══════════════ -->
+    <section class="tic-section tic-form-section" id="ticRegistration">
+        <div class="tic-container">
+            <div class="tic-reveal" style="text-align:center;">
+                <span class="tic-label">Inscription</span>
+                <h2 class="tic-section-title">Réserve ta <em>place</em></h2>
+                <p class="tic-section-sub" style="margin:0 auto;">Remplis le formulaire ci-dessous. Tu recevras les instructions de paiement par WhatsApp ou e-mail après enregistrement.</p>
+            </div>
+            <div class="tic-form-wrapper tic-reveal tic-delay-1">
+                <form id="ticRegistrationForm" novalidate>
+                    <div id="ticFormAlert" class="tic-form-alert"></div>
+
+                    <div class="tic-form-group">
+                        <label class="tic-form-label" for="ticFullName">
+                            Nom complet <span class="required">*</span>
+                        </label>
+                        <input type="text" id="ticFullName" class="tic-form-input" placeholder="Ex : Awa Koné" required autocomplete="name">
+                        <div class="tic-form-error">Veuillez entrer ton nom complet.</div>
+                    </div>
+
+                    <div class="tic-form-group">
+                        <label class="tic-form-label" for="ticWhatsapp">
+                            Numéro WhatsApp <span class="required">*</span>
+                        </label>
+                        <input type="tel" id="ticWhatsapp" class="tic-form-input" placeholder="Ex : +225 07 00 00 00 00" required autocomplete="tel">
+                        <div class="tic-form-error">Veuillez entrer un numéro de téléphone valide.</div>
+                    </div>
+
+                    <div class="tic-form-group">
+                        <label class="tic-form-label" for="ticEmail">
+                            Adresse e-mail <span style="font-weight:400;text-transform:none;letter-spacing:0;">(facultatif)</span>
+                        </label>
+                        <input type="email" id="ticEmail" class="tic-form-input" placeholder="Ex : awa@exemple.com" autocomplete="email">
+                        <div class="tic-form-error">Veuillez entrer une adresse e-mail valide.</div>
+                    </div>
+
+                    <div class="tic-form-group">
+                        <label class="tic-form-label" for="ticProfile">
+                            Ton profil <span class="required">*</span>
+                        </label>
+                        <select id="ticProfile" class="tic-form-input tic-form-select" required>
+                            <option value="" disabled selected>Choisis ton profil…</option>
+                            <option value="entrepreneur">Entrepreneur / Chef d'entreprise</option>
+                            <option value="commercant">Commerçant</option>
+                            <option value="etudiant">Étudiant / Jeune diplômé</option>
+                            <option value="createur">Créateur de contenu</option>
+                            <option value="freelance">Freelance / Prestataire</option>
+                            <option value="porteur">Porteur de projet</option>
+                            <option value="curieux">Curieux — débutant dans l'IA</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                        <div class="tic-form-error">Veuillez sélectionner ton profil.</div>
+                    </div>
+
+                    <div class="tic-form-group">
+                        <div class="tic-form-checkbox-group">
+                            <input type="checkbox" id="ticConsent" class="tic-form-checkbox" required>
+                            <label for="ticConsent" class="tic-form-checkbox-label">
+                                J'ai pris connaissance des informations relatives à l'inscription, y compris le montant de 2 500 FCFA et le fait que les modalités de paiement seront communiquées après mon enregistrement. <span class="required">*</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="tic-form-submit">
+                        <button type="submit" class="tic-btn tic-btn-primary tic-btn-block tic-btn-lg" id="ticSubmitBtn">
+                            Je m'inscris — 2 500 FCFA
+                        </button>
+                        <div class="tic-form-loading" id="ticFormLoading">
+                            <div class="tic-spinner"></div>
+                            Envoi en cours…
+                        </div>
+                    </div>
+                </form>
+
+                <div class="tic-form-success" id="ticFormSuccess">
+                    <div class="icon">✓</div>
+                    <h3>Inscription enregistrée</h3>
+                    <p>Merci ! Ton inscription a bien été reçue. Un membre de l'équipe Benilab Services te contactera très prochainement sur WhatsApp ou par e-mail avec les instructions pour finaliser ton inscription et ton paiement.</p>
+                    <div class="alert-box">
+                        <strong>Prochaines étapes :</strong><br>
+                        1. Attends un message de confirmation sur WhatsApp ou par e-mail.<br>
+                        2. Règle le montant de 2 500 FCFA selon les instructions reçues.<br>
+                        3. Reçois ton justificatif d'inscription et les informations pratiques pour le jour J.<br><br>
+                        <em>Samedi 24 octobre 2026 — 09 h à 15 h. Restauration incluse.</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer class="tic-footer">
+        <div class="tic-container">
+            <div class="tic-footer-top">
+                <div class="tic-footer-brand">
+                    <span class="logo"><strong>Benilab</strong> Services</span>
+                    <p>L'IA au service de ton business, de l'idée à la vidéo publicitaire. Organisateur de l'atelier « Ça me dit TIC ». <a href="https://benilab.co" target="_blank" rel="noopener">benilab.co</a></p>
+                </div>
+                <div class="tic-footer-links">
+                    <div class="tic-footer-col">
+                        <h4>Atelier</h4>
+                        <ul>
+                            <li><a href="#programme" onclick="scrollToProgram();return false;">Programme</a></li>
+                            <li><a href="#outils" onclick="event.preventDefault();document.getElementById('ticOutils').scrollIntoView({behavior:'smooth'});return false;">Outils</a></li>
+                            <li><a href="#faq" onclick="event.preventDefault();document.getElementById('ticFaq').scrollIntoView({behavior:'smooth'});return false;">FAQ</a></li>
+                            <li><a href="#inscription" onclick="window.scrollToRegistration();return false;">S'inscrire</a></li>
+                        </ul>
+                    </div>
+                    <div class="tic-footer-col">
+                        <h4>À propos</h4>
+                        <ul>
+                            <li><a href="https://benilab.co" target="_blank" rel="noopener">Site web</a></li>
+                            <li><a href="#ticProblem" onclick="event.preventDefault();document.getElementById('ticProblem').scrollIntoView({behavior:'smooth'});return false;">L'atelier</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="tic-footer-bottom">
+                <span>© 2026 Benilab Services — Tous droits réservés.</span>
+                <span>Atelier « Ça me dit TIC » · Samedi 24 octobre 2026</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile CTA bar -->
+    <div class="tic-mobile-cta" id="ticMobileCta">
+        <div class="tic-mobile-cta-price">
+            <strong>2 500 FCFA</strong> · 24 oct.
+        </div>
+        <a href="#inscription" class="tic-btn tic-btn-primary" onclick="window.scrollToRegistration();return false;">Réserver</a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/atelier-tic.js"></script>
+</body>
+</html>

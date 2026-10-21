@@ -1,0 +1,103 @@
+/* ═══════════════════════════════════════════════════════
+   BENILAB Digital360 — Admin Dashboard Styles
+   ═══════════════════════════════════════════════════════ */
+
+.admin-layout { display: flex; min-height: 100vh; }
+
+/* ── Admin Sidebar (wider) ── */
+.admin-sidebar {
+    width: 280px; background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    position: fixed; top: 0; left: 0; height: 100vh;
+    overflow-y: auto; z-index: 200;
+}
+.admin-sidebar-header {
+    padding: 20px 16px; border-bottom: 1px solid var(--border);
+}
+.admin-sidebar-logo {
+    font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+}
+.admin-sidebar-logo em { font-style: italic; color: var(--accent); font-family: var(--font-display); }
+.admin-sidebar-logo span { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); display: block; margin-top: 2px; }
+.admin-sidebar-nav { padding: 12px; }
+.admin-nav-section {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-muted); padding: 12px 8px 6px;
+}
+.admin-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: var(--radius-md);
+    font-size: 13px; color: var(--text-secondary);
+    transition: var(--transition); cursor: pointer;
+}
+.admin-nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.admin-nav-item.active { background: rgba(127,181,168,0.1); color: var(--accent); }
+.admin-nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+/* ── Admin Main ── */
+.admin-main { flex: 1; margin-left: 280px; min-height: 100vh; background: var(--bg-primary); }
+.admin-topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.admin-content { padding: 2rem; }
+
+/* ── Revenue Cards ── */
+.revenue-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+}
+.revenue-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+}
+.revenue-card-value {
+    font-family: var(--font-display); font-size: 2.2rem; font-weight: 700;
+    color: var(--accent); margin-bottom: 0.25rem;
+}
+.revenue-card-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.revenue-card-sub { font-size: 12px; color: var(--text-muted); margin-top: 0.5rem; }
+
+/* ── Client Table ── */
+.client-table-wrap { overflow-x: auto; }
+.client-filters {
+    display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.filter-input {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 10px 14px;
+    color: var(--text-primary); font-size: 13px; outline: none;
+}
+.filter-input:focus { border-color: var(--accent); }
+
+/* ── Client Card (fiche) ── */
+.client-fiche { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
+.client-fiche-sidebar { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; height: fit-content; }
+.client-fiche-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-warm));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 700; color: var(--text-inverse);
+    margin: 0 auto 1rem;
+}
+.client-fiche-name { text-align: center; font-size: 1.2rem; font-weight: 600; margin-bottom: 0.25rem; }
+.client-fiche-company { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 1.5rem; }
+.client-fiche-info { font-size: 13px; }
+.client-fiche-info div { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.client-fiche-info div:last-child { border-bottom: none; }
+.client-fiche-info .label { color: var(--text-muted); }
+
+/* ── Admin responsive ── */
+@media (max-width: 1024px) {
+    .admin-sidebar { transform: translateX(-100%); }
+    .admin-sidebar.open { transform: translateX(0); }
+    .admin-main { margin-left: 0; }
+    .client-fiche { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+    .admin-content { padding: 1.5rem; }
+    .revenue-grid { grid-template-columns: repeat(2, 1fr); }
+}

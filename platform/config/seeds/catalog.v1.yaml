@@ -1,0 +1,159 @@
+# Catalogue BENILAB Digital360 — version 1
+#
+# Prix HT, en unité mineure : FCFA pour XOF et XAF, CENTIMES pour EUR (137,05 € = 13705).
+# Une offre sans prix dans une devise n'est pas vendable dans cette devise.
+# XAF et EUR : grille à fixer par BENILAB (question Q14), volontairement absente.
+#
+# Modifier : copier en catalog.v2.yaml, incrémenter `version`, puis
+# `python -m digital360.cli seed-config`. Les commandes passées gardent le prix payé.
+
+key: default
+version: 1
+default_currency: XOF
+
+# Devise de facturation proposée selon le pays de l'entreprise
+currency_by_country:
+  CI: XOF
+  SN: XOF
+  BJ: XOF
+  TG: XOF
+  BF: XOF
+  ML: XOF
+  NE: XOF
+  CM: XAF
+  GA: XAF
+  CG: XAF
+  FR: EUR
+
+entitlements:
+  - { key: WEBSITE, type: BOOLEAN, description: "Site web professionnel (jusqu'à 5 pages)" }
+  - { key: MAINTENANCE, type: BOOLEAN, description: "Maintenance, mises à jour et sauvegardes" }
+  - { key: SUPPORT, type: BOOLEAN, description: "Assistance et petites modifications" }
+  - { key: CONTENT_MONTHLY_LIMIT, type: LIMIT, description: "Contenus produits par mois" }
+  - { key: GOOGLE_BUSINESS_MONITORING, type: BOOLEAN, description: "Suivi de la fiche Google Business" }
+  - { key: GOOGLE_BUSINESS_MANAGEMENT, type: BOOLEAN, description: "Optimisation de la fiche Google Business" }
+  - { key: SOCIAL_MANAGEMENT, type: BOOLEAN, description: "Gestion Facebook et Instagram" }
+  - { key: SEO, type: BOOLEAN, description: "SEO local" }
+  - { key: VISUAL_CREATION, type: BOOLEAN, description: "Création de visuels" }
+  - { key: LEAD_TRACKING, type: BOOLEAN, description: "Suivi des prospects" }
+  - { key: MONTHLY_REPORT, type: BOOLEAN, description: "Rapport mensuel" }
+  - { key: LANDING_PAGE_LIMIT, type: LIMIT, description: "Landing pages" }
+  - { key: EDITORIAL_STRATEGY, type: BOOLEAN, description: "Stratégie éditoriale" }
+  - { key: EMAIL_MARKETING, type: BOOLEAN, description: "Email marketing" }
+  - { key: AUTOMATION, type: BOOLEAN, description: "Automatisations" }
+  - { key: ADS_MANAGEMENT, type: BOOLEAN, description: "Gestion des campagnes publicitaires (budget séparé)" }
+  - { key: CONVERSION_OPTIMIZATION, type: BOOLEAN, description: "Optimisation de la conversion" }
+  - { key: ADVANCED_REPORTING, type: BOOLEAN, description: "Reporting avancé" }
+
+products:
+  - code: DIGITAL_START
+    name: "Digital Start"
+    kind: ONE_TIME
+    module: PRESENCE
+    description: "Pack complet : site web, domaine, hébergement, SEO de base."
+    includes:
+      - "Nom de domaine et hébergement (1re année)"
+      - "Site web responsive jusqu'à 5 pages"
+      - "Présentation, services, galerie, contact"
+      - "WhatsApp, Google Maps et réseaux sociaux intégrés"
+      - "Formulaire de contact"
+      - "SEO technique de base et Analytics"
+      - "Email professionnel de base"
+      - "Mise en ligne"
+    prices:
+      - { currency: XOF, amount: 89900 }
+    entitlements:
+      WEBSITE: true
+
+  - code: DIGITAL_ESSENTIAL
+    name: "Digital Essential"
+    kind: SUBSCRIPTION
+    family: support_plan
+    module: PRESENCE
+    description: "Maintenance, mises à jour, 4 contenus par mois, suivi Google Business."
+    includes:
+      - "Maintenance et mises à jour"
+      - "Sauvegardes"
+      - "Assistance et petites modifications"
+      - "4 contenus par mois"
+      - "Suivi Google Business"
+    prices:
+      - { currency: XOF, amount: 25000, period: MONTH }
+    entitlements:
+      MAINTENANCE: true
+      SUPPORT: true
+      CONTENT_MONTHLY_LIMIT: 4
+      GOOGLE_BUSINESS_MONITORING: true
+
+  - code: DIGITAL_GROWTH
+    name: "Digital Growth"
+    kind: SUBSCRIPTION
+    family: support_plan
+    module: VISIBILITY
+    description: "Tout Essential, gestion des réseaux, 8 contenus par mois, SEO local."
+    includes:
+      - "Tout Digital Essential"
+      - "8 contenus par mois"
+      - "Gestion Facebook et Instagram"
+      - "Optimisation Google Business et SEO local"
+      - "Création de visuels et optimisation du site"
+      - "Landing page simple selon besoin"
+      - "Suivi des prospects et rapport mensuel"
+    prices:
+      - { currency: XOF, amount: 50000, period: MONTH }
+    entitlements:
+      MAINTENANCE: true
+      SUPPORT: true
+      CONTENT_MONTHLY_LIMIT: 8
+      GOOGLE_BUSINESS_MONITORING: true
+      GOOGLE_BUSINESS_MANAGEMENT: true
+      SOCIAL_MANAGEMENT: true
+      SEO: true
+      VISUAL_CREATION: true
+      LEAD_TRACKING: true
+      MONTHLY_REPORT: true
+      LANDING_PAGE_LIMIT: 1
+
+  - code: DIGITAL_PERFORMANCE
+    name: "Digital Performance"
+    kind: SUBSCRIPTION
+    family: support_plan
+    module: ACQUISITION
+    description: "Tout Growth, publicité, email marketing, automatisations, reporting avancé."
+    includes:
+      - "Tout Digital Growth"
+      - "12 contenus par mois et stratégie éditoriale"
+      - "Landing pages et génération de prospects"
+      - "Email marketing et automatisations"
+      - "Gestion des campagnes publicitaires (budget publicitaire séparé)"
+      - "Optimisation de la conversion et reporting avancé"
+    prices:
+      - { currency: XOF, amount: 100000, period: MONTH }
+    entitlements:
+      MAINTENANCE: true
+      SUPPORT: true
+      CONTENT_MONTHLY_LIMIT: 12
+      GOOGLE_BUSINESS_MONITORING: true
+      GOOGLE_BUSINESS_MANAGEMENT: true
+      SOCIAL_MANAGEMENT: true
+      SEO: true
+      VISUAL_CREATION: true
+      LEAD_TRACKING: true
+      MONTHLY_REPORT: true
+      LANDING_PAGE_LIMIT: UNLIMITED
+      EDITORIAL_STRATEGY: true
+      EMAIL_MARKETING: true
+      AUTOMATION: true
+      ADS_MANAGEMENT: true
+      CONVERSION_OPTIMIZATION: true
+      ADVANCED_REPORTING: true
+
+  # Renouvellement annuel domaine + hébergement à partir de l'année 2 (payé par le client, Q1).
+  # Prix à fixer (Q15) : non vendable tant qu'aucun prix n'est défini.
+  - code: ANNUAL_RENEWAL
+    name: "Renouvellement annuel domaine et hébergement"
+    kind: SUBSCRIPTION
+    module: PRESENCE
+    public: false
+    description: "Renouvellement du nom de domaine et de l'hébergement, à partir de la 2e année."
+    prices: []
